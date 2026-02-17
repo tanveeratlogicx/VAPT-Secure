@@ -1089,19 +1089,21 @@ window.vaptScriptLoaded = true;
           flex-direction: column !important;
           height: 100% !important;
         }
-        /* Refined scrollbar */
+        /* Refined scrollbar - Always visible for better UX */
         .vapt-mapping-scroll-body::-webkit-scrollbar {
-          width: 8px;
+          width: 10px;
         }
         .vapt-mapping-scroll-body::-webkit-scrollbar-track {
-          background: #fbfbfc;
+          background: #f1f1f1;
+          border-radius: 5px;
         }
         .vapt-mapping-scroll-body::-webkit-scrollbar-thumb {
-          background: #dcdcde;
-          border-radius: 4px;
+          background: #ccc;
+          border-radius: 5px;
+          border: 2px solid #f1f1f1;
         }
         .vapt-mapping-scroll-body::-webkit-scrollbar-thumb:hover {
-          background: #c3c4c7;
+          background: #bbb;
         }
       `),
 
@@ -1144,7 +1146,7 @@ window.vaptScriptLoaded = true;
           ])
         ]),
 
-        // Content
+        // Content - Fixed scrolling with min-height constraint
         el('div', {
           className: 'vapt-mapping-scroll-body',
           style: {
@@ -1152,7 +1154,8 @@ window.vaptScriptLoaded = true;
             overflowY: 'auto',
             padding: '25px',
             background: '#fcfcfc',
-            position: 'relative'
+            position: 'relative',
+            minHeight: 0 // Allows flex child to shrink below its content height
           }
         }, [
           el('div', { style: { display: 'flex', flexDirection: 'column', gap: '0' } }, [
