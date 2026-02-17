@@ -1064,10 +1064,9 @@ window.vaptScriptLoaded = true;
     return el(Modal, {
       title: null,
       onRequestClose: onClose,
-      className: 'vapt-mapping-modal',
-      // We need to target the internal content div of the Modal. 
-      // Since we can't easily target the WP Modal internal classes from here without a global stylesheet,
-      // we use a high-specificity approach for the container we control.
+      className: 'vapt-mapping-modal no-header-modal', // Added class for potential CSS overrides
+      // WP Modal might still render the close button. We try to hide it by not providing a title 
+      // and potentially using styles to suppress the header area.
       style: {
         width: '600px',
         height: '80vh',
@@ -1075,89 +1074,75 @@ window.vaptScriptLoaded = true;
         maxHeight: '900px',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden', // Stop the modal container itself from scrolling
-        padding: 0 // Remove default scaffolding padding if any
+        overflow: 'hidden',
+        padding: 0
       }
     }, [
-      // Main Container - strictly fills the modal
+      // Main Container
       el('div', {
         style: {
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
           width: '100%',
-          overflow: 'hidden', // Double down on hidden overflow
-          position: 'relative' // Ensure stacking context
+          overflow: 'hidden',
+          position: 'relative',
+          background: '#fff'
         }
       }, [
 
-        // Unified Header Section (Title + Description + CTA)
-        // Uni-Header - Fixed height, no shrink
+        // Unified Sticky Header
         el('div', {
           style: {
-            padding: '20px 25px',
+            padding: '15px 25px',
             borderBottom: '1px solid #e2e4e7',
             background: '#fff',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            flex: '0 0 auto', // Equivalent to flex-shrink: 0, flex-grow: 0, flex-basis: auto
-            zIndex: 10,
-            position: 'relative'
+            flex: '0 0 auto',
+            zIndex: 100,
+            position: 'sticky',
+            top: 0
           }
         }, [
-          el('div', { style: { maxWidth: '70%' } }, [
-            el('h2', { style: { margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#1d2327' } }, __('Field Smart-Mapping Configuration', 'vapt-secure')),
-            el('p', { style: { margin: 0, fontSize: '13px', color: '#50575e', lineHeight: '1.4' } },
-              __('Map JSON fields to VAPT components for context-aware AI prompts.', 'vapt-secure')
+          el('div', { style: { maxWidth: '50%' } }, [
+            el('h2', { style: { margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1d2327' } }, __('Mapping Configuration', 'vapt-secure')),
+            el('p', { style: { margin: 0, fontSize: '12px', color: '#646970', lineHeight: '1.2' } },
+              __('Map JSON fields to VAPT components.', 'vapt-secure')
             )
           ]),
-          el(Button, { isSecondary: true, onClick: handleAutoMap }, __('Auto Map All', 'vapt-secure'))
+          el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } }, [
+            el(Button, { isSecondary: true, onClick: handleAutoMap, style: { height: '32px' } }, __('Auto Map', 'vapt-secure')),
+            el(Button, { isTertiary: true, onClick: onClose, style: { height: '32px' } }, __('Cancel', 'vapt-secure')),
+            el(Button, { isPrimary: true, onClick: onClose, style: { height: '32px' } }, __('Done', 'vapt-secure'))
+          ])
         ]),
 
-        // Content Body - The ONLY scrollable area
-        // Scrollable Body - Takes remaining space
+        // Scrollable Body
         el('div', {
           style: {
-            flex: '1 1 auto', // Grow and shrink to fill space
-            overflowY: 'auto', // Enable vertical scrolling here
+            flex: '1 1 auto',
+            overflowY: 'auto',
             padding: '25px',
             background: '#fcfcfc',
-            marginTop: 0,
-            marginBottom: 0
           }
         }, [
           el('div', { style: { display: 'flex', flexDirection: 'column', gap: '0' } }, [
-            el('h3', { style: { fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#646970', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
             renderMappingSelect(__('Description / Summary', 'vapt-secure'), 'description'),
             renderMappingSelect(__('Severity Level', 'vapt-secure'), 'severity'),
             renderMappingSelect(__('Attack Scenario', 'vapt-secure'), 'attack_scenario'),
 
-            el('h3', { style: { fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#646970', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '25px', letterSpacing: '0.5px' } }, __('Technical & Verification Fields')),
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Technical & Verification Fields')),
             renderMappingSelect(__('Remediation Strategy', 'vapt-secure'), 'remediation'),
             renderMappingSelect(__('Test Method (Protocol)', 'vapt-secure'), 'test_method'),
             renderMappingSelect(__('Verification Steps (Manual)', 'vapt-secure'), 'verification_steps'),
             renderMappingSelect(__('Compliance (OWASP/PCI)', 'vapt-secure'), 'compliance'),
 
-            el('h3', { style: { fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#646970', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '25px', letterSpacing: '0.5px' } }, __('Advanced Configuration')),
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Advanced Configuration')),
             renderMappingSelect(__('Verification Engine (JSON Schema)', 'vapt-secure'), 'verification_engine'),
           ])
-        ]),
-
-        // Fixed Footer Section
-        // Fixed Footer - No shrink
-        el('div', {
-          style: {
-            padding: '15px 25px',
-            textAlign: 'right',
-            borderTop: '1px solid #e2e4e7',
-            background: '#fff',
-            flex: '0 0 auto',
-            zIndex: 10,
-            position: 'relative'
-          }
-        }, [
-          el(Button, { isPrimary: true, onClick: onClose }, __('Done', 'vapt-secure'))
         ])
       ])
     ]);
