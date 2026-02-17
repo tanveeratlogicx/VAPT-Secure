@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "risk_id": "RISK-002",
+    "severity": "High",
+    "category": "Information Disclosure",
+    "title": "Xmlrpc enabled Leads to Ping back attack",
+    "version": "1.0.0",
+    "validation_status": "ready"
+  },
+  "manual_protocol": {
+    "steps": [
+      "1. POST to /xmlrpc.php with pingback.ping method",
+      "2. Verify amplification response size",
+      "3. Test with external target URL",
+      "4. Check server logs for XML-RPC access"
+    ]
+  },
+  "operational_notes": "Business Impact: Risk of Information Disclosure compromise leading to data breach or system compromise. Blocking XML-RPC eliminates pingback amplification attack vectors and reduces server load.",
+  "controls": [
+    {
+      "type": "header",
+      "label": "XML-RPC Protection Configuration"
+    },
+    {
+      "type": "toggle",
+      "label": "Block XML-RPC Access",
+      "key": "block_xmlrpc_enabled",
+      "default": false,
+      "description": "Prevents external access to xmlrpc.php to stop DDoS amplification and brute force attacks.",
+      "help": "This will add a deny rule to your .htaccess file."
+    },
+    {
+      "type": "test_action",
+      "label": "Verify Protection",
+      "key": "verify_xmlrpc_block",
+      "test_logic": "universal_probe",
+      "test_config": {
+        "target_url": "/xmlrpc.php",
+        "method": "POST",
+        "body": "<?xml version=\"1.0\"?><methodCall><methodName>pingback.ping</methodName></methodCall>",
+        "expected_status": 403,
+        "success_message": "XML-RPC is successfully blocked. (403)",
+        "fail_message": "XML-RPC is still accessible! (Check .htaccess)"
+      }
+    }
+  ],
+  "enforcement": {
+    "driver": "htaccess",
+    "target": "root",
+    "backup": true,
+    "rollback_on_disable": true,
+    "mappings": {
+      "block_xmlrpc_enabled": "<Files xmlrpc.php>\nOrder Deny,Allow\nDeny from all\n</Files>"
+    }
+  },
+  "reporting": {
+    "status_indicators": [
+      {
+        "indicator": "protected",
+        "display": "badge",
+        "message": "XML-RPC Protection Active"
+      }
+    ],
+    "export_formats": ["pdf", "json", "csv"],
+    "share_capability": true
+  },
+  "references": [
+    {
+      "title": "OWASP Security Guide",
+      "url": "https://owasp.org/",
+      "type": "documentation"
+    },
+    {
+      "title": "WordPress Security Best Practices",
+      "url": "https://wordpress.org/support/article/hardening-wordpress/",
+      "type": "documentation"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           1.0.0
+ * Version:           1.2.2
  * Author:            Automated Penetration Testing Builder
  * Author URI:        https://vaptbuilder.com/
  * License:           GPL-2.0-or-later
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.2.0');
+  define('VAPT_SECURE_VERSION', '1.2.2');
 }
 if (! defined('VAPT_SECURE_AUDITOR_VERSION')) {
   define('VAPT_SECURE_AUDITOR_VERSION', '2.8.0');

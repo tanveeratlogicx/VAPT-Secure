@@ -540,8 +540,22 @@ window.vaptScriptLoaded = true;
             },
             "automation_context": {
               "ai_check_prompt": "{{automation_prompts.ai_check}}",
-              "ai_schema_fields": "{{automation_prompts.ai_schema}}"
+              "ai_schema_fields": "{{automation_prompts.ai_schema}}",
+              "ai_agent_instructions": "{{ai_agent_instructions}}",
+              "global_settings": "{{global_settings}}"
             },
+            "risk_properties": {
+              "cvss_score": "{{cvss_score}}",
+              "cvss_vector": "{{cvss_vector}}",
+              "affected_components": "{{affected_components}}",
+              "performance_impact": "{{performance_impact}}"
+            },
+            "protection_details": "{{protection_details}}",
+            "testing_specs": "{{testing_specs}}",
+            "verification_engine": "{{verification_engine}}",
+            "relationships": "{{relationships}}",
+            "reporting": "{{reporting}}",
+            "references": "{{references}}",
             "implementation_strategy": {
               "execution_driver": `Prioritize: ${prioritizedDriver}`,
               "enforcement_mechanism": "Intelligent automated selection based on active datasource.",
@@ -578,7 +592,7 @@ window.vaptScriptLoaded = true;
       }
 
       // 2. Extract Development Guidance
-      let displayInstruct = feature.dev_instruct || feature.devInstruct || '';
+      let displayInstruct = feature.dev_instruct || feature.devInstruct || feature.ai_agent_instructions || '';
       if (!displayInstruct && feature.generated_schema) {
         try {
           const schema = typeof feature.generated_schema === 'string' ? JSON.parse(feature.generated_schema) : feature.generated_schema;
@@ -641,6 +655,54 @@ window.vaptScriptLoaded = true;
       const autoSteps = protection.automated_protection?.implementation_steps || [];
       contextJson = replaceAll(contextJson, 'automated_steps', Array.isArray(autoSteps) ? JSON.stringify(autoSteps, null, 2) : (autoSteps || ''));
       contextJson = replaceAll(contextJson, 'manual_steps', JSON.stringify(protection.manual_steps || [], null, 2));
+
+      // Enhanced Extraction (v3.13.1) - Critical & High Importance
+      const aiInstructions = feature.ai_agent_instructions || {};
+      const globalSettings = feature.global_settings || {};
+      const testing = feature.testing || {};
+      const verifEngine = feature.verification_engine || {};
+      const relationships = feature.relationships || {};
+      const perfImpact = feature.performance_impact || {};
+
+      contextJson = replaceAll(contextJson, 'ai_agent_instructions', JSON.stringify(aiInstructions, null, 2));
+      contextJson = replaceAll(contextJson, 'global_settings', JSON.stringify(globalSettings, null, 2));
+
+      // Risk Identity
+      const cvssScore = (typeof rawSev === 'object' ? rawSev.cvss_score : '') || '';
+      const cvssVector = (typeof rawSev === 'object' ? rawSev.cvss_vector : '') || '';
+      const affectedComponents = (typeof rawDesc === 'object' ? rawDesc.affected_components : '') || '';
+
+      contextJson = replaceAll(contextJson, 'cvss_score', cvssScore);
+      contextJson = replaceAll(contextJson, 'cvss_vector', cvssVector);
+      contextJson = replaceAll(contextJson, 'affected_components', Array.isArray(affectedComponents) ? affectedComponents.join(', ') : (affectedComponents || ''));
+
+      // Protection Details
+      const protectionDetails = {
+        effort: protection.remediation_effort || 'Medium',
+        estimated_time: protection.estimated_time || '30m',
+        priority_score: protection.priority_score || 5,
+        dependencies: protection.plugin_dependencies || [],
+        rollback: protection.rollback_steps || []
+      };
+      contextJson = replaceAll(contextJson, 'protection_details', JSON.stringify(protectionDetails, null, 2));
+
+      // Testing Specs
+      const testingSpecs = {
+        payloads: testing.test_payloads || [],
+        difficulty: testing.difficulty || 'Medium',
+        tools: testing.tools_required || []
+      };
+      contextJson = replaceAll(contextJson, 'testing_specs', JSON.stringify(testingSpecs, null, 2));
+
+      // Verification Engine & Relationships
+      contextJson = replaceAll(contextJson, 'verification_engine', JSON.stringify(verifEngine, null, 2));
+      contextJson = replaceAll(contextJson, 'relationships', JSON.stringify(relationships, null, 2));
+      contextJson = replaceAll(contextJson, 'performance_impact', JSON.stringify(perfImpact, null, 2));
+
+      // Reporting & References
+      contextJson = replaceAll(contextJson, 'reporting', JSON.stringify(feature.reporting || {}, null, 2));
+      contextJson = replaceAll(contextJson, 'references', JSON.stringify(feature.references || [], null, 2));
+
 
       const rawContext = { ...feature };
       delete rawContext.generated_schema;
@@ -877,7 +939,7 @@ window.vaptScriptLoaded = true;
           ]),
 
           (() => {
-            let displayInstruct = feature.dev_instruct || feature.devInstruct || '';
+            let displayInstruct = feature.dev_instruct || feature.devInstruct || feature.ai_agent_instructions || '';
 
             // FALLBACK: If dev_instruct is missing, try to extract from the generated schema string
             if (!displayInstruct && feature.generated_schema) {
@@ -3062,16 +3124,33 @@ window.vaptScriptLoaded = true;
   const generateDevInstructions = (f) => {
     if (!f) return '';
 
+    const formatVal = (v) => {
+      if (!v) return 'N/A';
+      if (Array.isArray(v)) return v.join(', ');
+      if (typeof v === 'object') return JSON.stringify(v);
+      return v;
+    };
+
     const lines = [];
     const baseUrl = window.location.origin;
+
+    // 0. AI Agent Instructions (Priority Overlay)
+    if (f.ai_agent_instructions) {
+      if (typeof f.ai_agent_instructions === 'string') return f.ai_agent_instructions;
+      if (typeof f.ai_agent_instructions === 'object') return JSON.stringify(f.ai_agent_instructions, null, 2);
+    }
 
     // 1. Identity & Context
     lines.push(`## 1. Identity & Context`);
     lines.push(`- **Risk ID**: ${f.risk_id || f.key || 'N/A'}`);
     lines.push(`- **Title**: ${f.title || f.label || 'N/A'}`);
     lines.push(`- **Category**: ${f.category || 'General'}`);
-    lines.push(`- **Severity**: ${f.severity || 'Medium'}`);
-    if (f.cvss_score) lines.push(`- **CVSS**: ${f.cvss_score} (${f.cvss_vector || 'N/A'})`);
+    // Severity Handling
+    const sev = (typeof f.severity === 'object') ? f.severity : { level: f.severity };
+    lines.push(`- **Severity**: ${sev.level || 'Medium'}`);
+    if (sev.cvss_score || f.cvss_score) lines.push(`- **CVSS Score**: ${sev.cvss_score || f.cvss_score}`);
+    if (sev.cvss_vector || f.cvss_vector) lines.push(`- **CVSS Vector**: ${sev.cvss_vector || f.cvss_vector}`);
+    if (sev.business_impact || f.business_impact) lines.push(`- **Business Impact**: ${sev.business_impact || f.business_impact}`);
 
     // 2. Summary & Description
     if (f.description) {
@@ -3086,11 +3165,11 @@ window.vaptScriptLoaded = true;
     // 3. Compliance
     if (f.owasp_mapping || f.pci_dss || f.gdpr || f.nist || f.cwe) {
       lines.push(`\n## 2. Compliance Mapping`);
-      if (f.owasp_mapping) lines.push(`- **OWASP**: ${Array.isArray(f.owasp_mapping) ? f.owasp_mapping.join(', ') : f.owasp_mapping}`);
-      if (f.pci_dss) lines.push(`- **PCI DSS**: ${Array.isArray(f.pci_dss) ? f.pci_dss.join(', ') : f.pci_dss}`);
-      if (f.gdpr) lines.push(`- **GDPR**: ${Array.isArray(f.gdpr) ? f.gdpr.join(', ') : f.gdpr}`);
-      if (f.nist) lines.push(`- **NIST**: ${Array.isArray(f.nist) ? f.nist.join(', ') : f.nist}`);
-      if (f.cwe) lines.push(`- **CWE**: ${Array.isArray(f.cwe) ? f.cwe.join(', ') : f.cwe}`);
+      if (f.owasp_mapping) lines.push(`- **OWASP**: ${formatVal(f.owasp_mapping)}`);
+      if (f.pci_dss) lines.push(`- **PCI DSS**: ${formatVal(f.pci_dss)}`);
+      if (f.gdpr) lines.push(`- **GDPR**: ${formatVal(f.gdpr)}`);
+      if (f.nist) lines.push(`- **NIST**: ${formatVal(f.nist)}`);
+      if (f.cwe) lines.push(`- **CWE**: ${formatVal(f.cwe)}`);
     }
 
     // 4. Technical Protection & Mitigation
@@ -3106,17 +3185,29 @@ window.vaptScriptLoaded = true;
         if (p.automated_protection.implementation_steps) {
           lines.push(`- **Implementation Steps**:`);
           const steps = Array.isArray(p.automated_protection.implementation_steps) ? p.automated_protection.implementation_steps : [p.automated_protection.implementation_steps];
-          steps.forEach(s => lines.push(`  - ${s}`));
+          steps.forEach(s => {
+            if (typeof s === 'object' && s.description) lines.push(`  - ${s.description}`);
+            else lines.push(`  - ${formatVal(s)}`);
+          });
         }
       }
       if (p.manual_steps) {
         lines.push(`\n### Manual Steps`);
-        lines.push(`${p.manual_steps.description || JSON.stringify(p.manual_steps)}`);
+        if (Array.isArray(p.manual_steps)) {
+          p.manual_steps.forEach(s => {
+            const desc = s.description || s.step || s;
+            if (typeof desc === 'object') lines.push(`- ${JSON.stringify(desc)}`);
+            else lines.push(`- ${desc}`);
+          });
+        } else {
+          lines.push(`${p.manual_steps.description || (typeof p.manual_steps === 'object' ? JSON.stringify(p.manual_steps) : p.manual_steps)}`);
+        }
       }
-      if (p.configuration) {
+      if (p.configuration || p.configuration_changes) {
         lines.push(`\n### Configuration`);
-        if (p.configuration.wp_config) lines.push(`- **wp-config.php**: \`${p.configuration.wp_config}\``);
-        if (p.configuration.htaccess) lines.push(`- **.htaccess**: \`${p.configuration.htaccess}\``);
+        const config = p.configuration || p.configuration_changes;
+        if (config.wp_config) lines.push(`- **wp-config.php**: \`${(typeof config.wp_config === 'object' ? JSON.stringify(config.wp_config) : config.wp_config)}\``);
+        if (config.htaccess || config.htaccess_rules) lines.push(`- **.htaccess**: \`${formatVal(config.htaccess || config.htaccess_rules)}\``);
       }
     }
 
@@ -3128,9 +3219,9 @@ window.vaptScriptLoaded = true;
         const checks = Array.isArray(f.verification_engine.automated_checks) ? f.verification_engine.automated_checks : [f.verification_engine.automated_checks];
         checks.forEach(c => {
           lines.push(`- **${c.check_id || 'Check'}**: ${c.name}`);
-          lines.push(`  - Method: ${c.method}`);
-          lines.push(`  - Success: ${c.success_criteria}`);
-          lines.push(`  - Fail: ${c.failure_message}`);
+          lines.push(`  - Method: ${formatVal(c.method)}`);
+          lines.push(`  - Success: ${formatVal(c.success_criteria)}`);
+          lines.push(`  - Fail: ${formatVal(c.failure_message)}`);
         });
       }
     }
@@ -3140,21 +3231,26 @@ window.vaptScriptLoaded = true;
     if (f.testing) {
       const t = f.testing;
       if (t.test_method) lines.push(`- **Method**: ${t.test_method}`);
-      if (t.tools_required) lines.push(`- **Tools**: ${Array.isArray(t.tools_required) ? t.tools_required.join(', ') : t.tools_required}`);
+      if (t.tools_required) lines.push(`- **Tools**: ${formatVal(t.tools_required)}`);
       if (t.verification_steps) {
         lines.push(`\n### Verification Steps`);
         const vSteps = Array.isArray(t.verification_steps) ? t.verification_steps : [t.verification_steps];
-        vSteps.forEach(s => lines.push(`- ${s}`));
+        vSteps.forEach(s => lines.push(`- ${formatVal(s)}`));
       }
       if (t.test_payloads) {
         lines.push(`\n### Test Payloads`);
         const payloads = Array.isArray(t.test_payloads) ? t.test_payloads : [t.test_payloads];
         payloads.forEach(p => {
-          let payloadStr = p.payload;
-          if (payloadStr && payloadStr.startsWith('/')) {
-            payloadStr = baseUrl + payloadStr;
-          }
-          lines.push(`- \`${payloadStr}\` (${p.type}) -> ${p.expected_behavior}`);
+          lines.push(`- **Test Payload** (${p.type || 'N/A'})`);
+          if (p.description) lines.push(`  - Description: ${p.description}`);
+          if (p.method) lines.push(`  - Method: ${p.method}`);
+          if (p.url) lines.push(`  - URL: ${p.url}`);
+          if (p.body) lines.push(`  - Body: ${p.body}`);
+          if (p.payload && p.payload !== p.url) lines.push(`  - Payload: ${p.payload}`);
+          if (p.severity) lines.push(`  - Severity: ${p.severity}`);
+          if (p.automated !== undefined) lines.push(`  - Automated: ${p.automated}`);
+          const expected = p.expected_behavior || p.expected_response || p.expected_result || 'N/A';
+          lines.push(`  - Expected: ${formatVal(expected)}`);
         });
       }
     }
@@ -3167,7 +3263,7 @@ window.vaptScriptLoaded = true;
         const comps = Array.isArray(ui.components) ? ui.components : [ui.components];
         comps.forEach(c => {
           lines.push(`- **${c.label}** (${c.type})`);
-          lines.push(`  - ID: \`${c.id}\``);
+          lines.push(`  - ID: \`${c.id || c.key || 'N/A'}\``);
           if (c.description) lines.push(`  - Desc: ${c.description}`);
           if (c.default_value !== undefined) lines.push(`  - Default: ${c.default_value}`);
         });
@@ -3193,6 +3289,7 @@ window.vaptScriptLoaded = true;
     const verificationStr = JSON.stringify(f.verification_steps || []).toLowerCase();
     const payloadsStr = JSON.stringify(f.testing?.test_payloads || []).toLowerCase();
     const combinedContext = lowerTitle + lowerDesc + verificationStr + payloadsStr;
+    const isXmlRpc = combinedContext.includes('xmlrpc') || combinedContext.includes('xml-rpc') || combinedContext.includes('pingback');
 
     lines.push(`### Implementation Strategy (Context-Driven)`);
 
@@ -3204,8 +3301,38 @@ window.vaptScriptLoaded = true;
       lines.push(`- **Constraint**: DO NOT use \`template_redirect\` for API requests (it may not fire or return HTML instead of JSON).`);
     }
 
-    // 2. Authentication Scope
-    if (combinedContext.includes('login') || combinedContext.includes('auth') || combinedContext.includes('password')) {
+    // Target-Specific Guidelines (Dynamic & Prioritized)
+    const targets = f.protection?.automated_protection?.implementation_targets || [];
+    let primaryTarget = 'PHP Functions'; // Default
+
+    // Priority: .htaccess > wp-config.php > Others
+    if (targets.includes('.htaccess')) primaryTarget = '.htaccess';
+    else if (targets.includes('wp-config.php')) primaryTarget = 'wp-config.php';
+    else if (targets.length > 0) primaryTarget = targets[0];
+
+    lines.push(`- **Primary Implementation Target**: ${primaryTarget}`);
+    lines.push(`- **Strategy Selection**: Prioritized ${primaryTarget} to ensure robust, server-level protection where possible.`);
+
+    if (primaryTarget === '.htaccess') {
+      lines.push(`- **Target Detected**: .htaccess`);
+      lines.push(`- **Guideline**: Ensure rules are wrapped in markers # BEGIN VAPT ... # END VAPT.`);
+      lines.push(`- **Safety**: Do not overwrite existing user rules. Append or Prepend safely.`);
+    } else if (primaryTarget === 'wp-config.php') {
+      lines.push(`- **Target Detected**: wp-config.php`);
+      lines.push(`- **Guideline**: Use regex or WP-CLI patterns to safely inject constants.`);
+      lines.push(`- **Safety**: Check \`defined()\` before defining constants to avoid PHP Notices.`);
+    }
+
+    // 2. XML-RPC Scope
+    if (isXmlRpc) {
+      lines.push(`- **Scope Detected**: XML-RPC Interface`);
+      lines.push(`- **Mandatory Hook**: \`xmlrpc_enabled\` (filter) or \`xmlrpc_methods\`.`);
+      lines.push(`- **Action**: Return \`false\` to disable, or filter specific methods.`);
+      lines.push(`- **Constraint**: XML-RPC is strictly a file-based or filter-based protection. Do NOT use standard authentication hooks.`);
+    }
+
+    // 3. Authentication Scope
+    if (!isXmlRpc && (combinedContext.includes('login') || combinedContext.includes('auth') || combinedContext.includes('password'))) {
       lines.push(`- **Scope Detected**: Authentication System`);
       lines.push(`- **Mandatory Hook**: \`authenticate\` filter (priority 30+) or \`login_init\`.`);
       lines.push(`- **Action**: Return \`WP_Error\` for blocking conditions.`);
@@ -3223,6 +3350,38 @@ window.vaptScriptLoaded = true;
     lines.push(`- **Error Handling**: Wrap critical logic. Avoid PHP Fatal Errors (HTTP 500).`);
     lines.push(`- **Standardization**: Use \`wp_die()\` for HTML pages, \`WP_Error\` for API.`);
     lines.push(`- **Bypass Prevention**: Ensure disabling the feature (via toggle) completely removes the hook.`);
+
+    // 10. Enhanced Context (v3.13.1) - Global Settings, Relationships, Reporting
+    if (f.global_settings) {
+      lines.push(`\n## 9. Global Settings`);
+      if (typeof f.global_settings === 'object') {
+        Object.entries(f.global_settings).forEach(([k, v]) => lines.push(`- **${k}**: ${formatVal(v)}`));
+      } else {
+        lines.push(String(f.global_settings));
+      }
+    }
+
+    if (f.relationships) {
+      lines.push(`\n## 10. Relationships`);
+      const rel = f.relationships;
+      if (rel.related_risks && rel.related_risks.length) lines.push(`- **Related**: ${formatVal(rel.related_risks)}`);
+      if (rel.conflicts_with && rel.conflicts_with.length) lines.push(`- **Conflicts**: ${formatVal(rel.conflicts_with)}`);
+      if (rel.risk_family) lines.push(`- **Family**: ${formatVal(rel.risk_family)}`);
+    }
+
+    if (f.reporting) {
+      lines.push(`\n## 11. Reporting & Monitoring`);
+      const rep = f.reporting;
+      if (rep.status_indicators) {
+        lines.push(`- **Indicators**: ${rep.status_indicators.map(i => (typeof i === 'object' ? (i.indicator || JSON.stringify(i)) : i)).join(', ')}`);
+      }
+      if (rep.export_formats) lines.push(`- **Exports**: ${formatVal(rep.export_formats)}`);
+    }
+
+    if (f.references && f.references.length) {
+      lines.push(`\n## 12. References`);
+      f.references.forEach(r => lines.push(`- [${r.title}](${r.url})`));
+    }
 
     return lines.join('\n');
   };
