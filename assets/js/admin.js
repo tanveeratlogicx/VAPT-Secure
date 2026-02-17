@@ -1158,7 +1158,8 @@ window.vaptScriptLoaded = true;
             padding: '25px',
             background: '#fcfcfc',
             position: 'relative',
-            minHeight: 0 // Allows flex child to shrink below its content height
+            maxHeight: '640px',
+            // minHeight: 0 // Allows flex child to shrink below its content height
           }
         }, [
           el('div', { style: { display: 'flex', flexDirection: 'column', gap: '0' } }, [

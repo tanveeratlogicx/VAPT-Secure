@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.1.4');
+  define('VAPT_SECURE_VERSION', '1.1.5');
 }
 if (! defined('VAPT_SECURE_AUDITOR_VERSION')) {
   define('VAPT_SECURE_AUDITOR_VERSION', '2.8.0');
