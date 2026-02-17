@@ -1064,9 +1064,7 @@ window.vaptScriptLoaded = true;
     return el(Modal, {
       title: null,
       onRequestClose: onClose,
-      className: 'vapt-mapping-modal no-header-modal', // Added class for potential CSS overrides
-      // WP Modal might still render the close button. We try to hide it by not providing a title 
-      // and potentially using styles to suppress the header area.
+      className: 'vapt-mapping-modal no-header-modal',
       style: {
         width: '600px',
         height: '80vh',
@@ -1078,7 +1076,36 @@ window.vaptScriptLoaded = true;
         padding: 0
       }
     }, [
-      // Main Container
+      // Direct CSS injection to bypass WP Modal scaffolding
+      el('style', null, `
+        .no-header-modal .components-modal__header { 
+          display: none !important; 
+        }
+        .no-header-modal .components-modal__content { 
+          padding: 0 !important; 
+          margin: 0 !important; 
+          overflow: hidden !important; 
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+        }
+        /* Refined scrollbar */
+        .vapt-mapping-scroll-body::-webkit-scrollbar {
+          width: 8px;
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar-track {
+          background: #fbfbfc;
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar-thumb {
+          background: #dcdcde;
+          border-radius: 4px;
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar-thumb:hover {
+          background: #c3c4c7;
+        }
+      `),
+
+      // Container
       el('div', {
         style: {
           display: 'flex',
@@ -1091,25 +1118,23 @@ window.vaptScriptLoaded = true;
         }
       }, [
 
-        // Unified Sticky Header
+        // Final Sticky Header (Actions + Title)
         el('div', {
           style: {
-            padding: '15px 25px',
-            borderBottom: '1px solid #e2e4e7',
+            padding: '18px 25px',
+            borderBottom: '1px solid #dcdcde',
             background: '#fff',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flex: '0 0 auto',
-            zIndex: 100,
-            position: 'sticky',
-            top: 0
+            zIndex: 100
           }
         }, [
-          el('div', { style: { maxWidth: '50%' } }, [
-            el('h2', { style: { margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1d2327' } }, __('Mapping Configuration', 'vapt-secure')),
-            el('p', { style: { margin: 0, fontSize: '12px', color: '#646970', lineHeight: '1.2' } },
-              __('Map JSON fields to VAPT components.', 'vapt-secure')
+          el('div', { style: { flex: 1 } }, [
+            el('h2', { style: { margin: '0 0 2px 0', fontSize: '18px', fontWeight: '600', color: '#1d2327' } }, __('Mapping Configuration', 'vapt-secure')),
+            el('p', { style: { margin: 0, fontSize: '12px', color: '#646970', lineHeight: '1.4' } },
+              __('Map JSON fields for context-aware prompts.', 'vapt-secure')
             )
           ]),
           el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } }, [
@@ -1119,28 +1144,30 @@ window.vaptScriptLoaded = true;
           ])
         ]),
 
-        // Scrollable Body
+        // Content
         el('div', {
+          className: 'vapt-mapping-scroll-body',
           style: {
             flex: '1 1 auto',
             overflowY: 'auto',
             padding: '25px',
             background: '#fcfcfc',
+            position: 'relative'
           }
         }, [
           el('div', { style: { display: 'flex', flexDirection: 'column', gap: '0' } }, [
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
             renderMappingSelect(__('Description / Summary', 'vapt-secure'), 'description'),
             renderMappingSelect(__('Severity Level', 'vapt-secure'), 'severity'),
             renderMappingSelect(__('Attack Scenario', 'vapt-secure'), 'attack_scenario'),
 
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Technical & Verification Fields')),
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Technical & Verification Fields')),
             renderMappingSelect(__('Remediation Strategy', 'vapt-secure'), 'remediation'),
             renderMappingSelect(__('Test Method (Protocol)', 'vapt-secure'), 'test_method'),
             renderMappingSelect(__('Verification Steps (Manual)', 'vapt-secure'), 'verification_steps'),
             renderMappingSelect(__('Compliance (OWASP/PCI)', 'vapt-secure'), 'compliance'),
 
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #e2e4e7', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Advanced Configuration')),
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Advanced Configuration')),
             renderMappingSelect(__('Verification Engine (JSON Schema)', 'vapt-secure'), 'verification_engine'),
           ])
         ])
