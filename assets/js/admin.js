@@ -1344,12 +1344,11 @@ window.vaptScriptLoaded = true;
     const steps = [
       { id: 'Draft', label: __('Draft', 'vapt-secure') },
       { id: 'Develop', label: __('Develop', 'vapt-secure') },
-      { id: 'Test', label: __('Test', 'vapt-secure') },
       { id: 'Release', label: __('Release', 'vapt-secure') }
     ];
 
     const getStepValue = (status) => {
-      const map = { 'Draft': 0, 'Develop': 1, 'Test': 2, 'Release': 3 };
+      const map = { 'Draft': 0, 'Develop': 1, 'Release': 2 };
       return map[status] || 0; // Default to 0 if unknown
     };
 
@@ -1361,7 +1360,6 @@ window.vaptScriptLoaded = true;
         // PCR: Backward Transition Warning
         let type = 'regression';
         if (nextStatus === 'Draft') type = 'reset';
-        else if (activeStep === 'Release' && nextStatus === 'Test') type = 'production_regression';
 
         setWarningState({ type, nextStatus });
       } else {
@@ -1897,7 +1895,6 @@ window.vaptScriptLoaded = true;
           el('div', { style: { display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '2px solid #e2e8f0' } }, [
             { label: __('Draft', 'vapt-secure'), value: 'draft' },
             { label: __('Develop', 'vapt-secure'), value: 'develop' },
-            { label: __('Test', 'vapt-secure'), value: 'test' },
             { label: __('Release', 'vapt-secure'), value: 'release' }
           ].filter(o => o.value).map(opt => el(CheckboxControl, {
             key: opt.value,
@@ -3467,7 +3464,6 @@ window.vaptScriptLoaded = true;
       total: processedFeatures.length,
       draft: processedFeatures.filter(f => f.status === 'Draft').length,
       develop: processedFeatures.filter(f => f.status === 'Develop').length,
-      test: processedFeatures.filter(f => f.status === 'Test').length,
       release: processedFeatures.filter(f => f.status === 'Release').length
     };
 
@@ -3485,7 +3481,6 @@ window.vaptScriptLoaded = true;
         const s = filterStatus.toLowerCase();
         if (s === 'draft') return f.status === 'Draft';
         if (s === 'develop') return f.status === 'Develop';
-        if (s === 'test') return f.status === 'Test';
         if (s === 'release') return f.status === 'Release';
         return f.status === filterStatus;
       });
@@ -3531,8 +3526,7 @@ window.vaptScriptLoaded = true;
 
       else if (sortBy === 'status') {
         const priority = {
-          'Release': 4,
-          'Test': 3,
+          'Release': 3,
           'Develop': 2,
           'Draft': 1
         };
@@ -3880,7 +3874,6 @@ window.vaptScriptLoaded = true;
             ),
             el('span', { style: { opacity: 0.7 } }, sprintf(__('Draft: %d', 'vapt-secure'), stats.draft)),
             el('span', { style: { color: '#d63638', fontWeight: '600' } }, sprintf(__('Develop: %d', 'vapt-secure'), stats.develop)),
-            el('span', { style: { color: '#dba617', fontWeight: '600' } }, sprintf(__('Test: %d', 'vapt-secure'), stats.test)),
             el('span', { style: { color: '#46b450', fontWeight: '700' } }, sprintf(__('Release: %d', 'vapt-secure'), stats.release)),
 
 
@@ -3999,7 +3992,6 @@ window.vaptScriptLoaded = true;
                 { label: __('All', 'vapt-secure'), value: 'all' },
                 { label: __('Draft', 'vapt-secure'), value: 'draft' },
                 { label: __('Develop', 'vapt-secure'), value: 'develop' },
-                { label: __('Test', 'vapt-secure'), value: 'test' },
                 { label: __('Release', 'vapt-secure'), value: 'release' },
               ].map(opt => el('label', { key: opt.value, style: { display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '11px' } }, [
                 el('input', {
@@ -4090,9 +4082,9 @@ window.vaptScriptLoaded = true;
                   feature: f,
                   onDirectUpdate: (key, updates) => updateFeature(key, updates),
                   onChange: (newStatus) => {
-                    // Validation: Prevent Draft -> Test or Draft -> Release
+                    // Validation: Prevent Draft -> Release
                     const currentStatus = f.status;
-                    if (currentStatus === 'Draft' && (newStatus === 'Test' || newStatus === 'Release')) {
+                    if (currentStatus === 'Draft' && newStatus === 'Release') {
                       setAlertState({
                         message: sprintf(__('Cannot transition directly from "Draft" to "%s". Please move to "Develop" first.', 'vapt-secure'), newStatus),
                         type: 'error'
@@ -4104,8 +4096,6 @@ window.vaptScriptLoaded = true;
                     const title = f.label || f.title;
                     if (newStatus === 'Develop') {
                       defaultNote = `Initiating implementation for ${title}. Configuring workbench and internal security drivers.`;
-                    } else if (newStatus === 'Test') {
-                      defaultNote = `Basic implementation and verifications are complete. Entering Test Stage.\n\nNow ready for customized changes to refine the User Experience for this feature.`;
                     } else if (newStatus === 'Release') {
                       defaultNote = `Verification protocol passed for ${title}. Ready for baseline deployment.`;
                     } else {

@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.1.5');
+  define('VAPT_SECURE_VERSION', '1.2.0');
 }
 if (! defined('VAPT_SECURE_AUDITOR_VERSION')) {
   define('VAPT_SECURE_AUDITOR_VERSION', '2.8.0');
@@ -197,7 +197,7 @@ function vapt_secure_activate_plugin()
   // Feature Status Table
   $table_status = "CREATE TABLE {$wpdb->prefix}vapt_secure_feature_status (
         feature_key VARCHAR(100) NOT NULL,
-        status ENUM('Draft', 'Develop', 'Test', 'Release') DEFAULT 'Draft',
+        status ENUM('Draft', 'Develop', 'Release') DEFAULT 'Draft',
         implemented_at DATETIME DEFAULT NULL,
         assigned_to BIGINT(20) UNSIGNED DEFAULT NULL,
         PRIMARY KEY  (feature_key)
@@ -361,11 +361,10 @@ if (! function_exists('vapt_secure_manual_db_fix')) {
       }
       // 3. Migrate Status ENUM to Title Case
       $status_table = $wpdb->prefix . 'vapt_secure_feature_status';
-      $wpdb->query("ALTER TABLE {$status_table} MODIFY COLUMN status ENUM('Draft', 'Develop', 'Test', 'Release') DEFAULT 'Draft'");
+      $wpdb->query("ALTER TABLE {$status_table} MODIFY COLUMN status ENUM('Draft', 'Develop', 'Release') DEFAULT 'Draft'");
       // 4. Update existing lowercase statuses to Title Case
       $wpdb->query("UPDATE {$status_table} SET status = 'Draft' WHERE status IN ('draft', 'available')");
-      $wpdb->query("UPDATE {$status_table} SET status = 'Develop' WHERE status IN ('develop', 'in_progress')");
-      $wpdb->query("UPDATE {$status_table} SET status = 'Test' WHERE status = 'test'");
+      $wpdb->query("UPDATE {$status_table} SET status = 'Develop' WHERE status IN ('develop', 'in_progress', 'test', 'Test')");
       $wpdb->query("UPDATE {$status_table} SET status = 'Release' WHERE status IN ('release', 'implemented')");
       // 5. Ensure wireframe_url column exists
       $meta_table = $wpdb->prefix . 'vapt_secure_feature_meta';
@@ -373,7 +372,7 @@ if (! function_exists('vapt_secure_manual_db_fix')) {
       if (empty($meta_col)) {
         $wpdb->query("ALTER TABLE {$meta_table} ADD COLUMN wireframe_url TEXT DEFAULT NULL");
       }
-      echo '<div class="notice notice-success"><p>Database migration complete. Statuses normalized to Draft, Develop, Test, Release.</p></div>';
+      echo '<div class="notice notice-success"><p>Database migration complete. Statuses normalized to Draft, Develop, Release.</p></div>';
       // 4. Force add is_enforced column
       $table_meta = $wpdb->prefix . 'vapt_secure_feature_meta';
       $col_enforced = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$table_meta} LIKE %s", 'is_enforced'));

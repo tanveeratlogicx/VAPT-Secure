@@ -73,7 +73,6 @@
   const STATUS_LABELS = {
     'All': __('All Lifecycle', 'vapt-secure'),
     'Develop': __('Develop', 'vapt-secure'),
-    'Test': __('Test', 'vapt-secure'),
     'Release': __('Release', 'vapt-secure')
   };
 
@@ -152,7 +151,7 @@
         });
     };
 
-    const availableStatuses = useMemo(() => isSuper ? ['All', 'Develop', 'Test', 'Release'] : ['All', 'Develop', 'Test', 'Release'], [isSuper]);
+    const availableStatuses = useMemo(() => isSuper ? ['All', 'Develop', 'Release'] : ['All', 'Develop', 'Release'], [isSuper]);
 
     const statusFeatures = useMemo(() => {
       return features.filter(f => {
@@ -160,11 +159,10 @@
         const active = activeStatus.toLowerCase();
 
         if (active === 'all') {
-          return ['develop', 'test', 'release', 'in_progress', 'testing', 'implemented'].includes(s);
+          return ['develop', 'release', 'in_progress', 'implemented'].includes(s);
         }
 
         if (active === 'develop') return ['develop', 'in_progress'].includes(s);
-        if (active === 'test') return ['test', 'testing'].includes(s);
         if (active === 'release') return ['release', 'implemented'].includes(s);
         return s === active;
       });
@@ -307,8 +305,7 @@
                   textTransform: 'uppercase',
                   color: '#fff',
                   background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
-                    (f.status === 'Test' || f.status === 'test') ? '#eab308' :
-                      (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
+                    (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                 }
               }, f.status),
