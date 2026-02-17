@@ -1089,21 +1089,24 @@ window.vaptScriptLoaded = true;
           flex-direction: column !important;
           height: 100% !important;
         }
-        /* Refined scrollbar - Always visible for better UX */
+        /* Refined scrollbar - High contrast and cross-browser support */
+        .vapt-mapping-scroll-body {
+          scrollbar-width: thin;
+          scrollbar-color: #949494 #f1f1f1; /* Firefox: thumb, track */
+        }
         .vapt-mapping-scroll-body::-webkit-scrollbar {
           width: 10px;
         }
         .vapt-mapping-scroll-body::-webkit-scrollbar-track {
           background: #f1f1f1;
-          border-radius: 5px;
         }
         .vapt-mapping-scroll-body::-webkit-scrollbar-thumb {
-          background: #ccc;
+          background: #949494; /* Darker grey for visibility */
           border-radius: 5px;
           border: 2px solid #f1f1f1;
         }
         .vapt-mapping-scroll-body::-webkit-scrollbar-thumb:hover {
-          background: #bbb;
+          background: #787878;
         }
       `),
 
