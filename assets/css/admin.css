@@ -1553,3 +1553,14 @@
     margin: 0 !important;
     font-size: 13px !important;
 }
+
+/* Mapping Configuration Scrollable Body */
+.vapt-mapping-scroll-body {
+    max-height: 400px; /* Adjust as needed */
+    overflow-y: auto;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
