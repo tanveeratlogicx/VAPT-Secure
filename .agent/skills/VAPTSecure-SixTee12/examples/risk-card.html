@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<!--
+  VAPTSecure SixTee12 — Example: Standalone Risk Card
+  No build tools required. Open directly in browser.
+  Demonstrates a single RISK-007 card with Google Antigravity aesthetic.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VAPTSecure SixTee12 — Risk Card Example</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #08101C;
+      --surface:  #111827;
+      --surface2: #1A2233;
+      --high:     #FF4444;
+      --medium:   #FFAA00;
+      --low:      #00C896;
+      --blue:     #4285F4;
+      --text:     #E8EAED;
+      --muted:    #9AA0A6;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Google Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: linear-gradient(145deg, #161E2E, var(--surface));
+      border: 1px solid rgba(255,255,255,0.07);
+      border-left: 3px solid var(--high);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(255,68,68,0.2), -3px 0 20px rgba(255,68,68,0.15);
+      animation: slideUp 0.6s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(1.5); }
+    }
+
+    @keyframes scanPulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ─ Header ─ */
+    .card-header {
+      padding: 20px 22px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badges { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    .badge {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      letter-spacing: 0.07em;
+    }
+
+    .badge-id     { color: var(--blue);   background: rgba(66,133,244,0.12); border: 1px solid rgba(66,133,244,0.25); }
+    .badge-high   { color: var(--high);   background: rgba(255,68,68,0.12);  border: 1px solid rgba(255,68,68,0.25); display: flex; align-items: center; gap: 5px; }
+    .badge-status { color: #FF4444; background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.2); }
+
+    .sev-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--high);
+      box-shadow: 0 0 8px var(--high);
+      animation: pulseGlow 1.5s infinite;
+      flex-shrink: 0;
+    }
+
+    /* CVSS Arc */
+    .cvss-wrap { display: flex; align-items: center; gap: 6px; }
+    .cvss-label { font-family: 'Roboto Mono', monospace; font-size: 10px; color: var(--muted); }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .tag {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    .tag-owasp { color: var(--blue);  background: rgba(66,133,244,0.1);  border: 1px solid rgba(66,133,244,0.2); }
+    .tag-cwe   { color: var(--muted); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); }
+    .tag-cat   { color: #81C995;     background: rgba(129,201,149,0.08); border: 1px solid rgba(129,201,149,0.2); }
+
+    /* ─ Drawer ─ */
+    .drawer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(.4,0,.2,1);
+      border-top: 1px solid rgba(255,255,255,0);
+    }
+    .drawer.open {
+      max-height: 700px;
+      border-top-color: rgba(255,255,255,0.06);
+    }
+
+    .drawer-body { padding: 16px 22px 20px; }
+
+    .summary {
+      font-size: 12.5px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.65;
+      margin-bottom: 14px;
+    }
+
+    .attack-box {
+      background: rgba(255,68,68,0.05);
+      border: 1px solid rgba(255,68,68,0.15);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    .box-label {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    .box-label.red   { color: var(--high); }
+    .box-label.green { color: var(--low);  }
+
+    .box-text {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.6;
+    }
+
+    .payload-list { margin-bottom: 14px; }
+    .payload-item {
+      background: #0A0F1E;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 11px;
+      color: #81C995;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .method { color: var(--blue); font-weight: 700; }
+    .path   { color: var(--text); }
+    .status { color: var(--medium); }
+    .auto   { color: var(--low);  font-size: 10px; }
+
+    .fix-box {
+      background: rgba(0,200,150,0.05);
+      border: 1px solid rgba(0,200,150,0.15);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .btn-run {
+      background: linear-gradient(135deg, var(--blue), #0D47A1);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Google Sans', sans-serif;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(66,133,244,0.35);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-run:hover { filter: brightness(1.2); transform: translateY(-1px); }
+    .btn-run:active { transform: translateY(0); }
+
+    .btn-run.scanning {
+      background: rgba(66,133,244,0.3);
+      cursor: not-allowed;
+      animation: scanPulse 1s infinite;
+    }
+
+    /* ─ Result Banner ─ */
+    .result-banner {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      display: none;
+    }
+
+    .result-banner.pass { background: rgba(0,200,150,0.1); color: var(--low);  border: 1px solid rgba(0,200,150,0.25); }
+    .result-banner.fail { background: rgba(255,68,68,0.1);  color: var(--high); border: 1px solid rgba(255,68,68,0.25); }
+
+    /* ─ Toggle arrow ─ */
+    .toggle-arrow {
+      color: rgba(255,255,255,0.25);
+      font-size: 16px;
+      transition: transform 0.35s;
+    }
+    .card.expanded .toggle-arrow { transform: rotate(180deg); }
+
+    /* ─ Footer ─ */
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.08em;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <div class="card" id="card-007">
+      <div class="card-header" onclick="toggleCard()">
+        <div class="meta-row">
+          <div class="badges">
+            <span class="badge badge-id">RISK-007</span>
+            <span class="badge badge-high"><span class="sev-dot"></span>HIGH</span>
+            <span class="badge badge-status" id="status-badge">✗ VULNERABLE</span>
+          </div>
+          <div class="cvss-wrap">
+            <!-- CVSS Arc SVG -->
+            <svg width="52" height="30" viewBox="0 0 52 30" id="cvss-arc">
+              <path d="M5,26 A22,22 0 0,1 47,26" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5" stroke-linecap="round"/>
+              <path id="cvss-fill" d="M5,26 A22,22 0 0,1 47,26" fill="none" stroke="#FF4444"
+                stroke-width="5" stroke-linecap="round"
+                stroke-dasharray="62 69"
+                style="filter: drop-shadow(0 0 5px #FF4444); transition: stroke-dasharray 1s ease;"/>
+              <text x="26" y="26" text-anchor="middle" fill="#FF4444" font-size="10" font-weight="700" font-family="'Roboto Mono',monospace">7.5</text>
+            </svg>
+            <span class="toggle-arrow" id="arrow">▾</span>
+          </div>
+        </div>
+
+        <h2 class="card-title">Lack of Rate Limiting on WordPress Login</h2>
+
+        <div class="tag-row">
+          <span class="tag tag-owasp">A07:2025</span>
+          <span class="tag tag-cwe">CWE-307</span>
+          <span class="tag tag-cat">Authentication</span>
+        </div>
+      </div>
+
+      <div class="drawer" id="drawer">
+        <div class="drawer-body">
+          <p class="summary">
+            wp-login.php lacks brute-force protection, enabling unlimited login
+            attempts. An attacker can run automated credential stuffing or
+            dictionary attacks with no lockout mechanism in place.
+          </p>
+
+          <div class="attack-box">
+            <div class="box-label red">⚠ ATTACK SCENARIO</div>
+            <p class="box-text">
+              Attacker launches automated brute-force or credential stuffing
+              attack against /wp-login.php — thousands of attempts per minute
+              with no IP lockout, CAPTCHA, or rate limiting to stop them.
+            </p>
+          </div>
+
+          <div class="payload-list">
+            <div class="box-label" style="color: var(--muted); margin-bottom: 8px;">TEST PAYLOADS</div>
+            <div class="payload-item">
+              <span class="method">POST</span>
+              <span class="path">/wp-login.php</span>
+              <span class="status">→ ip_blocked after 5 attempts</span>
+              <span class="auto">◉ manual</span>
+            </div>
+          </div>
+
+          <div class="fix-box">
+            <div class="box-label green">✦ REMEDIATION</div>
+            <p class="box-text">
+              Deploy fail2ban with WordPress jail config. Add Nginx
+              <code style="color: var(--low);">limit_req_zone</code> directive.
+              Lock out IP after 5 failed attempts within 10 minutes.
+              Consider Cloudflare Turnstile or reCAPTCHA v3 as secondary layer.
+            </p>
+          </div>
+
+          <button class="btn-run" id="run-btn" onclick="runTest()">
+            <span>▶</span> RUN VERIFICATION TEST
+          </button>
+
+          <div class="result-banner" id="result-banner"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer" style="margin-top: 24px;">
+      VAPTSECURE SIXTEE12 · RISK-007 · CHECK-007-001 · OWASP A07:2025
+    </div>
+  </div>
+
+  <script>
+    const card    = document.getElementById('card-007');
+    const drawer  = document.getElementById('drawer');
+    const arrow   = document.getElementById('arrow');
+    let expanded  = false;
+
+    function toggleCard() {
+      expanded = !expanded;
+      drawer.classList.toggle('open', expanded);
+      card.classList.toggle('expanded', expanded);
+    }
+
+    // Open by default for demo
+    toggleCard();
+
+    function runTest() {
+      const btn    = document.getElementById('run-btn');
+      const badge  = document.getElementById('status-badge');
+      const banner = document.getElementById('result-banner');
+
+      btn.classList.add('scanning');
+      btn.innerHTML = '<span>◌</span> SCANNING…';
+      badge.textContent = '◌ SCANNING';
+      badge.style.color = '#4285F4';
+      badge.style.background = 'rgba(66,133,244,0.08)';
+      banner.style.display = 'none';
+
+      setTimeout(() => {
+        btn.classList.remove('scanning');
+        btn.innerHTML = '<span>▶</span> RUN VERIFICATION TEST';
+
+        // Simulate result (random for demo)
+        const pass = Math.random() > 0.45;
+
+        if (pass) {
+          badge.textContent = '✓ PROTECTED';
+          badge.style.color = '#00C896';
+          badge.style.background = 'rgba(0,200,150,0.08)';
+          badge.style.borderColor = 'rgba(0,200,150,0.2)';
+          banner.className = 'result-banner pass';
+          banner.textContent = '✓ CHECK-007-001 PASSED — Rate limiting is active';
+          card.style.borderLeftColor = '#00C896';
+          card.style.boxShadow = '0 8px 32px rgba(0,200,150,0.15), -3px 0 20px rgba(0,200,150,0.1)';
+        } else {
+          badge.textContent = '✗ VULNERABLE';
+          badge.style.color = '#FF4444';
+          badge.style.background = 'rgba(255,68,68,0.08)';
+          badge.style.borderColor = 'rgba(255,68,68,0.2)';
+          banner.className = 'result-banner fail';
+          banner.textContent = '✗ CHECK-007-001 FAILED — No rate limiting detected on /wp-login.php';
+        }
+
+        banner.style.display = 'block';
+      }, 1600 + Math.random() * 800);
+    }
+  </script>
+</body>
+</html>

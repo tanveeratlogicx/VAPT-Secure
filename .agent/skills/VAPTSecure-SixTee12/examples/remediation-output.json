@@ -1,0 +1,209 @@
+{
+  "_comment": "VAPTSecure SixTee12 — Example Remediation Report Output",
+  "_description": "This is the canonical output format produced when Claude generates a remediation report using the skill. Use this as a reference when parsing or displaying generated reports.",
+
+  "report_metadata": {
+    "generated_at": "2026-02-16T14:30:00Z",
+    "skill_version": "VAPTSecure SixTee12 v1.0.0",
+    "schema_version": "3.4.0",
+    "target_url": "https://example-wordpress-site.com",
+    "scan_id": "SCAN-2026-0216-001",
+    "generated_by": "Claude Sonnet (VAPTSecure SixTee12 Skill)",
+    "owasp_standard": "OWASP Top 10 2025"
+  },
+
+  "executive_summary": {
+    "security_score": 58,
+    "score_out_of": 100,
+    "status": "needs_attention",
+    "total_risks_assessed": 12,
+    "protected": 9,
+    "unprotected": 3,
+    "unprotected_risk_ids": ["RISK-002", "RISK-007", "RISK-012"],
+    "total_unprotected_cvss": 20.3,
+    "total_max_cvss": 71.9,
+    "highest_priority_action": "Address RISK-007 (Login Rate Limiting) immediately — CVSS 7.5, priority 9"
+  },
+
+  "compliance_impact": {
+    "pci_dss": {
+      "affected_requirements": ["6.5"],
+      "status": "non_compliant",
+      "notes": "RISK-002 and RISK-007 violate PCI-DSS Requirement 6.5 controls"
+    },
+    "gdpr": {
+      "affected_articles": ["Article-32"],
+      "status": "at_risk",
+      "notes": "Missing HSTS (RISK-012) and brute-force protection (RISK-007) are Article 32 concerns"
+    },
+    "nist_csf": {
+      "affected_controls": ["PR.DS-5"],
+      "status": "partial"
+    }
+  },
+
+  "unprotected_risks": [
+    {
+      "risk_id": "RISK-002",
+      "title": "XML-RPC Pingback DDoS Amplification",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:N/A:H",
+      "owasp": "A02:2025 - Security Misconfiguration",
+      "cwe": "CWE-918",
+      "priority": 9,
+      "remediation_effort": "low",
+      "estimated_time": "1-2 hours",
+      "remediation_steps": [
+        {
+          "step": 1,
+          "action": "Block /xmlrpc.php via .htaccess",
+          "code": "<Files xmlrpc.php>\n  Order Deny,Allow\n  Deny from all\n</Files>",
+          "file": ".htaccess",
+          "automated": true,
+          "backup_required": true
+        },
+        {
+          "step": 2,
+          "action": "Or block via Nginx config",
+          "code": "location = /xmlrpc.php {\n    deny all;\n    return 403;\n}",
+          "file": "nginx.conf",
+          "automated": true,
+          "backup_required": true
+        },
+        {
+          "step": 3,
+          "action": "Alternatively, add to wp-config.php to disable XML-RPC",
+          "code": "add_filter('xmlrpc_enabled', '__return_false');",
+          "file": "functions.php",
+          "automated": true,
+          "backup_required": false
+        },
+        {
+          "step": 4,
+          "action": "Verify: POST /xmlrpc.php should return 403",
+          "verification_command": "curl -s -o /dev/null -w \"%{http_code}\" -X POST https://your-site.com/xmlrpc.php -H 'Content-Type: text/xml' --data '<?xml version=\"1.0\"?><methodCall><methodName>pingback.ping</methodName></methodCall>'",
+          "expected_output": "403",
+          "automated": true
+        }
+      ],
+      "rollback": {
+        "steps": ["Remove <Files xmlrpc.php> block from .htaccess", "Remove nginx deny rule and reload nginx"],
+        "automatic": false
+      }
+    },
+    {
+      "risk_id": "RISK-007",
+      "title": "Lack of Rate Limiting on WordPress Login",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "owasp": "A07:2025 - Authentication Failures",
+      "cwe": "CWE-307",
+      "priority": 9,
+      "remediation_effort": "medium",
+      "estimated_time": "2-4 hours",
+      "remediation_steps": [
+        {
+          "step": 1,
+          "action": "Install and configure fail2ban with WordPress jail",
+          "code": "[wordpress]\nenabled  = true\nfilter   = wordpress\nlogpath  = /var/log/auth.log\nmaxretry = 5\nfindtime = 600\nbantime  = 3600",
+          "file": "/etc/fail2ban/jail.local",
+          "automated": false,
+          "note": "Requires server access"
+        },
+        {
+          "step": 2,
+          "action": "Add Nginx rate limiting for wp-login.php",
+          "code": "limit_req_zone $binary_remote_addr zone=wplogin:10m rate=5r/m;\n\nlocation = /wp-login.php {\n    limit_req zone=wplogin burst=3 nodelay;\n    include fastcgi_params;\n    fastcgi_pass php;\n}",
+          "file": "nginx.conf",
+          "automated": false
+        },
+        {
+          "step": 3,
+          "action": "Add reCAPTCHA v3 to login form via plugin",
+          "action_detail": "Install 'Login No Captcha reCAPTCHA' or configure via Wordfence",
+          "automated": false
+        },
+        {
+          "step": 4,
+          "action": "Test: attempt 6+ failed logins and verify IP block",
+          "verification_command": "for i in $(seq 1 6); do curl -s -o/dev/null -w \"%{http_code}\\n\" -X POST https://your-site.com/wp-login.php -d 'log=admin&pwd=wrong$i'; done",
+          "expected_output": "Last response should be 429 or connection refused",
+          "automated": false
+        }
+      ],
+      "rollback": {
+        "steps": ["fail2ban-client unban all", "Remove limit_req from nginx config", "Restart nginx"],
+        "automatic": false
+      }
+    },
+    {
+      "risk_id": "RISK-012",
+      "title": "HSTS Not Implemented",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N",
+      "owasp": "A02:2025 - Security Misconfiguration",
+      "cwe": "CWE-319",
+      "priority": 6,
+      "remediation_effort": "low",
+      "estimated_time": "30 minutes",
+      "remediation_steps": [
+        {
+          "step": 1,
+          "action": "Add HSTS header to Apache config",
+          "code": "Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"",
+          "file": "httpd.conf or .htaccess",
+          "automated": true,
+          "note": "Requires mod_headers to be enabled"
+        },
+        {
+          "step": 2,
+          "action": "Or add to Nginx config",
+          "code": "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;",
+          "file": "nginx.conf",
+          "automated": true
+        },
+        {
+          "step": 3,
+          "action": "Verify header is present",
+          "verification_command": "curl -sI https://your-site.com/ | grep -i strict-transport",
+          "expected_output": "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload",
+          "automated": true
+        },
+        {
+          "step": 4,
+          "action": "Submit to HSTS preload list (optional but recommended)",
+          "url": "https://hstspreload.org",
+          "automated": false,
+          "note": "Only after confirming all subdomains support HTTPS"
+        }
+      ],
+      "rollback": {
+        "steps": ["Remove Header directive from Apache/.htaccess", "Remove add_header from nginx", "Reload web server"],
+        "automatic": true
+      }
+    }
+  ],
+
+  "protected_risks": [
+    { "risk_id": "RISK-001", "title": "wp-cron.php DoS", "status": "protected", "verified_at": "2026-02-16T14:25:00Z" },
+    { "risk_id": "RISK-003", "title": "Username Enum via REST", "status": "protected", "verified_at": "2026-02-16T14:25:10Z" },
+    { "risk_id": "RISK-004", "title": "Email Flooding", "status": "protected", "verified_at": "2026-02-16T14:25:20Z" },
+    { "risk_id": "RISK-005", "title": "Author Enumeration", "status": "protected", "verified_at": "2026-02-16T14:25:30Z" },
+    { "risk_id": "RISK-006", "title": "Endpoint Disclosure", "status": "protected", "verified_at": "2026-02-16T14:25:40Z" },
+    { "risk_id": "RISK-008", "title": "Login Error Enum", "status": "protected", "verified_at": "2026-02-16T14:25:50Z" },
+    { "risk_id": "RISK-009", "title": "Form Rate Limiting", "status": "protected", "verified_at": "2026-02-16T14:26:00Z" },
+    { "risk_id": "RISK-010", "title": "Server Banner", "status": "protected", "verified_at": "2026-02-16T14:26:10Z" },
+    { "risk_id": "RISK-011", "title": "readme.html", "status": "protected", "verified_at": "2026-02-16T14:26:20Z" }
+  ],
+
+  "next_steps": [
+    "1. Immediately: Block XML-RPC (RISK-002) — 1-2 hours, highest DDoS risk",
+    "2. Immediately: Implement login rate limiting (RISK-007) — 2-4 hours, brute-force protection",
+    "3. This week: Add HSTS header (RISK-012) — 30 minutes, MITM prevention",
+    "4. Schedule nightly CI/CD verification scan via vapt-ci.yml",
+    "5. Re-run vapt-smoke.sh after each remediation to confirm protection"
+  ]
+}

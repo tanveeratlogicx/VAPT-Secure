@@ -1,0 +1,111 @@
+{
+  "_name": "VAPTSecure SixTee12 — Canonical Risk Catalogue",
+  "_version": "3.4.0",
+  "_owasp": "OWASP Top 10 2025",
+  "_total_max_cvss": 71.9,
+  "_score_formula": "score = 100 - (sum_unprotected_cvss / 71.9 * 100)",
+
+  "risks": [
+    {
+      "id": "RISK-001", "check": "CHECK-001-001",
+      "title": "wp-cron.php Leads to DoS Attack",
+      "category": "Configuration", "severity": "high", "cvss": 7.5, "priority": 8,
+      "owasp": "A06:2025", "cwe": "CWE-400", "effort": "low",
+      "endpoint": "/wp-cron.php", "expected_status": 403,
+      "fix_summary": "define('DISABLE_WP_CRON', true) — use server cron instead"
+    },
+    {
+      "id": "RISK-002", "check": "CHECK-002-001",
+      "title": "XML-RPC Pingback DDoS Amplification",
+      "category": "Information Disclosure", "severity": "high", "cvss": 7.5, "priority": 9,
+      "owasp": "A02:2025", "cwe": "CWE-918", "effort": "low",
+      "endpoint": "/xmlrpc.php", "expected_status": 403,
+      "fix_summary": "Block /xmlrpc.php via .htaccess or nginx deny rule"
+    },
+    {
+      "id": "RISK-003", "check": "CHECK-003-001",
+      "title": "Username Enumeration via REST API",
+      "category": "Authentication", "severity": "medium", "cvss": 5.3, "priority": 6,
+      "owasp": "A01:2025", "cwe": "CWE-204", "effort": "medium",
+      "endpoint": "/wp-json/wp/v2/users", "expected_status": 401,
+      "fix_summary": "Restrict REST users endpoint — require auth via add_filter()"
+    },
+    {
+      "id": "RISK-004", "check": "CHECK-004-001",
+      "title": "Email Flooding via Password Reset",
+      "category": "Authentication", "severity": "medium", "cvss": 5.3, "priority": 5,
+      "owasp": "A07:2025", "cwe": "CWE-770", "effort": "medium",
+      "endpoint": "/wp-login.php?action=lostpassword", "expected_behavior": "rate_limited",
+      "fix_summary": "Rate limit: max 3 resets per 5 min per IP"
+    },
+    {
+      "id": "RISK-005", "check": "CHECK-005-001",
+      "title": "Admin Username via Author Query",
+      "category": "Information Disclosure", "severity": "medium", "cvss": 5.3, "priority": 6,
+      "owasp": "A01:2025", "cwe": "CWE-204", "effort": "low",
+      "endpoint": "/?author=1", "expected_status": 403,
+      "fix_summary": "Block author query redirects — return 403 for ?author= params"
+    },
+    {
+      "id": "RISK-006", "check": "CHECK-006-001",
+      "title": "REST Endpoint Disclosure",
+      "category": "API Security", "severity": "low", "cvss": 3.7, "priority": 3,
+      "owasp": "A02:2025", "cwe": "CWE-200", "effort": "medium",
+      "endpoint": "/wp-json/", "expected_status": 401,
+      "fix_summary": "Require auth for /wp-json/ index; restrict namespace discovery"
+    },
+    {
+      "id": "RISK-007", "check": "CHECK-007-001",
+      "title": "Lack of Rate Limiting on WordPress Login",
+      "category": "Authentication", "severity": "high", "cvss": 7.5, "priority": 9,
+      "owasp": "A07:2025", "cwe": "CWE-307", "effort": "medium",
+      "endpoint": "/wp-login.php", "expected_behavior": "ip_blocked_after_5_attempts",
+      "automated_test": false,
+      "fix_summary": "fail2ban + nginx limit_req; lockout after 5 failed attempts"
+    },
+    {
+      "id": "RISK-008", "check": "CHECK-008-001",
+      "title": "Username Enumeration via Login Errors",
+      "category": "Authentication", "severity": "medium", "cvss": 5.3, "priority": 5,
+      "owasp": "A07:2025", "cwe": "CWE-203", "effort": "low",
+      "endpoint": "/wp-login.php",
+      "forbidden_response_strings": ["unknown username", "incorrect password", "the password you entered for"],
+      "fix_summary": "Override all login errors to return generic 'Invalid credentials'"
+    },
+    {
+      "id": "RISK-009", "check": "CHECK-009-001",
+      "title": "No Rate Limiting on Contact Forms",
+      "category": "Configuration", "severity": "medium", "cvss": 5.3, "priority": 4,
+      "owasp": "A06:2025", "cwe": "CWE-770", "effort": "medium",
+      "endpoint": "/contact-us/", "expected_behavior": "rate_limited_or_captcha",
+      "fix_summary": "Add rate limiting + reCAPTCHA v3 to all public forms"
+    },
+    {
+      "id": "RISK-010", "check": "CHECK-010-001",
+      "title": "Server Banner Grabbing",
+      "category": "Information Disclosure", "severity": "low", "cvss": 3.7, "priority": 3,
+      "owasp": "A02:2025", "cwe": "CWE-200", "effort": "low",
+      "endpoint": "/", "check_type": "header_inspection",
+      "forbidden_headers": ["Server", "X-Powered-By", "X-Runtime"],
+      "fix_summary": "ServerTokens Prod (Apache) or server_tokens off (Nginx)"
+    },
+    {
+      "id": "RISK-011", "check": "CHECK-011-001",
+      "title": "WordPress Version via readme.html",
+      "category": "Information Disclosure", "severity": "medium", "cvss": 5.3, "priority": 4,
+      "owasp": "A02:2025", "cwe": "CWE-200", "effort": "low",
+      "endpoint": "/readme.html", "expected_status": 403,
+      "fix_summary": "Block /readme.html, /license.txt via .htaccess; delete files"
+    },
+    {
+      "id": "RISK-012", "check": "CHECK-012-001",
+      "title": "HSTS Not Implemented",
+      "category": "Configuration", "severity": "medium", "cvss": 5.3, "priority": 6,
+      "owasp": "A02:2025", "cwe": "CWE-319", "effort": "low",
+      "endpoint": "/", "check_type": "header_inspection",
+      "required_header": "Strict-Transport-Security",
+      "required_value_contains": "max-age=31536000",
+      "fix_summary": "Add Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"
+    }
+  ]
+}
