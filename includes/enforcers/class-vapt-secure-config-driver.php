@@ -26,6 +26,11 @@ class VAPT_SECURE_Config_Driver
       if (isset($data[$key])) {
         $value = $data[$key];
 
+        // [FIX v1.3.13] Skip if the value is falsey (for toggles)
+        if ($value === false || $value === 0 || $value === '0' || $value === 'off') {
+          continue;
+        }
+
         // Convert to PHP literal
         if (is_bool($value)) {
           $val_str = $value ? 'true' : 'false';
@@ -35,7 +40,14 @@ class VAPT_SECURE_Config_Driver
           $val_str = "'" . addslashes((string)$value) . "'";
         }
 
-        $rules[] = "define('$constant', $val_str);";
+        // Heuristic: If it looks like code (contains newlines, defines, or if-statements), treat as raw PHP
+        if (strpos($constant, "\n") !== false || strpos($constant, 'define(') !== false || strpos($constant, 'if(') !== false || strpos($constant, 'if (') !== false || strpos($constant, '/*') !== false) {
+          // It's a raw PHP block, use it as-is
+          $rules[] = $constant;
+        } else {
+          // It's a constant name, generate the define()
+          $rules[] = "define('$constant', $val_str);";
+        }
       }
     }
 

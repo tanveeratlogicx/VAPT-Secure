@@ -91,7 +91,20 @@
       return saved ? saved : null;
     });
     const [saveStatus, setSaveStatus] = useState(null);
+    const [enforceStatusMap, setEnforceStatusMap] = useState({});
     const [verifFeature, setVerifFeature] = useState(null);
+
+    // Helper: show a per-feature inline enforce status, auto-dismiss after 2s
+    const setEnforceStatus = (featureKey, msg, type = 'success') => {
+      setEnforceStatusMap(prev => ({ ...prev, [featureKey]: { message: msg, type } }));
+      setTimeout(() => {
+        setEnforceStatusMap(prev => {
+          const next = { ...prev };
+          delete next[featureKey];
+          return next;
+        });
+      }, 2200);
+    };
 
     useEffect(() => {
       localStorage.setItem('vapt_secure_workbench_active_status', activeStatus);
@@ -135,19 +148,29 @@
       fetchData();
     }, []);
 
-    const updateFeature = (key, data) => {
+    const updateFeature = (key, data, successMsg, silent = false) => {
       setFeatures(prev => prev.map(f => f.key === key ? { ...f, ...data } : f));
-      setSaveStatus({ message: __('Saving...', 'vapt-secure'), type: 'info' });
+      if (!silent) {
+        setSaveStatus({ message: __('Saving...', 'vapt-secure'), type: 'info' });
+      }
 
-      apiFetch({
+      return apiFetch({
         path: 'vapt-secure/v1/features/update',
         method: 'POST',
         data: { key, ...data }
       })
-        .then(() => setSaveStatus({ message: __('Saved', 'vapt-secure'), type: 'success' }))
+        .then((res) => {
+          if (!silent) {
+            setSaveStatus({ message: successMsg || __('Saved', 'vapt-secure'), type: 'success' });
+          }
+          return res;
+        })
         .catch(err => {
           console.error('Save failed:', err);
-          setSaveStatus({ message: __('Save Failed', 'vapt-secure'), type: 'error' });
+          if (!silent) {
+            setSaveStatus({ message: __('Save Failed', 'vapt-secure'), type: 'error' });
+          }
+          throw err;
         });
     };
 
@@ -317,7 +340,19 @@
                   const isEnforced = isHtaccess ? true : (f.is_enforced === undefined || f.is_enforced === null || f.is_enforced == 1);
                   const toggle = el(ToggleControl, {
                     checked: isEnforced,
-                    onChange: (val) => updateFeature(f.key, { is_enforced: val }),
+                    onChange: (val) => {
+                      // [v1.3.12] Inline per-feature status — no global toast
+                      const implData = f.implementation_data || {};
+                      const progressMsg = val
+                        ? __('Writing to configuration...', 'vapt-secure')
+                        : __('Removing from configuration...', 'vapt-secure');
+                      const successMsg = val
+                        ? __('✓ Code Injected Successfully', 'vapt-secure')
+                        : __('✓ Removed Successfully', 'vapt-secure');
+                      setEnforceStatus(f.key, progressMsg, 'info');
+                      updateFeature(f.key, { is_enforced: val, implementation_data: implData }, null, true)
+                        .then(() => setEnforceStatus(f.key, successMsg, 'success'));
+                    },
                     __nextHasNoMarginBottom: true,
                     style: { margin: 0 }
                   });
@@ -327,6 +362,33 @@
                     : toggle;
                 })()
               ])
+              // Inline enforce status — matches 'Code Injected' pill styling exactly
+              , enforceStatusMap[f.key] && el('div', {
+                style: {
+                  marginTop: '6px',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                }
+              }, el('span', {
+                style: {
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  background: enforceStatusMap[f.key].type === 'success' ? '#ecfdf5' : '#f0f9ff',
+                  color: enforceStatusMap[f.key].type === 'success' ? '#059669' : '#0369a1',
+                  border: `1px solid ${enforceStatusMap[f.key].type === 'success' ? '#10b981' : '#0ea5e9'}`,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                  transition: 'opacity 0.3s',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }
+              }, [
+                el(Icon, { icon: enforceStatusMap[f.key].type === 'success' ? 'yes' : 'update', size: 12 }),
+                enforceStatusMap[f.key].message
+              ]))
             ])
           ])
         ]),

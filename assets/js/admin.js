@@ -280,7 +280,7 @@ window.vaptScriptLoaded = true;
 
 
   // Design/Schema Modal
-  const DesignModal = ({ feature, onClose, updateFeature, designPromptConfig, setDesignPromptConfig, setIsPromptConfigModalOpen, selectedFile, fieldMapping }) => {
+  const DesignModal = ({ feature, onClose, updateFeature, designPromptConfig, setDesignPromptConfig, setIsPromptConfigModalOpen, selectedFile, fieldMapping, rootAiInstructions, rootGlobalSettings }) => {
     // Default prompt for guidance but still valid JSON (v3.6.11)
     const MEANINGFUL_DEFAULT = {
       "controls": [
@@ -468,7 +468,96 @@ window.vaptScriptLoaded = true;
     };
 
     const copyContext = () => {
-      let contextJson = '';
+      // Build context (v3.13.3)
+      let contextJson = `
+{
+  "site_context": {
+    "home_url": "${settings.homeUrl || ''}",
+    "plugin_name": "${settings.pluginName || 'VAPT Secure'}",
+    "environment": "production",
+    "mandate": "All URLs generated in the final JSON schema MUST be absolute URLs, using the provided home_url as the base."
+  },
+  "feature_blueprint": {
+    "id": "feature_id",
+    "title": "feature_title",
+    "description": "feature_description",
+    "severity": "feature_severity",
+    "category": "feature_category",
+    "compliance_references": "feature_owasp",
+    "cwe_reference": "feature_cwe",
+    "remediation_strategy": "feature_remediation",
+    "evidence_requirements": "feature_evidence_requirements",
+    "verification_steps": "feature_verification_steps",
+    "test_method": "feature_test_method",
+    "ui_components": {
+      "primary_card": "automation_prompts.ai_ui",
+      "test_checklist": "tests",
+      "risk_indicators": "risks",
+      "assurance_badges": "assurance",
+      "evidence_list": "evidence"
+    },
+    "interface_layout": {
+      "grid_structure": "Two-Column (Controls Left, Status Right)",
+      "functional_blocks": [
+        "Implementation Notes (Contextual Textarea)",
+        "Manual Verification (Full-Width Protocol & Evidence Checklist)",
+        "Automated Verification (Trigger Actions & Live Status)"
+      ],
+      "styling": "Standardized cards with subtle shadows and clear hierarchy."
+    },
+    "automation_context": {
+      "ai_check_prompt": "automation_prompts.ai_check",
+      "ai_schema_fields": "automation_prompts.ai_schema",
+      "ai_agent_instructions": "ai_agent_instructions",
+      "global_settings": "global_settings"
+    },
+    "risk_properties": {
+      "cvss_score": "cvss_score",
+      "cvss_vector": "cvss_vector",
+      "affected_components": "affected_components",
+      "performance_impact": "performance_impact"
+    },
+    "protection_details": "protection_details",
+    "testing_specs": "testing_specs",
+    "verification_engine": "verification_engine",
+    "relationships": "relationships",
+    "reporting": "reporting",
+    "references": "references",
+    "implementation_strategy": {
+      "execution_driver": "Prioritize: prioritizedDriver",
+      "enforcement_mechanism": "Intelligent automated selection based on active datasource.",
+      "decision_matrix": {
+        "driver: htaccess": "Use for physical files, server-wide blocking, or headers. Requires 'target': 'root'.",
+        "driver: wp-config": "Use for wp-config.php constants (defines).",
+        "driver: hook": "Use for dynamic PHP logic, headers, request interceptions (wp_head, init).",
+        "driver: manual": "Use for directives that require manual server configuration (e.g. Nginx, System Services)."
+      },
+      "available_methods": [
+        "block_xmlrpc",
+        "add_security_headers",
+        "hide_wp_version",
+        "block_user_enumeration",
+        "disable_file_editors",
+        "block_debug_exposure",
+        "limit_login_attempts",
+        "block_wp_cron",
+        "block_rest_api"
+      ],
+      "data_binding": "Controls must use 'key' to bind to enforcer logic."
+    },
+    "verification_protocol": {
+      "automated_verification": "Interactive test actions (universal_probe) for real-time proof"
+    },
+    "ui_blueprint": "ui_configuration",
+    "implementation_logic": {
+      "automated_steps": "automated_steps",
+      "manual_steps": "manual_steps"
+    },
+    "raw_feature_context": "raw_json",
+    "previous_implementation": "previous_schema"
+  }
+}
+`;
 
       // Helper to resolve nested paths based on field mapping
       const resolvePath = (obj, path) => {
@@ -486,20 +575,34 @@ window.vaptScriptLoaded = true;
         return obj[fallbackKey];
       };
 
-      // 1. Determine Driver Priority based on Active Datasource (v3.12.3)
+      // 1. Determine Driver Priority based on Single Enforcer Strategy (v3.13.1)
       let prioritizedDriver = 'hook';
       let driverContextInstruction = '';
       const activeFiles = (selectedFile || '').split(',');
 
-      if (activeFiles.some(f => f.includes('htaccess'))) {
-        prioritizedDriver = 'htaccess';
-        driverContextInstruction = `\n      - **CRITICAL**: The active datasource is an **htaccess** catalog. You MUST prioritize the 'htaccess' driver.`;
-      } else if (activeFiles.some(f => f.includes('wp-config'))) {
-        prioritizedDriver = 'wp-config';
-        driverContextInstruction = `\n      - **CRITICAL**: The active datasource is a **wp-config/hook** catalog. Use PHP constants or hooks.`;
-      } else if (activeFiles.some(f => f.includes('nginx'))) {
-        prioritizedDriver = 'nginx';
-        driverContextInstruction = `\n      - **CRITICAL**: The active datasource is an **nginx** catalog. Use Nginx directives.`;
+      const targets = feature.protection?.automated_protection?.implementation_targets || [];
+      if (Array.isArray(targets) && targets.length > 0) {
+        if (targets.includes('wp-config.php')) prioritizedDriver = 'wp-config';
+        else if (targets.includes('PHP Hook')) prioritizedDriver = 'hook';
+        else if (targets.includes('.htaccess')) prioritizedDriver = 'htaccess';
+        else if (targets.includes('nginx-config')) prioritizedDriver = 'manual';
+
+        driverContextInstruction = `\n      - **STRATEGY**: The feature specifically supports [${targets.join(', ')}]. You MUST implement target ONLY the **${prioritizedDriver}** enforcer for this feature.`;
+      } else {
+        // Fallback to active datasource file name
+        if (activeFiles.some(f => f.includes('htaccess'))) {
+          prioritizedDriver = 'htaccess';
+          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is an **htaccess** catalog. You MUST prioritize the 'htaccess' driver.`;
+        } else if (activeFiles.some(f => f.includes('wp-config'))) {
+          prioritizedDriver = 'wp-config';
+          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is a **wp-config** catalog. Use PHP constants via the 'wp-config' driver.`;
+        } else if (activeFiles.some(f => f.includes('hook'))) {
+          prioritizedDriver = 'hook';
+          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is a **hook** catalog. Use PHP hooks via the 'hook' driver.`;
+        } else if (activeFiles.some(f => f.includes('nginx'))) {
+          prioritizedDriver = 'manual';
+          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is an **nginx** catalog. Use manual instructions for Nginx directives.`;
+        }
       }
 
       if (designPromptConfig) {
@@ -555,39 +658,9 @@ window.vaptScriptLoaded = true;
             "verification_engine": "{{verification_engine}}",
             "relationships": "{{relationships}}",
             "reporting": "{{reporting}}",
-            "references": "{{references}}",
-            "implementation_strategy": {
-              "execution_driver": `Prioritize: ${prioritizedDriver}`,
-              "enforcement_mechanism": "Intelligent automated selection based on active datasource.",
-              "decision_matrix": {
-                "driver: htaccess": "Use for physical files, server-wide blocking, or headers. Requires 'target': 'root'.",
-                "driver: hook": "Use for dynamic PHP logic, headers, or request interceptions (wp_head, init).",
-                "driver: wp-config": "Use for PHP constants (e.g. DISALLOW_FILE_EDIT)."
-              },
-              "available_methods": [
-                "block_xmlrpc",
-                "add_security_headers",
-                "hide_wp_version",
-                "block_user_enumeration",
-                "disable_file_editors",
-                "block_debug_exposure",
-                "limit_login_attempts"
-              ],
-              "data_binding": "Controls must use 'key' to bind to enforcer logic."
-            },
-            "verification_protocol": {
-              "automated_verification": "Interactive test actions (universal_probe) for real-time proof"
-            },
-            "ui_blueprint": "{{ui_configuration}}",
-            "implementation_logic": {
-              "automated_steps": "{{automated_steps}}",
-              "manual_steps": "{{manual_steps}}"
-            },
-            "raw_feature_context": "{{raw_json}}",
-            "previous_implementation": "{{previous_schema}}"
+            "references": "{{references}}"
           }
         };
-
         contextJson = JSON.stringify(defaultTemplate, null, 2);
       }
 
@@ -609,7 +682,7 @@ window.vaptScriptLoaded = true;
         }).join('\n\n');
       }
 
-      // Replace Placeholders
+      // 4. Replace Placeholders
       const replaceAll = (str, key, val) => {
         const value = Array.isArray(val) ? val.join(', ') : (val || '');
         return str.split(`{{${key}}}`).join(value).split(`{${key}}`).join(value);
@@ -636,29 +709,23 @@ window.vaptScriptLoaded = true;
       contextJson = replaceAll(contextJson, 'description', formatValue(rawDesc) || 'None provided');
       contextJson = replaceAll(contextJson, 'severity', (typeof rawSev === 'object' ? rawSev.level : rawSev) || 'Medium');
       contextJson = replaceAll(contextJson, 'remediation', formatValue(rawRemediation));
-      contextJson = replaceAll(contextJson, 'assurance_against', Array.isArray(feature.assurance_against) ? feature.assurance_against.join(', ') : (feature.assurance_against || ''));
-      contextJson = replaceAll(contextJson, 'assurance', Array.isArray(feature.assurance) ? feature.assurance.join(', ') : (feature.assurance || ''));
-      contextJson = replaceAll(contextJson, 'tests', Array.isArray(feature.tests) ? feature.tests.join(', ') : (feature.tests || ''));
-      contextJson = replaceAll(contextJson, 'evidence', Array.isArray(feature.evidence) ? feature.evidence.join(', ') : (feature.evidence || ''));
-      contextJson = replaceAll(contextJson, 'test_method', formatValue(rawMethod));
       contextJson = replaceAll(contextJson, 'owasp', formatValue(rawOwasp));
       contextJson = replaceAll(contextJson, 'cwe', feature.cwe || '');
       contextJson = replaceAll(contextJson, 'risks', Array.isArray(feature.risks) ? feature.risks.join(', ') : (feature.risks || ''));
-      contextJson = replaceAll(contextJson, 'evidence_requirements', Array.isArray(feature.evidence_requirements) ? feature.evidence_requirements.join(', ') : (feature.evidence_requirements || ''));
       contextJson = replaceAll(contextJson, 'verification_steps', formatValue(rawVerif));
 
-      // Extract split-catalog specific fields (v3.13.0)
-      const uiConfig = feature.ui_configuration || {};
-      contextJson = replaceAll(contextJson, 'ui_configuration', JSON.stringify(uiConfig.components || [], null, 2));
-
-      const protection = feature.protection || {};
-      const autoSteps = protection.automated_protection?.implementation_steps || [];
-      contextJson = replaceAll(contextJson, 'automated_steps', Array.isArray(autoSteps) ? JSON.stringify(autoSteps, null, 2) : (autoSteps || ''));
-      contextJson = replaceAll(contextJson, 'manual_steps', JSON.stringify(protection.manual_steps || [], null, 2));
+      // Extra Data Points (v1.4.0)
+      const testingSpecs = {
+        payloads: feature.testing?.test_payloads || [],
+        tools: feature.testing?.tools_required || []
+      };
+      contextJson = replaceAll(contextJson, 'testing_specs', JSON.stringify(testingSpecs, null, 2));
 
       // Enhanced Extraction (v3.13.1) - Critical & High Importance
-      const aiInstructions = feature.ai_agent_instructions || {};
-      const globalSettings = feature.global_settings || {};
+      // Hyper-Personalization: Prioritize source-specific root nodes attached to the feature (v3.13.1)
+      const aiInstructions = { ...rootAiInstructions, ...(feature.root_ai_agent_instructions || {}), ...(feature.ai_agent_instructions || {}) };
+      const globalSettings = { ...rootGlobalSettings, ...(feature.root_global_settings || {}), ...(feature.global_settings || {}) };
+
       const testing = feature.testing || {};
       const verifEngine = feature.verification_engine || {};
       const relationships = feature.relationships || {};
@@ -677,6 +744,7 @@ window.vaptScriptLoaded = true;
       contextJson = replaceAll(contextJson, 'affected_components', Array.isArray(affectedComponents) ? affectedComponents.join(', ') : (affectedComponents || ''));
 
       // Protection Details
+      const protection = feature.protection || {};
       const protectionDetails = {
         effort: protection.remediation_effort || 'Medium',
         estimated_time: protection.estimated_time || '30m',
@@ -687,12 +755,12 @@ window.vaptScriptLoaded = true;
       contextJson = replaceAll(contextJson, 'protection_details', JSON.stringify(protectionDetails, null, 2));
 
       // Testing Specs
-      const testingSpecs = {
+      const testingSpecsFull = {
         payloads: testing.test_payloads || [],
         difficulty: testing.difficulty || 'Medium',
         tools: testing.tools_required || []
       };
-      contextJson = replaceAll(contextJson, 'testing_specs', JSON.stringify(testingSpecs, null, 2));
+      contextJson = replaceAll(contextJson, 'testing_specs', JSON.stringify(testingSpecsFull, null, 2));
 
       // Verification Engine & Relationships
       contextJson = replaceAll(contextJson, 'verification_engine', JSON.stringify(verifEngine, null, 2));
@@ -715,7 +783,7 @@ window.vaptScriptLoaded = true;
       contextJson = replaceAll(contextJson, 'automation_prompts.ai_check', prompts.ai_check || `PHP verification logic for ${feature.label || 'this feature'}.`);
       contextJson = replaceAll(contextJson, 'automation_prompts.ai_schema', prompts.ai_schema || `Essential schema fields for ${feature.label || 'this feature'}.`);
 
-      // 4. Extract Manual Protocol & Operational Context (v3.13.0)
+      // 5. Hyper-Personalization: Synthesize Security Objective & Business Context (v3.13.1)
       const featureSeverity = typeof rawSev === 'object' ? rawSev : { level: rawSev };
       const businessImpact = featureSeverity.business_impact || '';
 
@@ -723,10 +791,17 @@ window.vaptScriptLoaded = true;
       const detailedDesc = featureDesc.detailed || featureDesc.summary || '';
       const attackScenario = rawScenario || featureDesc.attack_scenario || '';
 
+      const securityObjective = `
+        - **PRIMARY GOAL**: Remediate the vulnerability identified as **${feature.id || 'N/A'}** (${feature.label || 'Unnamed Feature'}).
+        - **SECURITY MANDATE**: You MUST ensure the implementation provides robust protection against **${Array.isArray(feature.risks) ? feature.risks.join(' and ') : (feature.risks || 'identified risks')}**.
+        - **VULNERABILITY CONTEXT**: ${detailedDesc || 'No detailed description provided.'}
+        - **ATTACK VECTOR RELEVANCE**: This control specifically defeats the scenario where ${attackScenario || 'an attacker attempts to exploit this weakness'}.
+      `.trim();
+
       const operationalContext = `
-        - **Business Impact/Risk**: ${businessImpact || 'N/A'}
-        - **Attack Scenario**: ${attackScenario || 'N/A'}
-        - **Detailed Security Benefit**: ${detailedDesc || 'N/A'}
+        - **Business/Operational Risk**: ${businessImpact || 'N/A'}
+        - **Global Compliance Anchor**: This feature maps to **${formatValue(rawOwasp) || 'General Security Best Practices'}**.
+        - **Performance Constraint**: ${formatValue(perfImpact) || 'Standard implementation.'}
       `.trim();
 
       const protocolContext = `
@@ -735,16 +810,20 @@ window.vaptScriptLoaded = true;
         - **Testing Protocol**: ${formatValue(rawMethod) || 'N/A'}
       `.trim();
 
-      // 5. Assemble PRODUCTION READY PROMPT (v3.12.3 - VAPT Secure Skill Aligned)
+      // 5. Assemble PRODUCTION READY PROMPT (v3.13.1 - VAPT Secure Skill Aligned)
       const finalPrompt = `
       --- ROLE & OBJECTIVE ---
-      You are the **VAPT Secure Expert**. Your mandate is to implement security controls in the VAPTBuilder Plugin using standardized JSON schemas. You MUST provide a **Production-Ready** deployment that is precise, straightforward, and targeted.
+      You are the **VAPT Security Expert**. Your mandate is to implement security controls in the **${settings.pluginName || 'VAPT Secure'}** plugin using standardized JSON schemas. You MUST provide a **Production-Ready** deployment for the **${settings.pluginName || 'VAPT Secure'}** security workbench that is precise, straightforward, and targeted.
 
       --- DESIGN CONTEXT (JSON) ---
       ${contextJson}
       --- 
 
-      --- OPERATIONAL & SECURITY CONTEXT ---
+      --- SECURITY OBJECTIVE (PERSONAL ATTENTION) ---
+      ${securityObjective}
+      --- 
+
+      --- OPERATIONAL & GLOBAL CONTEXT ---
       ${operationalContext}
       ---
 
@@ -752,32 +831,36 @@ window.vaptScriptLoaded = true;
       ${protocolContext}
       ---
 
+      --- SOURCE-SPECIFIC AI AGENT INSTRUCTIONS ---
+      ${displayInstruct}
+      ---
+
       --- REFERENCE CODE ---
       ${referenceCode || 'No specific reference code provided.'}
       ---
 
-      --- FEATURE-SPECIFIC REQUIREMENTS ---
-      ${displayInstruct}
-      ---
-
       --- INSTRUCTIONS & CRITICAL RULES ---
       1. **Response Format**: Provide ONLY a JSON block. No preamble. No commentary.
-      2. **Single Enforcer Strategy**: You MUST target ONLY the **${prioritizedDriver}** driver. Do NOT suggest hybrid or multi-driver implementations.${driverContextInstruction}
-      3. **UI Blueprint Alignment**: Prioritize the components defined in 'ui_blueprint' for the 'controls' array. Keep labels and keys consistent where possible.
-      4. **Strict Key Enforcement**: EVERY control object in the 'controls' array MUST have a unique "key" field. If the blueprint uses "component_id" or "id", map it to "key". A control without a "key" is invalid.
-      5. **Interactive Verification**: Convert the 'verification_steps' into interactive 'test_action' controls. Each step should be a separate 'test_action' using 'universal_probe' as the 'test_logic'.
-      6. **Toggle-Aware Mappings**: If a control is a 'toggle', the mapping MUST be the literal string/code to be injected when the toggle is ON. Mappings must be direct and production-ready.
-      ${includeProtocol ? `7. **Manual Protocol Requirement**: The user has requested a Manual Verification Protocol. You MUST include a 'manual_protocol' object in the root of the JSON schema containing a 'steps' array derived from the provided protocol context.` : ''}
-      ${includeNotes ? `${includeProtocol ? '8' : '7'}. **Operational Notes Requirement**: The user has requested an Operational Notes Section. You MUST include an 'operational_notes' string in the root of the JSON schema summarizing the business impact and security benefits.` : ''}
-      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '9' : '8') : '7'}. **Production Precision**:
+      2. **Fully Qualified URLs (MANDATORY)**: You MUST use the provided **site_context.home_url** (${settings.homeUrl || ''}) to qualify every single URL, endpoint, or path in your generated JSON. Do NOT return relative paths. Every 'url' or 'path' field MUST be an absolute URL targeting the specific security check (e.g. http://site.com/wp-cron.php).
+      3. **Single Enforcer Strategy**: You MUST target ONLY the **${prioritizedDriver}** driver. Valid drivers are: hook, htaccess, wp-config, manual. Do NOT suggest hybrid or multi-driver implementations.${driverContextInstruction}
+      4. **No Internal IDs in Code (CRITICAL)**: Do NOT use internal IDs like 'RISK-001', 'VAPT-ID', or any specific feature ID in the 'mappings' code or comments. Use generic markers like '/* BEGIN VAPT PROTECTION */' and '/* END VAPT PROTECTION */'. Codes/comments MUST be suitable for a client's server configuration.
+      5. **Global Settings = Hard Constraints**: You MUST strictly adhere to the provided **global_settings**. These are not suggestions; they are architectural mandates for the **${settings.pluginName || 'VAPT Secure'}** environment.
+      6. **Personal Attention Requirement**: Every field in your generated JSON (labels, descriptions, mapping code) MUST be personalized for **${feature.label}**. Do NOT use generic placeholders.
+      7. **UI Blueprint Alignment**: Prioritize the components defined in 'ui_blueprint' for the 'controls' array. Keep labels and keys consistent where possible.
+      8. **Strict Key Enforcement**: EVERY control object in the 'controls' array MUST have a unique "key" field. If the blueprint uses "component_id" or "id", map it to "key". A control without a "key" is invalid.
+      9. **Interactive Verification**: Convert the 'verification_steps' into interactive 'test_action' controls. Each step should be a separate 'test_action' using 'universal_probe' as the 'test_logic'. The 'test_config' MUST contain an absolute 'url' or 'path' field targeting the specific endpoint.
+      10. **Toggle-Aware Mappings**: If a control is a 'toggle', the mapping MUST be the literal string/code to be injected when the toggle is ON. Mappings must be direct and production-ready.
+      ${includeProtocol ? `11. **Manual Protocol Requirement**: The user has requested a Manual Verification Protocol. You MUST include a 'manual_protocol' object in the root of the JSON schema containing a 'steps' array. EVERY step mentioning a URL MUST use the fully qualified absolute URL.` : ''}
+      ${includeNotes ? `${includeProtocol ? '12' : '11'}. **Operational Notes Requirement**: The user has requested an Operational Notes Section. You MUST include an 'operational_notes' string in the root of the JSON schema summarizing the business impact and security benefits tailored to this feature's unique role.` : ''}
+      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '13' : '12') : '11'}. **Production Precision**:
          - Simplify the 'controls' array. Avoid presentational clutter.
          - Ensure 'mappings' are precise for the chosen driver.
          - For 'htaccess', protect directives with '<IfModule>' block if possible.
-      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '10' : '9') : '8'}. **JSON Skeleton**:
+      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '14' : '13') : '12'}. **JSON Skeleton**:
       \`\`\`json
       {
         "metadata": {
-          "risk_id": "${feature.id || 'V-BT-001'}",
+          "risk_id": "V-PROT-GENERIC",
           "severity": "${(typeof feature.severity === 'object' ? feature.severity.level : feature.severity) || 'High'}",
           "category": "${feature.category || 'General'}"
         },
@@ -798,35 +881,90 @@ window.vaptScriptLoaded = true;
         }
       }
       \`\`\`
-      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '11' : '10') : '9'}. **Escaping**: Escape backslashes (\\\\) and quotes properly for JSON compatibility.
+      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '15' : '14') : '13'}. **Escaping**: Escape backslashes (\\\\) and quotes properly for JSON compatibility.
 
       Feature Name: ${feature.label || 'Unnamed Feature'}
       Feature ID: ${feature.id || 'N/A'}
       `;
 
-      // Personalize Domain (v3.3.0)
+      // 6. Fully Qualify URLs & Personalize Domain (v3.13.2)
+      // These are already defined at the top of the function.
+      const homeUrl = (settings.homeUrl || '').replace(/\/$/, '');
       const currentDomain = (settings.currentDomain || window.location.hostname || 'hermasnet.local').split(':')[0];
-      const placeholders = [/domain\.com/gi, /yourdomain\.com/gi, /example\.com/gi, /mysite\.com/gi];
-      let personalizedPrompt = finalPrompt;
-      placeholders.forEach(regex => {
-        personalizedPrompt = personalizedPrompt.replace(regex, currentDomain);
+
+      let qualifiedPrompt = finalPrompt;
+
+      // Transformation A: Replace Domain Placeholders with Fully Qualified Home URL
+      const domainPlaceholders = [/https?:\/\/(?:www\.)?(?:domain\.com|yourdomain\.com|example\.com|mysite\.com)/gi, /(?:www\.)?(?:domain\.com|yourdomain\.com|example\.com|mysite\.com)/gi];
+      domainPlaceholders.forEach((regex, idx) => {
+        // If it was already a full URL placeholder, replace with homeUrl
+        // If it was just a domain placeholder, replace with the domain part of homeUrl or homeUrl itself depending on context
+        // To be safe and meet "fully URL" requirement, we use homeUrl for the first and domain for the second.
+        if (idx === 0) {
+          qualifiedPrompt = qualifiedPrompt.replace(regex, homeUrl);
+        } else {
+          qualifiedPrompt = qualifiedPrompt.replace(regex, currentDomain);
+        }
       });
+
+      // Transformation B: Qualify Relative Paths (Common WP/VAPT paths)
+      // This looks for paths in quotes or preceded by space to avoid breaking JSON keys
+      const relativePaths = [
+        /\b\/wp-admin\b/g,
+        /\b\/wp-login\.php\b/g,
+        /\b\/xmlrpc\.php\b/g,
+        /\b\/wp-admin\/admin-ajax\.php\b/g,
+        /\b\/wp-cron\.php\b/g,
+        /\/\?author=\d+/g,
+        /\/\?p=\d+/g
+      ];
+
+      relativePaths.forEach(regex => {
+        qualifiedPrompt = qualifiedPrompt.replace(regex, (match) => homeUrl + match);
+      });
+
+      const personalizedPrompt = qualifiedPrompt;
 
       const copyToClipboard = (text) => {
-        if (navigator.clipboard) return navigator.clipboard.writeText(text);
-        let textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try { document.execCommand('copy'); } catch (err) { console.error('Copy failed', err); }
-        document.body.removeChild(textArea);
-        return Promise.resolve();
+        const fallbackCopy = (text) => {
+          let textArea = document.createElement("textarea");
+          textArea.value = text;
+          // Ensure it's not visible but exists in DOM
+          textArea.style.position = "fixed";
+          textArea.style.left = "-9999px";
+          textArea.style.top = "0";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          let success = false;
+          try {
+            success = document.execCommand('copy');
+          } catch (err) {
+            console.error('VAPT: Fallback Copy failed', err);
+          }
+          document.body.removeChild(textArea);
+          return success ? Promise.resolve() : Promise.reject('ExecCommand Failed');
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text).catch(err => {
+            console.warn('VAPT: navigator.clipboard failed, trying fallback...', err);
+            return fallbackCopy(text);
+          });
+        }
+        return fallbackCopy(text);
       };
 
-      copyToClipboard(personalizedPrompt).then(() => {
-        setSaveStatus({ message: __('Design Prompt copied!', 'vapt-secure'), type: 'success' });
-        setTimeout(() => setSaveStatus(null), 3000);
-      });
+      copyToClipboard(personalizedPrompt)
+        .then(() => {
+          setSaveStatus({ message: __('Design Prompt copied!', 'vapt-secure'), type: 'success' });
+          setTimeout(() => setSaveStatus(null), 3000);
+        })
+        .catch(err => {
+          console.error('VAPT: All copy methods failed', err);
+          setSaveStatus({ message: __('Copy failed. Please select and copy manually.', 'vapt-secure'), type: 'error' });
+          setTimeout(() => setSaveStatus(null), 4000);
+        });
     };
 
 
@@ -897,7 +1035,7 @@ window.vaptScriptLoaded = true;
                   isDestructive: true,
                   onConfirm: () => {
                     setConfirmState(null);
-                    onJsonChange(JSON.stringify(defaultState, null, 2));
+                    onJsonChange(JSON.stringify(MEANINGFUL_DEFAULT, null, 2));
                     setSaveStatus({ message: __('Schema Reset!', 'vapt-secure'), type: 'success' });
                     setTimeout(() => setSaveStatus(null), 2000);
                   }
@@ -972,7 +1110,17 @@ window.vaptScriptLoaded = true;
                   whiteSpace: 'pre-wrap',
                   fontFamily: 'inherit'
                 }
-              }, displayInstruct)
+              }, (() => {
+                // 🔗 Linkify URLs for easier verification (v3.13.2)
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                if (!displayInstruct || typeof displayInstruct !== 'string') return displayInstruct;
+                const parts = displayInstruct.split(urlRegex);
+                return parts.map((part, i) =>
+                  part.match(urlRegex)
+                    ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2271b1', textDecoration: 'underline' } }, part)
+                    : part
+                );
+              })())
             ]);
           })(),
         ]),
@@ -4343,6 +4491,8 @@ window.vaptScriptLoaded = true;
     const [confirmState, setConfirmState] = useState(null);
     const [selectedDomains, setSelectedDomains] = useState([]);
     const [alertState, setAlertState] = useState(null);
+    const [rootAiInstructions, setRootAiInstructions] = useState({});
+    const [rootGlobalSettings, setRootGlobalSettings] = useState({});
 
     const [catalogInfo, setCatalogInfo] = useState({ file: '', count: 0 }); // v3.6.29
     const [sortBySource, setSortBySource] = useState(false); // Primary Sort
@@ -4408,6 +4558,8 @@ window.vaptScriptLoaded = true;
           setFeatures(res.features || []);
           setSchema(res.schema || { item_fields: [] });
           setDesignPromptConfig(res.design_prompt || null); // Load prompt config
+          setRootAiInstructions(res.ai_agent_instructions || {});
+          setRootGlobalSettings(res.global_settings || {});
           if (res.active_catalog) {
             setCatalogInfo({ file: res.active_catalog, count: res.total_features || 0 });
           }
@@ -4424,6 +4576,9 @@ window.vaptScriptLoaded = true;
           const cleanedFiles = (files || []).map(f => ({ ...f, label: (f.label || f.filename).replace(/_/g, ' ') }));
           setFeatures(res.features || []);
           setSchema(res.schema || { item_fields: [] });
+          setDesignPromptConfig(res.design_prompt || null);
+          setRootAiInstructions(res.ai_agent_instructions || {});
+          setRootGlobalSettings(res.global_settings || {});
           setDomains(domainData || []);
           setDataFiles(cleanedFiles);
           setLoading(false);
@@ -4880,6 +5035,8 @@ window.vaptScriptLoaded = true;
         setIsPromptConfigModalOpen: setIsPromptConfigModalOpen,
         selectedFile: selectedFile,
         fieldMapping: fieldMapping, // Pass mapping config to DesignModal
+        rootAiInstructions: rootAiInstructions,
+        rootGlobalSettings: rootGlobalSettings,
         onClose: () => !isPromptConfigModalOpen && setDesignFeature(null)
       }),
 

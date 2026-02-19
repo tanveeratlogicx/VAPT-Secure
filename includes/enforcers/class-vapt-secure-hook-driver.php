@@ -35,7 +35,10 @@ class VAPT_SECURE_Hook_Driver
     'files' => 'block_sensitive_files',
     'limit' => 'limit_login_attempts',
     'login' => 'limit_login_attempts',
-    'brute' => 'limit_login_attempts'
+    'brute' => 'limit_login_attempts',
+    'cron' => 'block_wp_cron',
+    'rest' => 'block_rest_api',
+    'api' => 'block_rest_api'
   ];
 
   /**
@@ -145,6 +148,12 @@ class VAPT_SECURE_Hook_Driver
               break;
             case 'block_sensitive_files':
               self::block_sensitive_files($key);
+              break;
+            case 'block_wp_cron':
+              self::block_wp_cron($key);
+              break;
+            case 'block_rest_api':
+              self::block_rest_api($key);
               break;
           }
         } catch (Exception $e) {
@@ -731,5 +740,41 @@ class VAPT_SECURE_Hook_Driver
       return $_SERVER['HTTP_X_REAL_IP'];
     }
     return $_SERVER['REMOTE_ADDR'];
+  }
+
+  /**
+   * Block WP-Cron Requests
+   */
+  private static function block_wp_cron($key = 'unknown')
+  {
+    add_action('init', function () use ($key) {
+      $uri = $_SERVER['REQUEST_URI'] ?? '';
+      if (strpos($uri, 'wp-cron.php') !== false) {
+        status_header(403);
+        header('X-VAPT-Enforced: php-cron');
+        header('X-VAPT-Feature: ' . $key);
+        header('Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature');
+        wp_die('VAPT: WP-Cron is Blocked for Security.');
+      }
+    }, 1);
+  }
+
+  /**
+   * Block REST API Requests
+   */
+  private static function block_rest_api($key = 'unknown')
+  {
+    add_filter('rest_authentication_errors', function ($result) use ($key) {
+      if (!empty($result)) {
+        return $result;
+      }
+      if (!is_user_logged_in()) {
+        header('X-VAPT-Enforced: php-rest-api');
+        header('X-VAPT-Feature: ' . $key);
+        header('Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature');
+        return new WP_Error('rest_forbidden', 'VAPT: REST API access is restricted.', array('status' => 403));
+      }
+      return $result;
+    });
   }
 }

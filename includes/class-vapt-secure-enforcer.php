@@ -69,7 +69,8 @@ class VAPT_SECURE_Enforcer
   }
 
   /**
-   * Entry point for enforcement after a feature is saved
+   * Entry point for enforcement after a feature is saved.
+   * Always triggers a rebuild so toggling OFF also removes rules from config files.
    */
   public static function dispatch_enforcement($key, $data)
   {
@@ -89,12 +90,22 @@ class VAPT_SECURE_Enforcer
     $raw_schema = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
     $schema = !empty($raw_schema) ? json_decode($raw_schema, true) : array();
 
-    if (empty($schema['enforcement'])) return;
+    // [FIX v1.4.0] Always rebuild even if this feature has no enforcement block.
+    // This ensures that toggling OFF removes previously written rules from config files.
+    if (empty($schema['enforcement'])) {
+      $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
+      if (strpos($server, 'nginx') !== false) {
+        self::rebuild_nginx();
+      } else {
+        self::rebuild_htaccess();
+      }
+      self::rebuild_config();
+      return;
+    }
 
     $driver_name = $schema['enforcement']['driver'];
 
-    // 2. Dispatch to the correct driver
-    // 2. Dispatch to the correct driver
+    // Dispatch to the correct driver
     if ($driver_name === 'htaccess') {
       // UNIVERSAL FIX: Rebuild based on Server Type
       $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
@@ -107,7 +118,7 @@ class VAPT_SECURE_Enforcer
         // Default to Apache/.htaccess
         self::rebuild_htaccess();
       }
-    } elseif ($driver_name === 'config' || $driver_name === 'wp-config') {
+    } elseif ($driver_name === 'config' || $driver_name === 'wp_config' || $driver_name === 'wp-config') {
       self::rebuild_config();
     } else {
       // For hooks, we just rely on the runtime loader (next request will pick it up)
@@ -186,14 +197,18 @@ class VAPT_SECURE_Enforcer
     $enforced_features = self::get_enforced_features();
 
     // [ENHANCEMENT] Filter by Active Data Files (v3.12.0)
+    // [FIX v1.4.0] Only apply key filter when we actually have active keys - prevents
+    // silently dropping all features when the active file resolves to an empty key list.
     $active_keys = self::get_active_file_keys();
-    $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
-      // [FIX] Always allow XML-RPC regardless of key mismatch (v3.12.13)
-      if (strpos($feat['feature_key'], 'xml-rpc') !== false || strpos($feat['feature_key'], 'xmlrpc') !== false || $feat['feature_key'] === 'RISK-016-001') {
-        return true;
-      }
-      return in_array($feat['feature_key'], $active_keys);
-    });
+    if (!empty($active_keys)) {
+      $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
+        // [FIX] Always allow XML-RPC regardless of key mismatch (v3.12.13)
+        if (strpos($feat['feature_key'], 'xml-rpc') !== false || strpos($feat['feature_key'], 'xmlrpc') !== false || $feat['feature_key'] === 'RISK-016-001') {
+          return true;
+        }
+        return in_array($feat['feature_key'], $active_keys);
+      });
+    }
 
     error_log('VAPT DEBUG rebuild_htaccess - Found ' . count($enforced_features) . ' enforced features after filtering');
 
@@ -239,10 +254,13 @@ class VAPT_SECURE_Enforcer
     $enforced_features = self::get_enforced_features();
 
     // [ENHANCEMENT] Filter by Active Data Files (v3.12.0)
+    // [FIX v1.4.0] Only apply key filter when we actually have active keys.
     $active_keys = self::get_active_file_keys();
-    $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
-      return in_array($feat['feature_key'], $active_keys);
-    });
+    if (!empty($active_keys)) {
+      $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
+        return in_array($feat['feature_key'], $active_keys);
+      });
+    }
 
     $all_rules = array();
 
@@ -252,7 +270,7 @@ class VAPT_SECURE_Enforcer
         $impl_data = self::resolve_impl($meta);
         $driver = $schema['enforcement']['driver'] ?? '';
 
-        if ($driver === 'config' || $driver === 'wp-config') {
+        if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
           $feature_rules = VAPT_SECURE_Config_Driver::generate_rules($impl_data, $schema);
           if (!empty($feature_rules)) {
             $all_rules[] = "// Rule for: " . ($meta['feature_key']);

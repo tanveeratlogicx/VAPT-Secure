@@ -53,6 +53,8 @@ class VAPT_SECURE_Htaccess_Driver
    */
   public static function generate_rules($data, $schema)
   {
+    $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();
+
     // 🛡️ TWO-WAY DEACTIVATION (v3.12.3 - Intelligent Detection)
     $is_enabled = true;
     if (isset($data['enabled'])) {

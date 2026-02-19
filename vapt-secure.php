@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           1.2.2
+ * Version:           1.3.13
  * Author:            Automated Penetration Testing Builder
  * Author URI:        https://vaptbuilder.com/
  * License:           GPL-2.0-or-later
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.2.2');
+  define('VAPT_SECURE_VERSION', '1.3.13');
 }
 if (! defined('VAPT_SECURE_AUDITOR_VERSION')) {
   define('VAPT_SECURE_AUDITOR_VERSION', '2.8.0');
@@ -738,7 +738,8 @@ function vapt_secure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
-      'pluginVersion' => VAPT_SECURE_VERSION
+      'pluginVersion' => VAPT_SECURE_VERSION,
+      'pluginName' => 'VAPT Secure'
     ));
   }
   // 2. Client Dashboard (client.js) - "VAPT Secure" page
@@ -764,7 +765,8 @@ function vapt_secure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
-      'pluginVersion' => VAPT_SECURE_VERSION
+      'pluginVersion' => VAPT_SECURE_VERSION,
+      'pluginName' => 'VAPT Secure'
     ));
   }
 }

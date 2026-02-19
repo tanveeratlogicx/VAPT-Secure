@@ -8,11 +8,69 @@
   const { __, sprintf } = wp.i18n;
 
   /**
-   * Helper: Safely render a value that might be an object
+   * Universal URL Resolver (v3.13.2)
+   * Standardizes on vaptSecureSettings.homeUrl and detects absolute paths/URLs.
+   */
+  const resolveUrl = (path, configUrl, featureKey = '') => {
+    const homeUrl = (window.vaptSecureSettings && window.vaptSecureSettings.homeUrl) ? window.vaptSecureSettings.homeUrl.replace(/\/$/, '') : window.location.origin;
+
+    // 🛡️ Logic Refinement (v3.13.8): Context-Aware Specificity
+    let base = homeUrl;
+    let sub = path || '';
+
+    // If path is root default but feature implies a specific target, nudge it (v3.13.8)
+    if ((!path || path === '/') && !configUrl && featureKey) {
+      if (featureKey.includes('cron')) sub = 'wp-cron.php';
+      else if (featureKey.includes('xmlrpc')) sub = 'xmlrpc.php';
+      else if (featureKey.includes('login')) sub = 'wp-login.php';
+    }
+
+    if (configUrl) {
+      if (configUrl.startsWith('http')) {
+        const normalizedConfig = configUrl.replace(/\/$/, '');
+        // If configUrl is just the root domain, AND we have a better sub, JOIN them.
+        if (normalizedConfig === homeUrl && (sub && sub !== '/' && !sub.startsWith('http'))) {
+          // sub is already set above or from path
+        } else {
+          return configUrl; // Absolute override
+        }
+      } else {
+        sub = configUrl; // Relative override
+      }
+    } else if (path && path.startsWith('http')) {
+      return path; // Path is already absolute
+    }
+
+    const normalizedPath = sub.startsWith('/') ? sub : '/' + sub;
+    const result = base + (normalizedPath === '/' ? '' : normalizedPath);
+
+    // Final Fallback: if result is still root but sub had content, force it
+    if ((result === homeUrl || result === homeUrl + '/') && sub && sub.length > 1 && !sub.startsWith('http')) {
+      return homeUrl + (sub.startsWith('/') ? sub : '/' + sub);
+    }
+
+    return result;
+  };
+
+  /**
+   * Helper: Safely render a value that might be an object or a URL to linkify
    */
   const safeRender = (val) => {
     if (val === null || val === undefined) return '';
-    if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') return val.toString();
+    if (typeof val === 'string') {
+      // Linkify URLs in text
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const parts = val.split(urlRegex);
+      if (parts.length > 1) {
+        return parts.map((part, i) =>
+          part.match(urlRegex)
+            ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2563eb', textDecoration: 'underline' } }, part)
+            : part
+        );
+      }
+      return val;
+    }
+    if (typeof val === 'number' || typeof val === 'boolean') return val.toString();
     if (typeof val === 'object') {
       if (val.label) return safeRender(val.label);
       if (val.message) return safeRender(val.message);
@@ -28,8 +86,9 @@
   const PROBE_REGISTRY = {
     // 1. Header Probe: Verifies HTTP response headers
     check_headers: async (siteUrl, control, featureData, featureKey) => {
+      const url = resolveUrl('/', control.config?.url);
       const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vapt_secure_test_context=login' : '';
-      const resp = await fetch(siteUrl + '?vapt_secure_header_check=' + Date.now() + contextParam, { method: 'GET', cache: 'no-store' });
+      const resp = await fetch(url + '?vapt_secure_header_check=' + Date.now() + contextParam, { method: 'GET', cache: 'no-store' });
       const headers = {};
       resp.headers.forEach((v, k) => { headers[k] = v; });
       console.log("[VAPT] Full Response Headers:", headers);
@@ -105,7 +164,8 @@
         // Process sequentially for real-time reporting (v3.6.25)
         for (let i = 0; i < load; i++) {
           try {
-            const r = await fetch(siteUrl + '?vapt_secure_test_spike=' + i + contextParam, { cache: 'no-store' });
+            const url = resolveUrl('/', control.config?.url);
+            const r = await fetch(url + '?vapt_secure_test_spike=' + i + contextParam, { cache: 'no-store' });
             const respData = { status: r.status, headers: r.headers };
             responses.push(respData);
 
@@ -187,7 +247,8 @@
 
     // 3. Status Probe: Verifies specific file block (e.g., XML-RPC)
     block_xmlrpc: async (siteUrl, control, featureData, featureKey) => {
-      const resp = await fetch(siteUrl + '/xmlrpc.php', { method: 'POST', body: '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName><params></params></methodCall>' });
+      const url = resolveUrl('/xmlrpc.php', control.config?.url);
+      const resp = await fetch(url, { method: 'POST', body: '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName><params></params></methodCall>' });
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
       const enforcedFeature = resp.headers.get('x-vapt-feature');
 
@@ -209,7 +270,7 @@
 
     // 4. Directory Probe: Verifies Indexing Block
     disable_directory_browsing: async (siteUrl, control, featureData, featureKey) => {
-      const target = siteUrl + '/wp-content/uploads/';
+      const target = resolveUrl('/wp-content/uploads/', control.config?.url);
       const resp = await fetch(target, { cache: 'no-store' });
       const text = await resp.text();
       const snippet = text.substring(0, 500);
@@ -231,7 +292,7 @@
       return PROBE_REGISTRY.block_null_byte_injection(siteUrl, control, featureData);
     },
     block_null_byte_injection: async (siteUrl, control, featureData) => {
-      const target = siteUrl + '/?vapt_secure_test_param=safe&vapt_secure_attack=test%00payload';
+      const target = resolveUrl('/', control.config?.url) + '?vapt_secure_test_param=safe&vapt_secure_attack=test%00payload';
       const resp = await fetch(target, { cache: 'no-store' });
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
@@ -244,7 +305,8 @@
 
     // 6. Version Hide Probe
     hide_wp_version: async (siteUrl, control, featureData) => {
-      const resp = await fetch(siteUrl + '?vapt_secure_version_check=1', { method: 'GET', cache: 'no-store' });
+      const url = resolveUrl('/', control.config?.url);
+      const resp = await fetch(url + '?vapt_secure_version_check=1', { method: 'GET', cache: 'no-store' });
       const text = await resp.text();
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
@@ -269,7 +331,7 @@
       const expectedText = config.expected_text;
       const expectedHeaders = config.expected_headers;
 
-      let url = config.url || (siteUrl + path);
+      let url = resolveUrl(path, config.url, featureKey);
       const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? 'vapt_secure_test_context=login' : '';
 
       if (method === 'GET') {
@@ -809,6 +871,7 @@
 
     const currentData = feature.implementation_data ? (typeof feature.implementation_data === 'string' ? JSON.parse(feature.implementation_data) : feature.implementation_data) : {};
     const [localAlert, setLocalAlert] = useState(null);
+    const [statusMap, setStatusMap] = useState({});
 
     if (!schema || !schema.controls || !Array.isArray(schema.controls)) {
       return el('div', { style: { padding: '20px', textAlign: 'center', color: '#999', fontStyle: 'italic' } },
@@ -824,6 +887,17 @@
     const handleChange = (key, value) => {
       const updated = { ...currentData, [key]: value };
       if (onUpdate) onUpdate(updated);
+    };
+
+    const toBool = (val) => {
+      if (val === true || val === 1 || val === '1' || val === 'true' || val === 'on') return true;
+      return false;
+    };
+
+    const isRemovalContext = (key, currentVal) => {
+      const status = statusMap[key];
+      if (!status) return false;
+      return toBool(currentVal) && (status.message === __("Removing...", "vapt-secure") || status.message === __("Removed Successfully", "vapt-secure"));
     };
 
     const renderControl = (control, index) => {
@@ -851,13 +925,103 @@
           ]);
 
         case 'toggle':
-          return el(ToggleControl, {
-            key: uniqueKey,
-            label: el('strong', { style: { fontSize: '12px', color: '#334155' } }, safeRender(label)),
-            help: safeRender(control.description || help), // Prioritize description (v3.12.3)
-            checked: !!value,
-            onChange: (val) => handleChange(key, val)
-          });
+          const mapping = (schema.enforcement?.mappings || {})[key];
+          const isDevelop = (feature.status || '').toLowerCase() === 'develop' || (feature.normalized_status || '').toLowerCase() === 'develop';
+          const isSuperAdmin = window.vaptSecureSettings?.isSuper || false;
+
+          return el('div', { key: uniqueKey, style: { marginBottom: '15px' } }, [
+            el(ToggleControl, {
+              label: el('strong', { style: { fontSize: '12px', color: '#334155' } }, safeRender(label)),
+              help: safeRender(control.description || help), // Prioritize description (v3.12.3)
+              checked: toBool(value),
+              onChange: (val) => {
+                const isRemoval = toBool(value) && !val;
+                const progressMsg = isRemoval ? __("Removing...", "vapt-secure") : __("Applying...", "vapt-secure");
+                const successMsg = isRemoval ? __("Removed Successfully", "vapt-secure") : __("Code Injected Successfully", "vapt-secure");
+
+                setStatusMap(prev => ({ ...prev, [key]: { message: progressMsg, type: "info" } }));
+                handleChange(key, val);
+
+                // Auto-success after update (since local state updates are synchronous here)
+                setTimeout(() => {
+                  setStatusMap(prev => ({ ...prev, [key]: { message: successMsg, type: "success" } }));
+                  setTimeout(() => {
+                    setStatusMap(prev => {
+                      const nu = { ...prev };
+                      delete nu[key];
+                      return nu;
+                    });
+                  }, 2000);
+                }, 600);
+              }
+            }),
+            // 🛡️ Localized Status Pill (v3.13.12)
+            statusMap[key] && el('div', {
+              style: {
+                marginTop: '-8px',
+                marginBottom: '8px',
+                marginLeft: '35px',
+                display: 'flex'
+              }
+            }, el('span', {
+              style: {
+                fontSize: '10px',
+                fontWeight: '600',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                background: statusMap[key].type === 'success' ? '#ecfdf5' : (isRemovalContext(key, value) ? '#fef2f2' : '#f0f9ff'),
+                color: statusMap[key].type === 'success' ? '#059669' : (isRemovalContext(key, value) ? '#b91c1c' : '#0369a1'),
+                border: `1px solid ${statusMap[key].type === 'success' ? '#10b981' : (isRemovalContext(key, value) ? '#f87171' : '#0ea5e9')}`,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }
+            }, [
+              el(Icon, { icon: statusMap[key].type === 'success' ? 'yes' : 'update', size: 12 }),
+              statusMap[key].message
+            ])),
+            // 🛡️ Visual Indicator for Code Addition (v3.13.9)
+            toBool(value) && el('div', {
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 8px',
+                background: '#ecfdf5',
+                color: '#059669',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '600',
+                marginTop: '-8px',
+                marginBottom: '8px',
+                marginLeft: '35px', // Align with toggle-slider offset
+                border: '1px solid #10b981',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }
+            }, [
+              el(Icon, { icon: 'editor-code', size: 12 }),
+              __('Code Injected', 'vapt-secure')
+            ]),
+            // 🛡️ Admin Preview Logic (v3.13.8): Visible ONLY when enabled (toBool(value))
+            isDevelop && isSuperAdmin && mapping && toBool(value) && el('div', {
+              style: {
+                marginTop: '10px',
+                padding: '10px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderLeft: '4px solid #6366f1',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                color: '#4338ca',
+                whiteSpace: 'pre-wrap'
+              }
+            }, [
+              el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', color: '#6366f1', textTransform: 'uppercase' } }, __('Live Protection Code (Superadmin Only)', 'vapt-secure')),
+              mapping
+            ])
+          ]);
 
         case 'input':
           return el('div', { key: uniqueKey, style: { marginBottom: '15px', padding: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px' } }, [

@@ -264,6 +264,8 @@ class VAPT_SECURE_REST
     $schema = [];
     $merged_features = []; // Track by normalized label
     $design_prompt = null;
+    $ai_agent_instructions = null;
+    $global_settings = null;
 
     // 3. Load and process each file
     foreach ($files_to_load as $file) {
@@ -275,6 +277,8 @@ class VAPT_SECURE_REST
       if (! is_array($raw_data)) continue;
 
       if (!$design_prompt && isset($raw_data['design_prompt'])) $design_prompt = $raw_data['design_prompt'];
+      if (!$ai_agent_instructions && isset($raw_data['ai_agent_instructions'])) $ai_agent_instructions = $raw_data['ai_agent_instructions'];
+      if (!$global_settings && isset($raw_data['global_settings'])) $global_settings = $raw_data['global_settings'];
 
       $current_features = [];
       $current_schema = [];
@@ -298,6 +302,13 @@ class VAPT_SECURE_REST
             $item['severity'] = isset($item['severity']['level']) ? $item['severity']['level'] : 'medium';
           }
           if (empty($item['test_method']) && isset($item['testing']['test_method'])) $item['test_method'] = $item['testing']['test_method'];
+
+          // Hyper-Personalization: Attach source-specific root nodes to each feature (v3.13.1)
+          $item['root_design_prompt'] = isset($raw_data['design_prompt']) ? $raw_data['design_prompt'] : null;
+          $item['root_ai_agent_instructions'] = isset($raw_data['ai_agent_instructions']) ? $raw_data['ai_agent_instructions'] : null;
+          $item['root_global_settings'] = isset($raw_data['global_settings']) ? $raw_data['global_settings'] : null;
+          $item['source_file'] = $file;
+
           if (empty($item['verification_engine']) && isset($item['protection']['automated_protection'])) $item['verification_engine'] = $item['protection']['automated_protection'];
           if (isset($item['testing']) && isset($item['testing']['verification_steps']) && is_array($item['testing']['verification_steps'])) {
             $steps = [];
@@ -325,6 +336,13 @@ class VAPT_SECURE_REST
       foreach ($current_features as &$feature) {
         $label = isset($feature['name']) ? $feature['name'] : (isset($feature['title']) ? $feature['title'] : (isset($feature['label']) ? $feature['label'] : __('Unnamed Feature', 'vapt-secure')));
         $feature['label'] = $label;
+
+        // Hyper-Personalization: Attach source-specific root nodes to each feature (v3.13.1)
+        $feature['root_design_prompt'] = isset($raw_data['design_prompt']) ? $raw_data['design_prompt'] : null;
+        $feature['root_ai_agent_instructions'] = isset($raw_data['ai_agent_instructions']) ? $raw_data['ai_agent_instructions'] : null;
+        $feature['root_global_settings'] = isset($raw_data['global_settings']) ? $raw_data['global_settings'] : null;
+        // The source_file is already set below, but for consistency with the risk_catalog block, we can add it here too.
+        // However, the existing line `feature['source_file'] = $file;` is sufficient.
 
         $key = isset($feature['id']) ? $feature['id'] : (isset($feature['key']) ? $feature['key'] : sanitize_title($label));
         $feature['key'] = $key;
@@ -411,7 +429,13 @@ class VAPT_SECURE_REST
       $features = array_values($features);
     }
 
-    $response_data = array('features' => $features, 'schema' => $schema, 'design_prompt' => $design_prompt);
+    $response_data = array(
+      'features' => $features,
+      'schema' => $schema,
+      'design_prompt' => $design_prompt,
+      'ai_agent_instructions' => $ai_agent_instructions,
+      'global_settings' => $global_settings
+    );
     if ($is_superadmin) {
       $response_data['active_catalog'] = $requested_file;
       $response_data['total_features'] = count($features);
@@ -1353,11 +1377,25 @@ class VAPT_SECURE_REST
       }
     }
 
-    // Auto-Correct if driver is 'hook' but needs 'htaccess'
+    // Auto-Correct if driver is 'hook' but needs 'htaccess' or 'wp-config'
     if ($needs_htaccess && $driver === 'hook') {
       error_log("VAPT Intelligence: Auto-switching driver to 'htaccess' for feature $feature_key based on physical file target.");
       $schema['enforcement']['driver'] = 'htaccess';
       $schema['enforcement']['target'] = $schema['enforcement']['target'] ?? 'root';
+    }
+
+    // [v3.13.2] Auto-Correct for wp-config constants
+    $needs_config = false;
+    foreach ($mappings as $key => $value) {
+      if (is_string($value) && strpos($value, 'define(') !== false) {
+        $needs_config = true;
+        break;
+      }
+    }
+
+    if ($needs_config && $driver === 'hook') {
+      error_log("VAPT Intelligence: Auto-switching driver to 'wp-config' for feature $feature_key based on define constant.");
+      $schema['enforcement']['driver'] = 'wp-config';
     }
 
     // Auto-Correct Mapping Key Mismatch (feat_key vs feat_enabled)
@@ -1503,7 +1541,7 @@ class VAPT_SECURE_REST
         );
       }
 
-      $valid_drivers = ['hook', 'htaccess', 'universal', 'manual'];
+      $valid_drivers = ['hook', 'htaccess', 'universal', 'manual', 'config', 'wp-config'];
       if (!in_array($schema['enforcement']['driver'], $valid_drivers)) {
         return new WP_Error(
           'invalid_schema',
