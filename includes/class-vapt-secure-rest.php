@@ -175,24 +175,6 @@ class VAPT_SECURE_REST
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    // Scanner routes
-    register_rest_route('vapt-secure/v1', '/scan/start', array(
-      'methods'  => 'POST',
-      'callback' => array($this, 'start_scan'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
-
-    register_rest_route('vapt-secure/v1', '/scan/(?P<id>\d+)/report', array(
-      'methods'  => 'GET',
-      'callback' => array($this, 'get_scan_report'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
-
-    register_rest_route('vapt-secure/v1', '/scans', array(
-      'methods'  => 'GET',
-      'callback' => array($this, 'get_scans'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
 
     register_rest_route('vapt-secure/v1', '/ping', array(
       'methods'  => 'GET',

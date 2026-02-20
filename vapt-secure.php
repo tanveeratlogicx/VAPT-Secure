@@ -25,10 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.3.13');
-}
-if (! defined('VAPT_SECURE_AUDITOR_VERSION')) {
-  define('VAPT_SECURE_AUDITOR_VERSION', '2.8.0');
+  define('VAPT_SECURE_VERSION', '1.3.14');
 }
 if (! defined('VAPT_SECURE_PATH')) {
   define('VAPT_SECURE_PATH', plugin_dir_path(__FILE__));
@@ -116,7 +113,6 @@ require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-db.php';
 require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-workflow.php';
 require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-build.php';
 require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-enforcer.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-scanner.php';
 require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-admin.php';
 
 /**
@@ -145,18 +141,8 @@ function vapt_secure_initialize_services()
   if (class_exists('VAPT_SECURE_Admin')) {
     new VAPT_SECURE_Admin();
   }
-  if (class_exists('VAPT_SECURE_Scanner')) {
-    new VAPT_SECURE_Scanner();
-  }
 }
 
-// Add cron hook for scans
-add_action('vapt_secure_run_scan', 'vapt_secure_execute_scan', 10, 2);
-function vapt_secure_execute_scan($scan_id, $target_url)
-{
-  $scanner = new VAPT_SECURE_Scanner();
-  $scanner->run_scan($scan_id, $target_url);
-}
 
 /**
  * Activation Hook: Initialize Database Tables
@@ -243,45 +229,12 @@ function vapt_secure_activate_plugin()
         PRIMARY KEY  (id),
         KEY domain (domain)
     ) $charset_collate;";
-  // Scans Table
-  $table_scans = "CREATE TABLE {$wpdb->prefix}vapt_secure_scans (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        target_url VARCHAR(500) NOT NULL,
-        status ENUM('pending', 'running', 'completed', 'failed') DEFAULT 'pending',
-        started_at DATETIME DEFAULT NULL,
-        completed_at DATETIME DEFAULT NULL,
-        user_id BIGINT(20) UNSIGNED DEFAULT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY  (id),
-        KEY target_url (target_url),
-        KEY status (status)
-    ) $charset_collate;";
-  // Scan Results Table
-  $table_scan_results = "CREATE TABLE {$wpdb->prefix}vapt_secure_scan_results (
-        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        scan_id BIGINT(20) UNSIGNED NOT NULL,
-        vulnerability_id VARCHAR(100) NOT NULL,
-        severity ENUM('critical', 'high', 'medium', 'low') NOT NULL,
-        affected_url VARCHAR(500),
-        description TEXT,
-        impact TEXT,
-        recommendation TEXT,
-        steps_to_reproduce TEXT,
-        evidence_url VARCHAR(500),
-        screenshot_path VARCHAR(500),
-        found_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY  (id),
-        KEY scan_id (scan_id),
-        KEY severity (severity)
-    ) $charset_collate;";
   dbDelta($table_domains);
   dbDelta($table_features);
   dbDelta($table_status);
   dbDelta($table_meta);
   dbDelta($table_history);
   dbDelta($table_builds);
-  dbDelta($table_scans);
-  dbDelta($table_scan_results);
   // Ensure data directory exists
   if (! file_exists(VAPT_SECURE_PATH . 'data')) {
     wp_mkdir_p(VAPT_SECURE_PATH . 'data');
