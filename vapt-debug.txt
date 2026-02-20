@@ -418,3 +418,246 @@ Applying rules with Data: {"disable_wp_cron":false,"verify_cron_blocking":null,"
 VAPT Enforcement Run at 2026-02-19 02:11:42
 Feature: RISK-001
 Applying rules with Data: {"disable_wp_cron":false,"verify_cron_blocking":null,"verify_constant_set":null,"verify_server_cron":null}
+VAPT Enforcement Run at 2026-02-20 08:38:15
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:38:22
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:40:18
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:42:18
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:44:19
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:45:05
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:46:11
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:46:15
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:48:15
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:48:16
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:50:13
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:50:16
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:52:15
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:52:17
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:54:15
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:54:17
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:56:24
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 08:58:27
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:00:28
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:02:28
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:04:31
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:06:29
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:08:33
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:10:31
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:12:34
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:14:35
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:16:35
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:18:36
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:20:36
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:22:37
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:24:41
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:26:39
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:28:40
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:30:41
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:32:43
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:34:45
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:36:45
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:38:45
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:40:48
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:42:49
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:44:51
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:46:50
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:48:53
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:50:52
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:52:52
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:54:53
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:56:54
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 09:58:58
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:00:58
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:03:00
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:05:01
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:06:59
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:09:01
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:09:54
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:09:57
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:07
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:13
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:15
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:18
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:31
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:46
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:49
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:10:54
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:05
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:08
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:08
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:10
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:17
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:17
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:21
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:29
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:29
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:29
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:11:48
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:12:02
+Feature: RISK-008
+Applying rules with Data: {"block_username_enumeration":true,"protection_level":"strict","custom_error_message":"Invalid credentials. Please try again.","verify_invalid_username":null,"verify_valid_username":null,"verify_author_blocking":null,"full_enumeration_scan":null,"block_enum_enabled":false,"block_username_enum":true,"feat_enabled":false}
+VAPT Enforcement Run at 2026-02-20 10:12:06
+Feature: RISK-008
+Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
+VAPT Enforcement Run at 2026-02-20 10:12:14
+Feature: RISK-008
+Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
+VAPT Enforcement Run at 2026-02-20 10:12:23
+Feature: RISK-008
+Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
+VAPT Enforcement Run at 2026-02-20 10:12:23
+Feature: RISK-008
+Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
+VAPT Enforcement Run at 2026-02-20 10:12:24
+Feature: RISK-008
+Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
+VAPT Enforcement Run at 2026-02-20 10:12:39
+Feature: RISK-008
+Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
