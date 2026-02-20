@@ -1,13 +1,13 @@
 <?php
 
 /**
- * VAPT_SECURE_IIS_Driver
+ * VAPTSECURE_IIS_Driver
  * Handles enforcement of rules for IIS via web.config XML injection.
  */
 
 if (!defined('ABSPATH')) exit;
 
-class VAPT_SECURE_IIS_Driver
+class VAPTSECURE_IIS_Driver
 {
   /**
    * Generates a list of valid IIS XML nodes based on the provided data and schema.

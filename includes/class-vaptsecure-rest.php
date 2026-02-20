@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
   exit;
 }
 
-class VAPT_SECURE_REST
+class VAPTSECURE_REST
 {
 
   public function __construct()
@@ -18,165 +18,165 @@ class VAPT_SECURE_REST
 
   public function register_routes()
   {
-    register_rest_route('vapt-secure/v1', '/features', array(
+    register_rest_route('vaptsecure/v1', '/features', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_features'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/data-files/all', array(
+    register_rest_route('vaptsecure/v1', '/data-files/all', array(
       'methods' => 'GET',
       'callback' => array($this, 'get_all_data_files'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/data-files', array(
+    register_rest_route('vaptsecure/v1', '/data-files', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_data_files'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/update-hidden-files', array(
+    register_rest_route('vaptsecure/v1', '/update-hidden-files', array(
       'methods' => 'POST',
       'callback' => array($this, 'update_hidden_files'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/data-files/remove', array(
+    register_rest_route('vaptsecure/v1', '/data-files/remove', array(
       'methods' => 'POST',
       'callback' => array($this, 'remove_data_file'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/reset-limit', array(
+    register_rest_route('vaptsecure/v1', '/reset-limit', array(
       'methods' => 'POST',
       'callback' => array($this, 'reset_rate_limit'),
       'permission_callback' => '__return_true', // Public endpoint for testing (limited to user IP)
     ));
 
 
-    register_rest_route('vapt-secure/v1', '/features/update', array(
+    register_rest_route('vaptsecure/v1', '/features/update', array(
       'methods'  => 'POST',
       'callback' => array($this, 'update_feature'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/features/transition', array(
+    register_rest_route('vaptsecure/v1', '/features/transition', array(
       'methods'  => 'POST',
       'callback' => array($this, 'transition_feature'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/history', array(
+    register_rest_route('vaptsecure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/history', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_feature_history'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/stats', array(
+    register_rest_route('vaptsecure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/stats', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_feature_stats'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/verify', array(
+    register_rest_route('vaptsecure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/verify', array(
       'methods'             => 'POST',
       'callback'            => array($this, 'verify_implementation'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/reset', array(
+    register_rest_route('vaptsecure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/reset', array(
       'methods'  => 'POST',
       'callback' => array($this, 'reset_feature_stats'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/assignees', array(
+    register_rest_route('vaptsecure/v1', '/assignees', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_assignees'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/features/assign', array(
+    register_rest_route('vaptsecure/v1', '/features/assign', array(
       'methods'  => 'POST',
       'callback' => array($this, 'update_assignment'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/upload-json', array(
+    register_rest_route('vaptsecure/v1', '/upload-json', array(
       'methods'  => 'POST',
       'callback' => array($this, 'upload_json'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/domains', array(
+    register_rest_route('vaptsecure/v1', '/domains', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_domains'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/domains/update', array(
+    register_rest_route('vaptsecure/v1', '/domains/update', array(
       'methods'  => 'POST',
       'callback' => array($this, 'update_domain'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/domains/features', array(
+    register_rest_route('vaptsecure/v1', '/domains/features', array(
       'methods'  => 'POST',
       'callback' => array($this, 'update_domain_features'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/domains/delete', array(
+    register_rest_route('vaptsecure/v1', '/domains/delete', array(
       'methods'  => 'DELETE',
       'callback' => array($this, 'delete_domain'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/domains/batch-delete', array(
+    register_rest_route('vaptsecure/v1', '/domains/batch-delete', array(
       'methods'  => 'POST',
       'callback' => array($this, 'batch_delete_domains'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/build/generate', array(
+    register_rest_route('vaptsecure/v1', '/build/generate', array(
       'methods'  => 'POST',
       'callback' => array($this, 'generate_build'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/build/save-config', array(
+    register_rest_route('vaptsecure/v1', '/build/save-config', array(
       'methods'  => 'POST',
       'callback' => array($this, 'save_config_to_root'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/upload-media', array(
+    register_rest_route('vaptsecure/v1', '/upload-media', array(
       'methods'  => 'POST',
       'callback' => array($this, 'upload_media'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/data-files/meta', array(
+    register_rest_route('vaptsecure/v1', '/data-files/meta', array(
       'methods'  => 'POST',
       'callback' => array($this, 'update_file_meta'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/active-file', array(
+    register_rest_route('vaptsecure/v1', '/active-file', array(
       'methods'  => array('GET', 'POST'),
       'callback' => array($this, 'handle_active_file'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    register_rest_route('vapt-secure/v1', '/build/sync-config', array(
+    register_rest_route('vaptsecure/v1', '/build/sync-config', array(
       'methods'  => 'POST',
       'callback' => array($this, 'sync_config_from_file'),
       'permission_callback' => array($this, 'check_permission'),
     ));
 
 
-    register_rest_route('vapt-secure/v1', '/ping', array(
+    register_rest_route('vaptsecure/v1', '/ping', array(
       'methods'  => 'GET',
       'callback' => function () {
         return new WP_REST_Response(['pong' => true], 200);
@@ -187,24 +187,24 @@ class VAPT_SECURE_REST
 
   public function check_permission()
   {
-    return is_vapt_secure_superadmin();
+    return is_vaptsecure_superadmin();
   }
 
   public function get_features($request)
   {
-    $default_file = defined('VAPT_SECURE_ACTIVE_DATA_FILE') ? VAPT_SECURE_ACTIVE_DATA_FILE : 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
+    $default_file = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
     $requested_file = $request->get_param('file') ?: $default_file;
 
     // 1. Resolve which files to load
     $files_to_load = [];
     if ($requested_file === '__all__') {
-      $data_dir = VAPT_SECURE_PATH . 'data';
+      $data_dir = VAPTSECURE_PATH . 'data';
       if (is_dir($data_dir)) {
         $all_json = array_filter(scandir($data_dir), function ($f) {
           return strtolower(pathinfo($f, PATHINFO_EXTENSION)) === 'json';
         });
-        $hidden_files = get_option('vapt_secure_hidden_json_files', array());
-        $removed_files = get_option('vapt_secure_removed_json_files', array());
+        $hidden_files = get_option('vaptsecure_hidden_json_files', array());
+        $removed_files = get_option('vaptsecure_removed_json_files', array());
         $hidden_normalized = array_map('sanitize_file_name', $hidden_files);
         $removed_normalized = array_map('sanitize_file_name', $removed_files);
 
@@ -221,11 +221,11 @@ class VAPT_SECURE_REST
 
     // v3.12.1: Final filter against existence to prevent stale entries
     $files_to_load = array_filter($files_to_load, function ($f) {
-      return file_exists(VAPT_SECURE_PATH . 'data/' . sanitize_file_name($f));
+      return file_exists(VAPTSECURE_PATH . 'data/' . sanitize_file_name($f));
     });
 
     // 2. Pre-fetch global state (Status map and History counts)
-    $statuses = VAPT_SECURE_DB::get_feature_statuses_full();
+    $statuses = VAPTSECURE_DB::get_feature_statuses_full();
     $status_map = [];
     foreach ($statuses as $row) {
       $status_map[$row['feature_key']] = array(
@@ -236,10 +236,10 @@ class VAPT_SECURE_REST
     }
 
     global $wpdb;
-    $history_table = $wpdb->prefix . 'vapt_secure_feature_history';
+    $history_table = $wpdb->prefix . 'vaptsecure_feature_history';
     $history_counts = $wpdb->get_results("SELECT feature_key, COUNT(*) as count FROM $history_table GROUP BY feature_key", OBJECT_K);
 
-    $is_superadmin = is_vapt_secure_superadmin();
+    $is_superadmin = is_vaptsecure_superadmin();
     $scope = $request->get_param('scope');
 
     $features = [];
@@ -251,7 +251,7 @@ class VAPT_SECURE_REST
 
     // 3. Load and process each file
     foreach ($files_to_load as $file) {
-      $json_path = VAPT_SECURE_PATH . 'data/' . sanitize_file_name($file);
+      $json_path = VAPTSECURE_PATH . 'data/' . sanitize_file_name($file);
       if (! file_exists($json_path)) continue;
 
       $content = file_get_contents($json_path);
@@ -350,7 +350,7 @@ class VAPT_SECURE_REST
         $feature['source_file'] = $file;
         $feature['exists_in_multiple_files'] = false;
 
-        $meta = VAPT_SECURE_DB::get_feature_meta($key);
+        $meta = VAPTSECURE_DB::get_feature_meta($key);
         if ($meta) {
           $feature['include_test_method'] = (bool) $meta['include_test_method'];
           $feature['include_verification'] = (bool) $meta['include_verification'];
@@ -397,9 +397,9 @@ class VAPT_SECURE_REST
       $domain = $request->get_param('domain');
       $enabled_features = [];
       if ($domain) {
-        $dom_row = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}vapt_secure_domains WHERE domain = %s", $domain));
+        $dom_row = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}vaptsecure_domains WHERE domain = %s", $domain));
         if ($dom_row) {
-          $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vapt_secure_domain_features WHERE domain_id = %d AND enabled = 1", $dom_row->id), ARRAY_N);
+          $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $dom_row->id), ARRAY_N);
           $enabled_features = array_column($feat_rows, 0);
         }
       }
@@ -427,15 +427,15 @@ class VAPT_SECURE_REST
 
   public function get_data_files()
   {
-    $data_dir = VAPT_SECURE_PATH . 'data';
+    $data_dir = VAPTSECURE_PATH . 'data';
     if (!is_dir($data_dir)) return new WP_REST_Response([], 200);
 
     $files = array_diff(scandir($data_dir), array('..', '.'));
     $json_files = [];
 
-    $hidden_files  = get_option('vapt_secure_hidden_json_files', array());
-    $removed_files = get_option('vapt_secure_removed_json_files', array());
-    $active_option = get_option('vapt_secure_active_feature_file');
+    $hidden_files  = get_option('vaptsecure_hidden_json_files', array());
+    $removed_files = get_option('vaptsecure_removed_json_files', array());
+    $active_option = get_option('vaptsecure_active_feature_file');
     $current_active = $active_option ? explode(',', $active_option) : array();
 
     $hidden_normalized  = array_map('sanitize_file_name', $hidden_files);
@@ -472,7 +472,7 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(['error' => 'Invalid target URL'], 400);
     }
 
-    $scanner = new VAPT_SECURE_Scanner();
+    $scanner = new VAPTSECURE_Scanner();
     $scan_id = $scanner->start_scan($target_url);
 
     if ($scan_id === false) {
@@ -485,7 +485,7 @@ class VAPT_SECURE_REST
   public function get_scan_report($request)
   {
     $scan_id = $request->get_param('id');
-    $scanner = new VAPT_SECURE_Scanner();
+    $scanner = new VAPTSECURE_Scanner();
     $report = $scanner->generate_report($scan_id);
 
     if (!$report) {
@@ -498,7 +498,7 @@ class VAPT_SECURE_REST
   public function get_scans($request)
   {
     global $wpdb;
-    $scans = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}vapt_secure_scans ORDER BY created_at DESC", ARRAY_A);
+    $scans = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}vaptsecure_scans ORDER BY created_at DESC", ARRAY_A);
     return new WP_REST_Response($scans, 200);
   }
 
@@ -516,7 +516,7 @@ class VAPT_SECURE_REST
 
     if ($status) {
       $note = $request->get_param('history_note') ?: ($request->get_param('transition_note') ?: '');
-      $result = VAPT_SECURE_Workflow::transition_feature($key, $status, $note);
+      $result = VAPTSECURE_Workflow::transition_feature($key, $status, $note);
       if (is_wp_error($result)) {
         return new WP_REST_Response($result, 400);
       }
@@ -555,7 +555,7 @@ class VAPT_SECURE_REST
 
         // 🛡️ LIFECYCLE ENFORCEMENT: Schema updates allowed only in Draft/Develop stages
         // Update: 'Test' stage allows updates but saves to OVERRIDE meta (Local customization)
-        $current_feat = VAPT_SECURE_DB::get_feature($key);
+        $current_feat = VAPTSECURE_DB::get_feature($key);
         $current_status = $current_feat ? strtolower($current_feat['status']) : 'draft';
 
         if (!in_array($current_status, ['draft', 'develop', 'test'])) {
@@ -626,7 +626,7 @@ class VAPT_SECURE_REST
     }
 
     if ($request->has_param('implementation_data')) {
-      $current_feat = $current_feat ?? VAPT_SECURE_DB::get_feature($key);
+      $current_feat = $current_feat ?? VAPTSECURE_DB::get_feature($key);
       $current_status = $current_feat ? strtolower($current_feat['status']) : 'draft';
 
       // 🛡️ VALIDATION: Check implementation data against schema (v3.6.19)
@@ -635,7 +635,7 @@ class VAPT_SECURE_REST
       if ($request->has_param('generated_schema')) {
         $schema_for_val = $schema; // Already decoded above
       } else {
-        $meta = VAPT_SECURE_DB::get_feature_meta($key);
+        $meta = VAPTSECURE_DB::get_feature_meta($key);
         $raw_schema = ($current_status === 'test') ? ($meta['override_schema'] ?? $meta['generated_schema']) : ($meta['generated_schema'] ?? null);
         $schema_for_val = $raw_schema ? json_decode($raw_schema, true) : null;
       }
@@ -672,13 +672,13 @@ class VAPT_SECURE_REST
     }
 
     if (! empty($meta_updates)) {
-      VAPT_SECURE_DB::update_feature_meta($key, $meta_updates);
-      do_action('vapt_secure_feature_saved', $key, $meta_updates);
+      VAPTSECURE_DB::update_feature_meta($key, $meta_updates);
+      do_action('vaptsecure_feature_saved', $key, $meta_updates);
     }
 
     if ($reset_history) {
       global $wpdb;
-      $history_table = $wpdb->prefix . 'vapt_secure_feature_history';
+      $history_table = $wpdb->prefix . 'vaptsecure_feature_history';
       $wpdb->delete($history_table, array('feature_key' => $key), array('%s'));
     }
 
@@ -695,7 +695,7 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Missing file or key param'), 400);
     }
 
-    $json_path = VAPT_SECURE_PATH . 'data/' . sanitize_file_name($file);
+    $json_path = VAPTSECURE_PATH . 'data/' . sanitize_file_name($file);
 
     if (!file_exists($json_path)) {
       return new WP_REST_Response(array('error' => 'File not found'), 404);
@@ -729,7 +729,7 @@ class VAPT_SECURE_REST
     $status = $request->get_param('status');
     $note = $request->get_param('note') ?: '';
 
-    $result = VAPT_SECURE_Workflow::transition_feature($key, $status, $note);
+    $result = VAPTSECURE_Workflow::transition_feature($key, $status, $note);
 
     if (is_wp_error($result)) {
       return new WP_REST_Response($result, 400);
@@ -741,7 +741,7 @@ class VAPT_SECURE_REST
   public function get_feature_history($request)
   {
     $key = $request['key'];
-    $history = VAPT_SECURE_Workflow::get_history($key);
+    $history = VAPTSECURE_Workflow::get_history($key);
 
     return new WP_REST_Response($history, 200);
   }
@@ -749,9 +749,9 @@ class VAPT_SECURE_REST
   public function get_feature_stats($request)
   {
     $key = $request['key'];
-    require_once(VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-hook-driver.php');
-    if (method_exists('VAPT_SECURE_Hook_Driver', 'get_feature_stats')) {
-      $stats = VAPT_SECURE_Hook_Driver::get_feature_stats($key);
+    require_once(VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php');
+    if (method_exists('VAPTSECURE_Hook_Driver', 'get_feature_stats')) {
+      $stats = VAPTSECURE_Hook_Driver::get_feature_stats($key);
       return new WP_REST_Response($stats, 200);
     }
     return new WP_REST_Response(['error' => 'Method not supported'], 500);
@@ -760,9 +760,9 @@ class VAPT_SECURE_REST
   public function reset_feature_stats($request)
   {
     $key = $request['key'];
-    require_once(VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-hook-driver.php');
-    if (method_exists('VAPT_SECURE_Hook_Driver', 'reset_feature_stats')) {
-      $count = VAPT_SECURE_Hook_Driver::reset_feature_stats($key);
+    require_once(VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php');
+    if (method_exists('VAPTSECURE_Hook_Driver', 'reset_feature_stats')) {
+      $count = VAPTSECURE_Hook_Driver::reset_feature_stats($key);
       return new WP_REST_Response(['success' => true, 'deleted_locks' => $count], 200);
     }
     return new WP_REST_Response(['error' => 'Method not supported'], 500);
@@ -800,8 +800,8 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Invalid JSON'), 400);
     }
 
-    $json_path = VAPT_SECURE_PATH . 'data/' . $filename;
-    $data_dir = VAPT_SECURE_PATH . 'data/';
+    $json_path = VAPTSECURE_PATH . 'data/' . $filename;
+    $data_dir = VAPTSECURE_PATH . 'data/';
 
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     WP_Filesystem();
@@ -836,25 +836,25 @@ class VAPT_SECURE_REST
     // ... rest of the logic remains same ...
 
     // Auto-unhide if it was hidden
-    $hidden_files = get_option('vapt_secure_hidden_json_files', array());
+    $hidden_files = get_option('vaptsecure_hidden_json_files', array());
     $normalized_hidden = array_map('sanitize_file_name', $hidden_files);
 
     if (in_array($filename, $normalized_hidden) || in_array($files['file']['name'], $hidden_files)) {
       $new_hidden = array_filter($hidden_files, function ($f) use ($filename, $files) {
         return sanitize_file_name($f) !== $filename && $f !== $files['file']['name'];
       });
-      update_option('vapt_secure_hidden_json_files', array_values($new_hidden));
+      update_option('vaptsecure_hidden_json_files', array_values($new_hidden));
     }
 
     // Auto-restore if it was removed
-    $removed_files = get_option('vapt_secure_removed_json_files', array());
+    $removed_files = get_option('vaptsecure_removed_json_files', array());
     $normalized_removed = array_map('sanitize_file_name', $removed_files);
 
     if (in_array($filename, $normalized_removed) || in_array($files['file']['name'], $removed_files)) {
       $new_removed = array_filter($removed_files, function ($f) use ($filename, $files) {
         return sanitize_file_name($f) !== $filename && $f !== $files['file']['name'];
       });
-      update_option('vapt_secure_removed_json_files', array_values($new_removed));
+      update_option('vaptsecure_removed_json_files', array_values($new_removed));
     }
 
     return new WP_REST_Response(array('success' => true, 'filename' => $filename), 200);
@@ -869,7 +869,7 @@ class VAPT_SECURE_REST
 
     $hidden_files = array_map('sanitize_file_name', $hidden_files);
 
-    update_option('vapt_secure_hidden_json_files', $hidden_files);
+    update_option('vaptsecure_hidden_json_files', $hidden_files);
     $this->sanitize_active_file();
 
     return new WP_REST_Response(array('success' => true, 'hidden_files' => $hidden_files), 200);
@@ -882,15 +882,15 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Missing filename'), 400);
     }
 
-    $active_file = defined('VAPT_SECURE_ACTIVE_DATA_FILE') ? VAPT_SECURE_ACTIVE_DATA_FILE : 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
+    $active_file = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
     if ($filename === $active_file || sanitize_file_name($filename) === sanitize_file_name($active_file)) {
       return new WP_REST_Response(array('error' => 'Cannot remove the active file.'), 400);
     }
 
-    $removed_files = get_option('vapt_secure_removed_json_files', array());
+    $removed_files = get_option('vaptsecure_removed_json_files', array());
     if (!in_array($filename, $removed_files)) {
       $removed_files[] = $filename;
-      update_option('vapt_secure_removed_json_files', $removed_files);
+      update_option('vaptsecure_removed_json_files', $removed_files);
       $this->sanitize_active_file();
     }
 
@@ -899,9 +899,9 @@ class VAPT_SECURE_REST
 
   public function reset_rate_limit($request)
   {
-    require_once(VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-hook-driver.php');
-    if (class_exists('VAPT_SECURE_Hook_Driver')) {
-      $result = VAPT_SECURE_Hook_Driver::reset_limit();
+    require_once(VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php');
+    if (class_exists('VAPTSECURE_Hook_Driver')) {
+      $result = VAPTSECURE_Hook_Driver::reset_limit();
       return new WP_REST_Response(array('success' => true, 'debug' => $result), 200);
     }
     return new WP_REST_Response(array('error' => 'Hook driver not found'), 500);
@@ -909,13 +909,13 @@ class VAPT_SECURE_REST
 
   public function get_all_data_files()
   {
-    $data_dir = VAPT_SECURE_PATH . 'data';
+    $data_dir = VAPTSECURE_PATH . 'data';
     if (!is_dir($data_dir)) return new WP_REST_Response([], 200);
 
     $files = array_diff(scandir($data_dir), array('..', '.'));
     $json_files = [];
-    $hidden_files  = get_option('vapt_secure_hidden_json_files', array());
-    $removed_files = get_option('vapt_secure_removed_json_files', array());
+    $hidden_files  = get_option('vaptsecure_hidden_json_files', array());
+    $removed_files = get_option('vaptsecure_removed_json_files', array());
 
     $hidden_normalized  = array_map('sanitize_file_name', $hidden_files);
     $removed_normalized = array_map('sanitize_file_name', $removed_files);
@@ -942,13 +942,13 @@ class VAPT_SECURE_REST
   public function get_domains()
   {
     global $wpdb;
-    $domains = VAPT_SECURE_DB::get_domains();
+    $domains = VAPTSECURE_DB::get_domains();
 
     foreach ($domains as &$domain) {
       $domain_id = $domain['id'];
-      $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vapt_secure_domain_features WHERE domain_id = %d AND enabled = 1", $domain_id), ARRAY_N);
+      $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $domain_id), ARRAY_N);
       $domain['features'] = array_column($feat_rows, 0);
-      $domain['imported_at'] = get_option('vapt_secure_imported_at_' . $domain['domain'], null);
+      $domain['imported_at'] = get_option('vaptsecure_imported_at_' . $domain['domain'], null);
     }
 
     return new WP_REST_Response($domains, 200);
@@ -969,10 +969,10 @@ class VAPT_SECURE_REST
 
     $id = $request->get_param('id');
     if ($id) {
-      $current = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vapt_secure_domains WHERE id = %d", $id), ARRAY_A);
+      $current = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vaptsecure_domains WHERE id = %d", $id), ARRAY_A);
       if ($current && !$domain) $domain = $current['domain'];
     } else {
-      $current = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vapt_secure_domains WHERE domain = %s", $domain), ARRAY_A);
+      $current = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vaptsecure_domains WHERE domain = %s", $domain), ARRAY_A);
     }
 
     $history = $current && !empty($current['renewal_history']) ? json_decode($current['renewal_history'], true) : array();
@@ -1073,13 +1073,13 @@ class VAPT_SECURE_REST
       }
     }
 
-    $result_id = VAPT_SECURE_DB::update_domain($domain, $is_wildcard ? 1 : 0, $is_enabled ? 1 : 0, $id, $license_id, $license_type, $manual_expiry_date, $auto_renew, $renewals_count, $history, $license_scope, $installation_limit);
+    $result_id = VAPTSECURE_DB::update_domain($domain, $is_wildcard ? 1 : 0, $is_enabled ? 1 : 0, $id, $license_id, $license_type, $manual_expiry_date, $auto_renew, $renewals_count, $history, $license_scope, $installation_limit);
 
     if ($result_id === false) {
       return new WP_REST_Response(array('error' => 'Database update failed'), 500);
     }
 
-    $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vapt_secure_domains WHERE id = %d", $result_id), ARRAY_A);
+    $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vaptsecure_domains WHERE id = %d", $result_id), ARRAY_A);
 
     return new WP_REST_Response(array('success' => true, 'domain' => $fresh), 200);
   }
@@ -1091,7 +1091,7 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Missing domain ID'), 400);
     }
 
-    VAPT_SECURE_DB::delete_domain($domain_id);
+    VAPTSECURE_DB::delete_domain($domain_id);
     return new WP_REST_Response(array('success' => true), 200);
   }
 
@@ -1102,7 +1102,7 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Missing or invalid domain IDs'), 400);
     }
 
-    VAPT_SECURE_DB::batch_delete_domains($ids);
+    VAPTSECURE_DB::batch_delete_domains($ids);
     return new WP_REST_Response(array('success' => true), 200);
   }
 
@@ -1116,7 +1116,7 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Invalid features format'), 400);
     }
 
-    $table = $wpdb->prefix . 'vapt_secure_domain_features';
+    $table = $wpdb->prefix . 'vaptsecure_domain_features';
 
     $wpdb->delete($table, array('domain_id' => $domain_id), array('%d'));
 
@@ -1145,9 +1145,9 @@ class VAPT_SECURE_REST
     $data['installation_limit'] = $request->get_param('installation_limit');
 
     // Delegate to Build Class
-    require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-build.php';
+    require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
     try {
-      $download_url = VAPT_SECURE_Build::generate($data);
+      $download_url = VAPTSECURE_Build::generate($data);
       return new WP_REST_Response(array('success' => true, 'download_url' => $download_url), 200);
     } catch (Exception $e) {
       return new WP_REST_Response(array('success' => false, 'message' => $e->getMessage()), 500);
@@ -1166,10 +1166,10 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Missing domain or version'), 400);
     }
 
-    require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-build.php';
-    $config_content = VAPT_SECURE_Build::generate_config_content($domain, $version, $features, null, $license_scope, $installation_limit);
+    require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
+    $config_content = VAPTSECURE_Build::generate_config_content($domain, $version, $features, null, $license_scope, $installation_limit);
     $filename = "vapt-{$domain}-config-{$version}.php";
-    $filepath = VAPT_SECURE_PATH . $filename;
+    $filepath = VAPTSECURE_PATH . $filename;
 
     $saved = file_put_contents($filepath, $config_content);
 
@@ -1187,7 +1187,7 @@ class VAPT_SECURE_REST
       return new WP_REST_Response(array('error' => 'Missing domain'), 400);
     }
 
-    $files = glob(VAPT_SECURE_PATH . "vapt-*-config-*.php");
+    $files = glob(VAPTSECURE_PATH . "vapt-*-config-*.php");
     $matched_file = null;
 
     if ($files) {
@@ -1199,8 +1199,8 @@ class VAPT_SECURE_REST
       }
     }
 
-    if (!$matched_file && file_exists(VAPT_SECURE_PATH . 'vapt-locked-config.php')) {
-      $matched_file = VAPT_SECURE_PATH . 'vapt-locked-config.php';
+    if (!$matched_file && file_exists(VAPTSECURE_PATH . 'vapt-locked-config.php')) {
+      $matched_file = VAPTSECURE_PATH . 'vapt-locked-config.php';
     }
 
     if (!$matched_file) {
@@ -1208,7 +1208,7 @@ class VAPT_SECURE_REST
     }
 
     $content = file_get_contents($matched_file);
-    preg_match_all("/define\( 'VAPT_SECURE_FEATURE_(.*?)', true \);/", $content, $matches);
+    preg_match_all("/define\( 'VAPTSECURE_FEATURE_(.*?)', true \);/", $content, $matches);
 
     $features = array();
     if (!empty($matches[1])) {
@@ -1222,8 +1222,8 @@ class VAPT_SECURE_REST
       $version = trim($v_match[1]);
     }
 
-    update_option('vapt_secure_imported_at_' . $domain, current_time('mysql'));
-    update_option('vapt_secure_imported_version_' . $domain, $version);
+    update_option('vaptsecure_imported_at_' . $domain, current_time('mysql'));
+    update_option('vaptsecure_imported_version_' . $domain, $version);
 
     return new WP_REST_Response(array(
       'success' => true,
@@ -1249,7 +1249,7 @@ class VAPT_SECURE_REST
     global $wpdb;
     $key = $request->get_param('key');
     $user_id = $request->get_param('user_id');
-    $table_status = $wpdb->prefix . 'vapt_secure_feature_status';
+    $table_status = $wpdb->prefix . 'vaptsecure_feature_status';
     $wpdb->update($table_status, array('assigned_to' => $user_id ? $user_id : null), array('feature_key' => $key));
 
     return new WP_REST_Response(array('success' => true), 200);
@@ -1637,12 +1637,12 @@ class VAPT_SECURE_REST
   public function verify_implementation($request)
   {
     $key = $request['key'];
-    $meta = VAPT_SECURE_DB::get_feature_meta($key);
+    $meta = VAPTSECURE_DB::get_feature_meta($key);
     if (!$meta) {
       return new WP_Error('not_found', 'Feature not found', array('status' => 404));
     }
 
-    $current_feat = VAPT_SECURE_DB::get_feature($key);
+    $current_feat = VAPTSECURE_DB::get_feature($key);
     $current_status = $current_feat ? strtolower($current_feat['status']) : 'draft';
 
     $schema_raw = ($current_status === 'test' ? ($meta['override_schema'] ?? $meta['generated_schema']) : $meta['generated_schema']);
@@ -1665,10 +1665,10 @@ class VAPT_SECURE_REST
     // Instantiate appropriate driver for verification
     switch ($driver) {
       case 'hook':
-        $is_active = VAPT_SECURE_Hook_Driver::verify($key, $impl_data, $schema);
+        $is_active = VAPTSECURE_Hook_Driver::verify($key, $impl_data, $schema);
         break;
       case 'htaccess':
-        $is_active = VAPT_SECURE_Htaccess_Driver::verify($key, $impl_data, $schema);
+        $is_active = VAPTSECURE_Htaccess_Driver::verify($key, $impl_data, $schema);
         break;
       default:
         // For nginx/iis, we might just check if the implementation data exists and is enabled
@@ -1703,7 +1703,7 @@ class VAPT_SECURE_REST
       // v3.12.1: Strict existence check
       $valid_files = [];
       foreach ($sanitized_files as $f) {
-        if (file_exists(VAPT_SECURE_PATH . 'data/' . $f)) {
+        if (file_exists(VAPTSECURE_PATH . 'data/' . $f)) {
           $valid_files[] = $f;
         }
       }
@@ -1713,13 +1713,13 @@ class VAPT_SECURE_REST
       }
 
       $filename = implode(',', $valid_files);
-      update_option('vapt_secure_active_feature_file', $filename);
+      update_option('vaptsecure_active_feature_file', $filename);
       return new WP_REST_Response(array('success' => true, 'active_file' => $filename), 200);
     }
 
-    $active = get_option('vapt_secure_active_feature_file');
-    if (!$active && defined('VAPT_SECURE_ACTIVE_DATA_FILE')) {
-      $active = VAPT_SECURE_ACTIVE_DATA_FILE;
+    $active = get_option('vaptsecure_active_feature_file');
+    if (!$active && defined('VAPTSECURE_ACTIVE_DATA_FILE')) {
+      $active = VAPTSECURE_ACTIVE_DATA_FILE;
     }
     if (!$active) {
       $active = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
@@ -1736,22 +1736,22 @@ class VAPT_SECURE_REST
    */
   private function sanitize_active_file()
   {
-    $active = get_option('vapt_secure_active_feature_file');
+    $active = get_option('vaptsecure_active_feature_file');
     if (!$active) return;
 
     $files = array_filter(explode(',', $active));
     $valid_files = [];
     foreach ($files as $f) {
-      if (file_exists(VAPT_SECURE_PATH . 'data/' . sanitize_file_name($f))) {
+      if (file_exists(VAPTSECURE_PATH . 'data/' . sanitize_file_name($f))) {
         $valid_files[] = $f;
       }
     }
 
     if (count($valid_files) !== count($files)) {
       if (empty($valid_files)) {
-        update_option('vapt_secure_active_feature_file', 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json');
+        update_option('vaptsecure_active_feature_file', 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json');
       } else {
-        update_option('vapt_secure_active_feature_file', implode(',', $valid_files));
+        update_option('vaptsecure_active_feature_file', implode(',', $valid_files));
       }
     }
   }

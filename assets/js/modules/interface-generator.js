@@ -98,5 +98,5 @@
   };
 
   // Expose to global scope
-  window.VAPT_SECURE_Generator = InterfaceGenerator;
+  window.VAPTSECURE_Generator = InterfaceGenerator;
 })();

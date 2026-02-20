@@ -9,7 +9,7 @@ if (! defined('ABSPATH')) {
   exit;
 }
 
-class VAPT_SECURE_Hook_Driver
+class VAPTSECURE_Hook_Driver
 {
   private static $feature_configs = [];
   private static $enforced_keys = [];
@@ -50,7 +50,7 @@ class VAPT_SECURE_Hook_Driver
    */
   public static function apply($impl_data, $schema, $key = '')
   {
-    $log_file = VAPT_SECURE_PATH . 'vapt-debug.txt';
+    $log_file = VAPTSECURE_PATH . 'vapt-debug.txt';
     $log = "VAPT Enforcement Run at " . current_time('mysql') . "\n";
     $log .= "Feature: $key\n";
 
@@ -212,8 +212,8 @@ class VAPT_SECURE_Hook_Driver
   {
     if (self::$catalog_data === null) {
       // Dynamic Active File Resolution
-      $active_file = defined('VAPT_SECURE_ACTIVE_DATA_FILE') ? constant('VAPT_SECURE_ACTIVE_DATA_FILE') : get_option('vapt_secure_active_feature_file', 'Feature-List-99.json');
-      $path = VAPT_SECURE_PATH . 'data/' . sanitize_file_name($active_file);
+      $active_file = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? constant('VAPTSECURE_ACTIVE_DATA_FILE') : get_option('vaptsecure_active_feature_file', 'Feature-List-99.json');
+      $path = VAPTSECURE_PATH . 'data/' . sanitize_file_name($active_file);
 
       if (file_exists($path)) {
         $json = json_decode(file_get_contents($path), true);
@@ -293,7 +293,7 @@ class VAPT_SECURE_Hook_Driver
       strpos($script, 'wp-login.php') !== false ||
       strpos($uri, 'xmlrpc.php') !== false ||
       (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) ||
-      (isset($_GET['vapt_secure_test_context']) && $_GET['vapt_secure_test_context'] === 'login');
+      (isset($_GET['vaptsecure_test_context']) && $_GET['vaptsecure_test_context'] === 'login');
 
     $is_admin = is_admin() && !$is_login;
     $is_api = strpos($uri, 'wp-json') !== false;
@@ -422,8 +422,8 @@ class VAPT_SECURE_Hook_Driver
     self::$rate_limit_hook_registered = true;
 
     add_action('init', function () {
-      if (strpos($_SERVER['REQUEST_URI'], 'reset-limit') !== false || isset($_GET['vapt_secure_action'])) return;
-      if (current_user_can('manage_options') && !isset($_GET['vapt_secure_test_spike'])) return;
+      if (strpos($_SERVER['REQUEST_URI'], 'reset-limit') !== false || isset($_GET['vaptsecure_action'])) return;
+      if (current_user_can('manage_options') && !isset($_GET['vaptsecure_test_spike'])) return;
 
       $context = self::detect_context();
       $ip = self::get_real_ip();

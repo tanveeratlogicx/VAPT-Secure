@@ -1,7 +1,7 @@
 <?php
 
 /**
- * VAPT_SECURE_Enforcer: The Global Security Hammer
+ * VAPTSECURE_Enforcer: The Global Security Hammer
  * 
  * Acts as a generic dispatcher that routes enforcement requests to specific drivers
  * (Htaccess, Hooks, etc.) based on the feature's generated_schema.
@@ -9,13 +9,13 @@
 
 if (!defined('ABSPATH')) exit;
 
-class VAPT_SECURE_Enforcer
+class VAPTSECURE_Enforcer
 {
 
   public static function init()
   {
     // Listen for workbench saves
-    add_action('vapt_secure_feature_saved', array(__CLASS__, 'dispatch_enforcement'), 10, 2);
+    add_action('vaptsecure_feature_saved', array(__CLASS__, 'dispatch_enforcement'), 10, 2);
 
     // Apply PHP-based hooks at runtime
     self::runtime_enforcement();
@@ -26,16 +26,16 @@ class VAPT_SECURE_Enforcer
    */
   public static function runtime_enforcement()
   {
-    $cache_key = 'vapt_secure_active_enforcements';
+    $cache_key = 'vaptsecure_active_enforcements';
     $enforced = get_transient($cache_key);
 
     if (false === $enforced) {
       global $wpdb;
-      $table = $wpdb->prefix . 'vapt_secure_feature_meta';
+      $table = $wpdb->prefix . 'vaptsecure_feature_meta';
       $enforced = $wpdb->get_results("
         SELECT m.*, s.status 
         FROM $table m
-        LEFT JOIN {$wpdb->prefix}vapt_secure_feature_status s ON m.feature_key = s.feature_key
+        LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key
         WHERE m.is_enforced = 1
       ", ARRAY_A);
       set_transient($cache_key, $enforced, HOUR_IN_SECONDS);
@@ -43,7 +43,7 @@ class VAPT_SECURE_Enforcer
 
     if (empty($enforced)) return;
 
-    require_once VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-hook-driver.php';
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php';
 
     foreach ($enforced as $meta) {
       $status = isset($meta['status']) ? strtolower($meta['status']) : 'draft';
@@ -61,8 +61,8 @@ class VAPT_SECURE_Enforcer
 
       // Hook driver is universally shared for PHP-based fallback rules
       if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess') {
-        if (class_exists('VAPT_SECURE_Hook_Driver')) {
-          VAPT_SECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
+        if (class_exists('VAPTSECURE_Hook_Driver')) {
+          VAPTSECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
         }
       }
     }
@@ -75,14 +75,14 @@ class VAPT_SECURE_Enforcer
   public static function dispatch_enforcement($key, $data)
   {
     // Clear runtime cache so changes apply instantly
-    delete_transient('vapt_secure_active_enforcements');
+    delete_transient('vaptsecure_active_enforcements');
 
-    $meta = VAPT_SECURE_DB::get_feature_meta($key);
+    $meta = VAPTSECURE_DB::get_feature_meta($key);
     if (!$meta) return;
 
     // Fetch Status for Context
     global $wpdb;
-    $status_row = $wpdb->get_row($wpdb->prepare("SELECT status FROM {$wpdb->prefix}vapt_secure_feature_status WHERE feature_key = %s", $key));
+    $status_row = $wpdb->get_row($wpdb->prepare("SELECT status FROM {$wpdb->prefix}vaptsecure_feature_status WHERE feature_key = %s", $key));
     $status = $status_row ? strtolower($status_row->status) : 'draft';
 
     // Override Logic
@@ -131,7 +131,7 @@ class VAPT_SECURE_Enforcer
    */
   private static function rebuild_nginx()
   {
-    require_once VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-nginx-driver.php';
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-nginx-driver.php';
 
     $features = self::get_enforced_features();
     $all_rules = [];
@@ -141,12 +141,12 @@ class VAPT_SECURE_Enforcer
       $impl = self::resolve_impl($meta);
 
       if (($schema['enforcement']['driver'] ?? '') === 'htaccess') {
-        $rules = VAPT_SECURE_Nginx_Driver::generate_rules($impl, $schema);
+        $rules = VAPTSECURE_Nginx_Driver::generate_rules($impl, $schema);
         if ($rules) $all_rules = array_merge($all_rules, $rules);
       }
     }
 
-    VAPT_SECURE_Nginx_Driver::write_batch($all_rules);
+    VAPTSECURE_Nginx_Driver::write_batch($all_rules);
   }
 
   /**
@@ -154,7 +154,7 @@ class VAPT_SECURE_Enforcer
    */
   private static function rebuild_iis()
   {
-    require_once VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-iis-driver.php';
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-iis-driver.php';
     // Logic placeholder - similar structure to above
   }
 
@@ -162,8 +162,8 @@ class VAPT_SECURE_Enforcer
   private static function get_enforced_features()
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_meta';
-    return $wpdb->get_results("SELECT m.*, s.status FROM $table m LEFT JOIN {$wpdb->prefix}vapt_secure_feature_status s ON m.feature_key = s.feature_key WHERE m.is_enforced = 1", ARRAY_A);
+    $table = $wpdb->prefix . 'vaptsecure_feature_meta';
+    return $wpdb->get_results("SELECT m.*, s.status FROM $table m LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key WHERE m.is_enforced = 1", ARRAY_A);
   }
 
   // Helpers for Schema/Impl Resolution
@@ -212,8 +212,8 @@ class VAPT_SECURE_Enforcer
 
     error_log('VAPT DEBUG rebuild_htaccess - Found ' . count($enforced_features) . ' enforced features after filtering');
 
-    require_once VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-htaccess-driver.php';
-    if (!class_exists('VAPT_SECURE_Htaccess_Driver')) return;
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-htaccess-driver.php';
+    if (!class_exists('VAPTSECURE_Htaccess_Driver')) return;
 
     // Group rules by target
     $targets_rules = array(
@@ -228,7 +228,7 @@ class VAPT_SECURE_Enforcer
       $target = isset($schema['enforcement']['target']) ? $schema['enforcement']['target'] : 'root';
 
       if ($driver === 'htaccess') {
-        $feature_rules = VAPT_SECURE_Htaccess_Driver::generate_rules($impl_data, $schema);
+        $feature_rules = VAPTSECURE_Htaccess_Driver::generate_rules($impl_data, $schema);
         if (!empty($feature_rules)) {
           if (!isset($targets_rules[$target])) {
             $targets_rules[$target] = array();
@@ -240,7 +240,7 @@ class VAPT_SECURE_Enforcer
 
     // Write batch for each target
     foreach ($targets_rules as $target => $rules) {
-      VAPT_SECURE_Htaccess_Driver::write_batch($rules, $target);
+      VAPTSECURE_Htaccess_Driver::write_batch($rules, $target);
     }
   }
 
@@ -249,7 +249,7 @@ class VAPT_SECURE_Enforcer
    */
   public static function rebuild_config()
   {
-    require_once VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-config-driver.php';
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-config-driver.php';
 
     $enforced_features = self::get_enforced_features();
 
@@ -271,7 +271,7 @@ class VAPT_SECURE_Enforcer
         $driver = $schema['enforcement']['driver'] ?? '';
 
         if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
-          $feature_rules = VAPT_SECURE_Config_Driver::generate_rules($impl_data, $schema);
+          $feature_rules = VAPTSECURE_Config_Driver::generate_rules($impl_data, $schema);
           if (!empty($feature_rules)) {
             $all_rules[] = "// Rule for: " . ($meta['feature_key']);
             $all_rules = array_merge($all_rules, $feature_rules);
@@ -280,7 +280,7 @@ class VAPT_SECURE_Enforcer
       }
     }
 
-    return VAPT_SECURE_Config_Driver::write_batch($all_rules);
+    return VAPTSECURE_Config_Driver::write_batch($all_rules);
   }
 
   /**
@@ -292,7 +292,7 @@ class VAPT_SECURE_Enforcer
     self::rebuild_config();
     self::rebuild_nginx();
     self::rebuild_iis();
-    delete_transient('vapt_secure_active_enforcements');
+    delete_transient('vaptsecure_active_enforcements');
   }
 
   /**
@@ -300,12 +300,12 @@ class VAPT_SECURE_Enforcer
    */
   private static function get_active_file_keys()
   {
-    $active_files_raw = defined('VAPT_SECURE_ACTIVE_DATA_FILE') ? VAPT_SECURE_ACTIVE_DATA_FILE : get_option('vapt_secure_active_feature_file', '');
+    $active_files_raw = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : get_option('vaptsecure_active_feature_file', '');
     $files = array_filter(explode(',', $active_files_raw));
     $keys = [];
 
     foreach ($files as $file) {
-      $path = VAPT_SECURE_PATH . 'data/' . sanitize_file_name(trim($file));
+      $path = VAPTSECURE_PATH . 'data/' . sanitize_file_name(trim($file));
       if (file_exists($path)) {
         $content = file_get_contents($path);
         $data = json_decode($content, true);

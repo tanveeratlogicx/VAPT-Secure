@@ -10,8 +10,8 @@
   const isSuper = settings.isSuper || false;
 
   // 🛡️ GLOBAL REST HOTPATCH (v3.8.16)
-  if (wp.apiFetch && !wp.apiFetch.__vapt_secure_patched) {
-    let localBroken = localStorage.getItem('vapt_secure_rest_broken') === '1';
+  if (wp.apiFetch && !wp.apiFetch.__vaptsecure_patched) {
+    let localBroken = localStorage.getItem('vaptsecure_rest_broken') === '1';
     const originalApiFetch = wp.apiFetch;
     const patchedApiFetch = (args) => {
       const getFallbackUrl = (pathOrUrl) => {
@@ -47,7 +47,7 @@
           if (!localBroken) {
             console.warn('VAPT Secure: Switching to Pre-emptive Mode (Silent) for REST API.');
             localBroken = true;
-            localStorage.setItem('vapt_secure_rest_broken', '1');
+            localStorage.setItem('vaptsecure_rest_broken', '1');
           }
 
           const fallbackArgs = Object.assign({}, args, { url: fallbackUrl });
@@ -59,7 +59,7 @@
     };
 
     Object.keys(originalApiFetch).forEach(key => { patchedApiFetch[key] = originalApiFetch[key]; });
-    patchedApiFetch.__vapt_secure_patched = true;
+    patchedApiFetch.__vaptsecure_patched = true;
     wp.apiFetch = patchedApiFetch;
   }
 
@@ -68,11 +68,11 @@
 
   // Settings moved to top
 
-  const GeneratedInterface = window.VAPT_SECURE_GeneratedInterface || window.vapt_GeneratedInterface;
+  const GeneratedInterface = window.VAPTSECURE_GeneratedInterface || window.vapt_GeneratedInterface;
 
   const STATUS_LABELS = {
-    'All': __('All Lifecycle', 'vapt-secure'),
-    'Develop': __('Develop', 'vapt-secure'),
+    'All': __('All Lifecycle', 'vaptsecure'),
+    'Develop': __('Develop', 'vaptsecure'),
     'Release': __('Release', 'vaptsecure')
   };
 
@@ -82,12 +82,12 @@
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const [activeStatus, setActiveStatus] = useState(() => {
-      const saved = localStorage.getItem('vapt_secure_workbench_active_status');
+      const saved = localStorage.getItem('vaptsecure_workbench_active_status');
       return saved ? saved : 'Develop';
     });
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeFeatureKey, setActiveFeatureKey] = useState(() => {
-      const saved = localStorage.getItem('vapt_secure_workbench_active_feature');
+      const saved = localStorage.getItem('vaptsecure_workbench_active_feature');
       return saved ? saved : null;
     });
     const [saveStatus, setSaveStatus] = useState(null);
@@ -107,12 +107,12 @@
     };
 
     useEffect(() => {
-      localStorage.setItem('vapt_secure_workbench_active_status', activeStatus);
+      localStorage.setItem('vaptsecure_workbench_active_status', activeStatus);
     }, [activeStatus]);
 
     useEffect(() => {
       if (activeFeatureKey) {
-        localStorage.setItem('vapt_secure_workbench_active_feature', activeFeatureKey);
+        localStorage.setItem('vaptsecure_workbench_active_feature', activeFeatureKey);
       }
     }, [activeFeatureKey]);
 
@@ -151,7 +151,7 @@
     const updateFeature = (key, data, successMsg, silent = false) => {
       setFeatures(prev => prev.map(f => f.key === key ? { ...f, ...data } : f));
       if (!silent) {
-        setSaveStatus({ message: __('Saving...', 'vapt-secure'), type: 'info' });
+        setSaveStatus({ message: __('Saving...', 'vaptsecure'), type: 'info' });
       }
 
       return apiFetch({
@@ -161,14 +161,14 @@
       })
         .then((res) => {
           if (!silent) {
-            setSaveStatus({ message: successMsg || __('Saved', 'vapt-secure'), type: 'success' });
+            setSaveStatus({ message: successMsg || __('Saved', 'vaptsecure'), type: 'success' });
           }
           return res;
         })
         .catch(err => {
           console.error('Save failed:', err);
           if (!silent) {
-            setSaveStatus({ message: __('Save Failed', 'vapt-secure'), type: 'error' });
+            setSaveStatus({ message: __('Save Failed', 'vaptsecure'), type: 'error' });
           }
           throw err;
         });
@@ -345,10 +345,10 @@
                       const implData = f.implementation_data || {};
                       const progressMsg = val
                         ? __('Writing to configuration...', 'vaptsecure')
-                        : __('Removing from configuration...', 'vapt-secure');
+                        : __('Removing from configuration...', 'vaptsecure');
                       const successMsg = val
                         ? __('✓ Code Injected Successfully', 'vaptsecure')
-                        : __('✓ Removed Successfully', 'vapt-secure');
+                        : __('✓ Removed Successfully', 'vaptsecure');
                       setEnforceStatus(f.key, progressMsg, 'info');
                       updateFeature(f.key, { is_enforced: val, implementation_data: implData }, null, true)
                         .then(() => setEnforceStatus(f.key, successMsg, 'success'));
@@ -358,7 +358,7 @@
                   });
 
                   return isHtaccess
-                    ? el(Tooltip, { text: __('Enforcement is permanently active via .htaccess (Server Level)', 'vapt-secure') }, el('div', { style: { display: 'inline-block' } }, toggle))
+                    ? el(Tooltip, { text: __('Enforcement is permanently active via .htaccess (Server Level)', 'vaptsecure') }, el('div', { style: { display: 'inline-block' } }, toggle))
                     : toggle;
                 })()
               ])
@@ -406,7 +406,7 @@
                 f.generated_schema && GeneratedInterface
                   ? el(GeneratedInterface, { feature: { ...f, generated_schema: { ...schema, controls: implControls } }, onUpdate: (data) => updateFeature(f.key, { implementation_data: data }), hideProtocol: true })
                   : el('div', { style: { padding: '30px', background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: '8px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' } },
-                    __('No configurable controls.', 'vapt-secure'))
+                    __('No configurable controls.', 'vaptsecure'))
               ]),
 
               !!f.include_manual_protocol && el('div', { style: { marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #f1f5f9' } }, [
@@ -415,7 +415,7 @@
                   onClick: () => setVerifFeature(f),
                   icon: 'shield',
                   style: { borderRadius: '6px', width: '100%', justifyContent: 'center' }
-                }, __('Open Manual Verification Protocol', 'vapt-secure'))
+                }, __('Open Manual Verification Protocol', 'vaptsecure'))
               ])
             ]),
 
@@ -433,7 +433,7 @@
                     onUpdate: (data) => updateFeature(f.key, { implementation_data: data }),
                     hideMonitor: true,
                     hideOpNotes: true
-                  }) : el('p', { style: { fontSize: '12px', color: '#64748b', fontStyle: 'italic', margin: 0 } }, __('No automated tests defined.', 'vapt-secure'))
+                  }) : el('p', { style: { fontSize: '12px', color: '#64748b', fontStyle: 'italic', margin: 0 } }, __('No automated tests defined.', 'vaptsecure'))
                 ])
               ])
             ])
@@ -453,12 +453,12 @@
           ])
         ]),
         el(CardFooter, { style: { borderTop: '1px solid #f3f4f6', padding: '12px 24px', background: '#fafafa' } }, [
-          el('span', { style: { fontSize: '11px', color: '#9ca3af' } }, sprintf(__('Feature Reference: %s', 'vapt-secure'), f.key))
+          el('span', { style: { fontSize: '11px', color: '#9ca3af' } }, sprintf(__('Feature Reference: %s', 'vaptsecure'), f.key))
         ])
       ]);
     };
 
-    if (loading) return el('div', { className: 'vapt-loading' }, [el(Spinner), el('p', null, __('Loading Workbench...', 'vapt-secure'))]);
+    if (loading) return el('div', { className: 'vapt-loading' }, [el(Spinner), el('p', null, __('Loading Workbench...', 'vaptsecure'))]);
     if (error) return el(Notice, { status: 'error', isDismissible: false }, error);
 
     return el('div', { className: 'vapt-workbench-root', style: { display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 120px)', background: '#f9fafb', position: 'relative', paddingBottom: '40px' } }, [
@@ -541,7 +541,7 @@
                 fontSize: '14px'
               }
             }, [
-              el('span', null, __('All Categories', 'vapt-secure')),
+              el('span', null, __('All Categories', 'vaptsecure')),
               el('span', { style: { fontSize: '11px', background: activeCategory === 'all' ? '#dbeafe' : '#f3f4f6', padding: '2px 6px', borderRadius: '4px' } }, statusFeatures.length)
             ]),
             categories.map(cat => {
@@ -564,15 +564,15 @@
               ]);
             })
           ]),
-          categories.length === 0 && el('p', { style: { padding: '20px', color: '#9ca3af', fontSize: '13px' } }, __('No active categories', 'vapt-secure'))
+          categories.length === 0 && el('p', { style: { padding: '20px', color: '#9ca3af', fontSize: '13px' } }, __('No active categories', 'vaptsecure'))
         ]),
 
         // Pane 2: Feature List (Middle)
         el('div', { className: 'vapt-workbench-list', style: { width: '320px', borderRight: '1px solid #e5e7eb', background: '#fcfcfd', overflowY: 'auto', flexShrink: 0 } }, [
           el('div', { style: { padding: '20px', fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', borderBottom: '1px solid #f3f4f6' } },
-            activeCategory === 'all' ? __('All Features', 'vapt-secure') : sprintf(__('%s Features', 'vapt-secure'), activeCategory)
+            activeCategory === 'all' ? __('All Features', 'vaptsecure') : sprintf(__('%s Features', 'vaptsecure'), activeCategory)
           ),
-          displayFeatures.length === 0 ? el('p', { style: { padding: '20px', color: '#9ca3af', fontSize: '13px' } }, __('No features available', 'vapt-secure')) :
+          displayFeatures.length === 0 ? el('p', { style: { padding: '20px', color: '#9ca3af', fontSize: '13px' } }, __('No features available', 'vaptsecure')) :
             displayFeatures.map(f => {
               const isActive = activeFeatureKey === f.key;
               const multiFileClass = f.exists_in_multiple_files ? ' vapt-feature-multi-file' : (f.is_from_active_file === false ? ' vapt-feature-inactive-only' : '');
@@ -599,7 +599,7 @@
 
         // Pane 3: Feature Interface (Right)
         el('main', { style: { flexGrow: 1, padding: '30px', overflowY: 'auto', background: '#f9fafb' } }, [
-          !activeFeatureKey ? el('div', { style: { textAlign: 'center', padding: '100px', color: '#9ca3af' } }, __('Select a feature from the list to view implementation controls.', 'vapt-secure')) :
+          !activeFeatureKey ? el('div', { style: { textAlign: 'center', padding: '100px', color: '#9ca3af' } }, __('Select a feature from the list to view implementation controls.', 'vaptsecure')) :
             el('div', { style: { maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' } }, [
               // Breadcrumb Removed (v3.6.19 Request)
               renderFeatureCard(features.find(f => f.key === activeFeatureKey), setVerifFeature)
@@ -609,7 +609,7 @@
 
       // Functional Verification Modal (Simplified)
       verifFeature && el(Modal, {
-        title: sprintf(__('Manual Verification: %s', 'vapt-secure'), verifFeature.label),
+        title: sprintf(__('Manual Verification: %s', 'vaptsecure'), verifFeature.label),
         onRequestClose: () => setVerifFeature(null),
         style: { width: '700px', maxWidth: '98%' }
       }, (() => {
@@ -627,7 +627,7 @@
         return el('div', { style: { display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px' } }, [
           // Manual Protocol & Evidence
           (protocol || checklist.length > 0 || guideItems.length > 0) ? el('div', { style: { ...boxStyle, background: '#f8fafc' } }, [
-            el('h4', { style: { margin: '0 0 15px 0', fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' } }, __('Manual Verification Protocol', 'vapt-secure')),
+            el('h4', { style: { margin: '0 0 15px 0', fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' } }, __('Manual Verification Protocol', 'vaptsecure')),
 
             protocol && el('div', { style: { marginBottom: '20px' } }, [
               el('label', { style: { display: 'block', fontSize: '11px', fontWeight: 700, color: '#92400e', marginBottom: '8px', textTransform: 'uppercase' } }, __('Test Protocol')),
@@ -651,7 +651,7 @@
               onUpdate: (data) => updateFeature(f.key, { implementation_data: data }),
               isGuidePanel: true
             })
-          ]) : el('div', { style: { padding: '20px', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic' } }, __('No manual verification steps defined.', 'vapt-secure')),
+          ]) : el('div', { style: { padding: '20px', textAlign: 'center', color: '#9ca3af', fontStyle: 'italic' } }, __('No manual verification steps defined.', 'vaptsecure')),
 
           // Assurance Badges
           support.length > 0 && el('div', { style: { ...boxStyle, background: '#f0fdf4', border: '1px solid #bbf7d0' } }, [

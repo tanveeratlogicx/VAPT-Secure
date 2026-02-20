@@ -1,13 +1,13 @@
 <?php
 
 /**
- * VAPT_SECURE_Config_Driver
+ * VAPTSECURE_Config_Driver
  * Handles enforcement of rules into wp-config.php
  */
 
 if (!defined('ABSPATH')) exit;
 
-class VAPT_SECURE_Config_Driver
+class VAPTSECURE_Config_Driver
 {
   /**
    * Generates a list of valid wp-config.php defines based on the provided data and schema.
@@ -99,19 +99,19 @@ class VAPT_SECURE_Config_Driver
 
     // 2. Filter existing content: remove old VAPT blocks and any existing definitions of our constants
     $new_lines = [];
-    $in_vapt_secure_block = false;
+    $in_vaptsecure_block = false;
     foreach ($lines as $line) {
       $trimmed = trim($line);
 
       if ($trimmed === $start_marker) {
-        $in_vapt_secure_block = true;
+        $in_vaptsecure_block = true;
         continue;
       }
       if ($trimmed === $end_marker) {
-        $in_vapt_secure_block = false;
+        $in_vaptsecure_block = false;
         continue;
       }
-      if ($in_vapt_secure_block) continue;
+      if ($in_vaptsecure_block) continue;
 
       // Clean up legacy single-line markers
       if (strpos($trimmed, "// Added by VAPT Security") !== false) continue;
@@ -131,13 +131,13 @@ class VAPT_SECURE_Config_Driver
     }
 
     // 3. Prepare new VAPT block
-    $vapt_secure_block = [];
+    $vaptsecure_block = [];
     if (!empty($all_rules_array)) {
-      $vapt_secure_block[] = $start_marker;
+      $vaptsecure_block[] = $start_marker;
       foreach ($all_rules_array as $rule) {
-        $vapt_secure_block[] = $rule;
+        $vaptsecure_block[] = $rule;
       }
-      $vapt_secure_block[] = $end_marker;
+      $vaptsecure_block[] = $end_marker;
     }
 
     // 4. Insert before "That's all, stop editing" or at end
@@ -151,7 +151,7 @@ class VAPT_SECURE_Config_Driver
     }
 
     if ($insert_idx !== -1) {
-      array_splice($new_lines, $insert_idx, 0, $vapt_secure_block);
+      array_splice($new_lines, $insert_idx, 0, $vaptsecure_block);
     } else {
       // Fallback: Before wp-settings.php
       foreach ($new_lines as $i => $line) {
@@ -161,9 +161,9 @@ class VAPT_SECURE_Config_Driver
         }
       }
       if ($insert_idx !== -1) {
-        array_splice($new_lines, $insert_idx, 0, $vapt_secure_block);
+        array_splice($new_lines, $insert_idx, 0, $vaptsecure_block);
       } else {
-        $new_lines = array_merge($new_lines, $vapt_secure_block);
+        $new_lines = array_merge($new_lines, $vaptsecure_block);
       }
     }
 

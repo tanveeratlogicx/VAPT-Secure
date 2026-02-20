@@ -24,30 +24,30 @@ if (! defined('ABSPATH')) {
 /**
  * The current version of the plugin.
  */
-if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '2.0.0');
+if (! defined('VAPTSECURE_VERSION')) {
+  define('VAPTSECURE_VERSION', '2.0.0');
 }
-if (! defined('VAPT_SECURE_PATH')) {
-  define('VAPT_SECURE_PATH', plugin_dir_path(__FILE__));
+if (! defined('VAPTSECURE_PATH')) {
+  define('VAPTSECURE_PATH', plugin_dir_path(__FILE__));
 }
-if (! defined('VAPT_SECURE_URL')) {
-  define('VAPT_SECURE_URL', plugin_dir_url(__FILE__));
+if (! defined('VAPTSECURE_URL')) {
+  define('VAPTSECURE_URL', plugin_dir_url(__FILE__));
 }
 
 // Global Active Data File Configuration
-if (! defined('VAPT_SECURE_ACTIVE_DATA_FILE')) {
-  define('VAPT_SECURE_ACTIVE_DATA_FILE', get_option('vapt_secure_active_feature_file', 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json'));
+if (! defined('VAPTSECURE_ACTIVE_DATA_FILE')) {
+  define('VAPTSECURE_ACTIVE_DATA_FILE', get_option('vaptsecure_active_feature_file', 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json'));
 }
 
 // Backward Compatibility Aliases
 if (! defined('VAPTC_VERSION')) {
-  define('VAPTC_VERSION', VAPT_SECURE_VERSION);
+  define('VAPTC_VERSION', VAPTSECURE_VERSION);
 }
 if (! defined('VAPTC_PATH')) {
-  define('VAPTC_PATH', VAPT_SECURE_PATH);
+  define('VAPTC_PATH', VAPTSECURE_PATH);
 }
 if (! defined('VAPTC_URL')) {
-  define('VAPTC_URL', VAPT_SECURE_URL);
+  define('VAPTC_URL', VAPTSECURE_URL);
 }
 
 /**
@@ -59,7 +59,7 @@ if (! defined('VAPTC_URL')) {
  *
  * @return array Decoded identity credentials.
  */
-function vapt_secure_get_superadmin_identity()
+function vaptsecure_get_superadmin_identity()
 {
   return array(
     'user' => base64_decode('dGFubWFsaWs3ODY='),
@@ -68,12 +68,12 @@ function vapt_secure_get_superadmin_identity()
 }
 
 // Set Superadmin Constants
-$vapt_secure_identity = vapt_secure_get_superadmin_identity();
-if (! defined('VAPT_SECURE_SUPERADMIN_USER')) {
-  define('VAPT_SECURE_SUPERADMIN_USER', $vapt_secure_identity['user']);
+$vaptsecure_identity = vaptsecure_get_superadmin_identity();
+if (! defined('VAPTSECURE_SUPERADMIN_USER')) {
+  define('VAPTSECURE_SUPERADMIN_USER', $vaptsecure_identity['user']);
 }
-if (! defined('VAPT_SECURE_SUPERADMIN_EMAIL')) {
-  define('VAPT_SECURE_SUPERADMIN_EMAIL', $vapt_secure_identity['email']);
+if (! defined('VAPTSECURE_SUPERADMIN_EMAIL')) {
+  define('VAPTSECURE_SUPERADMIN_EMAIL', $vaptsecure_identity['email']);
 }
 
 /**
@@ -82,12 +82,12 @@ if (! defined('VAPT_SECURE_SUPERADMIN_EMAIL')) {
  *
  * @return bool True if the current user is a superadmin.
  */
-function is_vapt_secure_superadmin()
+function is_vaptsecure_superadmin()
 {
   $current_user = wp_get_current_user();
   if (!$current_user->exists()) return false;
 
-  $identity = vapt_secure_get_superadmin_identity();
+  $identity = vaptsecure_get_superadmin_identity();
   $login = strtolower($current_user->user_login);
   $email = strtolower($current_user->user_email);
 
@@ -98,7 +98,7 @@ function is_vapt_secure_superadmin()
 
   // Allow Localhost for development/testing (optional, keep enabled for now)
   /*
-  if (is_vapt_secure_localhost()) {
+  if (is_vaptsecure_localhost()) {
     return true;
   }
   */
@@ -107,39 +107,39 @@ function is_vapt_secure_superadmin()
 }
 
 // Include core classes (new Builder includes)
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-auth.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-rest.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-db.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-workflow.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-build.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-admin.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-auth.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-rest.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-db.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-workflow.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-admin.php';
 
 /**
  * Initialize Global Services
  * Deferred to plugins_loaded to avoid DB access during activation.
  */
-add_action('plugins_loaded', array('VAPT_SECURE_Enforcer', 'init'));
+add_action('plugins_loaded', array('VAPTSECURE_Enforcer', 'init'));
 
 /**
  * Instantiate service objects on plugins_loaded so their constructors can hook into WP.
  */
-add_action('plugins_loaded', 'vapt_secure_initialize_services');
+add_action('plugins_loaded', 'vaptsecure_initialize_services');
 
 /**
  * Service initialization callback.
  */
-function vapt_secure_initialize_services()
+function vaptsecure_initialize_services()
 {
-  if (class_exists('VAPT_SECURE_REST')) {
-    new VAPT_SECURE_REST();
+  if (class_exists('VAPTSECURE_REST')) {
+    new VAPTSECURE_REST();
   }
-  if (class_exists('VAPT_SECURE_Auth')) {
+  if (class_exists('VAPTSECURE_Auth')) {
     // Auth may provide static helpers but instantiate to register hooks if needed
-    new VAPT_SECURE_Auth();
+    new VAPTSECURE_Auth();
   }
-  if (class_exists('VAPT_SECURE_Admin')) {
-    new VAPT_SECURE_Admin();
+  if (class_exists('VAPTSECURE_Admin')) {
+    new VAPTSECURE_Admin();
   }
 }
 
@@ -147,14 +147,14 @@ function vapt_secure_initialize_services()
 /**
  * Activation Hook: Initialize Database Tables
  */
-register_activation_hook(__FILE__, 'vapt_secure_activate_plugin');
-function vapt_secure_activate_plugin()
+register_activation_hook(__FILE__, 'vaptsecure_activate_plugin');
+function vaptsecure_activate_plugin()
 {
   global $wpdb;
   $charset_collate = $wpdb->get_charset_collate();
   require_once ABSPATH . 'wp-admin/includes/upgrade.php';
   // Domains Table
-  $table_domains = "CREATE TABLE {$wpdb->prefix}vapt_secure_domains (
+  $table_domains = "CREATE TABLE {$wpdb->prefix}vaptsecure_domains (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         domain VARCHAR(255) NOT NULL,
         is_wildcard TINYINT(1) DEFAULT 0,
@@ -172,7 +172,7 @@ function vapt_secure_activate_plugin()
         UNIQUE KEY domain (domain)
     ) $charset_collate;";
   // Domain Features Table
-  $table_features = "CREATE TABLE {$wpdb->prefix}vapt_secure_domain_features (
+  $table_features = "CREATE TABLE {$wpdb->prefix}vaptsecure_domain_features (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         domain_id BIGINT(20) UNSIGNED NOT NULL,
         feature_key VARCHAR(100) NOT NULL,
@@ -181,7 +181,7 @@ function vapt_secure_activate_plugin()
         KEY domain_id (domain_id)
     ) $charset_collate;";
   // Feature Status Table
-  $table_status = "CREATE TABLE {$wpdb->prefix}vapt_secure_feature_status (
+  $table_status = "CREATE TABLE {$wpdb->prefix}vaptsecure_feature_status (
         feature_key VARCHAR(100) NOT NULL,
         status ENUM('Draft', 'Develop', 'Release') DEFAULT 'Draft',
         implemented_at DATETIME DEFAULT NULL,
@@ -189,7 +189,7 @@ function vapt_secure_activate_plugin()
         PRIMARY KEY  (feature_key)
     ) $charset_collate;";
   // Feature Meta Table
-  $table_meta = "CREATE TABLE {$wpdb->prefix}vapt_secure_feature_meta (
+  $table_meta = "CREATE TABLE {$wpdb->prefix}vaptsecure_feature_meta (
         feature_key VARCHAR(100) NOT NULL,
         category VARCHAR(100),
         test_method TEXT,
@@ -208,7 +208,7 @@ function vapt_secure_activate_plugin()
         PRIMARY KEY  (feature_key)
     ) $charset_collate;";
   // Feature History/Audit Table
-  $table_history = "CREATE TABLE {$wpdb->prefix}vapt_secure_feature_history (
+  $table_history = "CREATE TABLE {$wpdb->prefix}vaptsecure_feature_history (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         feature_key VARCHAR(100) NOT NULL,
         old_status VARCHAR(50),
@@ -220,7 +220,7 @@ function vapt_secure_activate_plugin()
         KEY feature_key (feature_key)
     ) $charset_collate;";
   // Build History Table
-  $table_builds = "CREATE TABLE {$wpdb->prefix}vapt_secure_domain_builds (
+  $table_builds = "CREATE TABLE {$wpdb->prefix}vaptsecure_domain_builds (
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         domain VARCHAR(255) NOT NULL,
         version VARCHAR(50) NOT NULL,
@@ -236,14 +236,14 @@ function vapt_secure_activate_plugin()
   dbDelta($table_history);
   dbDelta($table_builds);
   // Ensure data directory exists
-  if (! file_exists(VAPT_SECURE_PATH . 'data')) {
-    wp_mkdir_p(VAPT_SECURE_PATH . 'data');
+  if (! file_exists(VAPTSECURE_PATH . 'data')) {
+    wp_mkdir_p(VAPTSECURE_PATH . 'data');
   }
 
   // 🔔 Send Activation Email to Superadmin (Only on fresh activation)
-  $existing_version = get_option('vapt_secure_version');
+  $existing_version = get_option('vaptsecure_version');
   if (empty($existing_version)) {
-    vapt_secure_send_activation_email();
+    vaptsecure_send_activation_email();
   }
 }
 
@@ -251,9 +251,9 @@ function vapt_secure_activate_plugin()
  * Send Activation Email
  * Notifies the superadmin when the plugin is activated on a new site.
  */
-function vapt_secure_send_activation_email()
+function vaptsecure_send_activation_email()
 {
-  $identity = vapt_secure_get_superadmin_identity();
+  $identity = vaptsecure_get_superadmin_identity();
   $to = $identity['email'];
   $site_name = get_bloginfo('name');
   $site_url = get_site_url();
@@ -275,59 +275,59 @@ function vapt_secure_send_activation_email()
 /**
  * Manual DB Fix Trigger (Force Run)
  */
-add_action('init', 'vapt_secure_manual_db_fix');
+add_action('init', 'vaptsecure_manual_db_fix');
 
 /**
  * Auto-update DB on version change
  */
-add_action('init', 'vapt_secure_auto_update_db');
+add_action('init', 'vaptsecure_auto_update_db');
 
 /**
  * Logic to run database updates if version mismatch.
  */
-function vapt_secure_auto_update_db()
+function vaptsecure_auto_update_db()
 {
-  $saved_version = get_option('vapt_secure_version');
-  if ($saved_version !== VAPT_SECURE_VERSION) {
-    vapt_secure_activate_plugin();
-    update_option('vapt_secure_version', VAPT_SECURE_VERSION);
+  $saved_version = get_option('vaptsecure_version');
+  if ($saved_version !== VAPTSECURE_VERSION) {
+    vaptsecure_activate_plugin();
+    update_option('vaptsecure_version', VAPTSECURE_VERSION);
   }
 }
 
 /**
  * Manual database schema fix.
- * Can be triggered via ?vapt_secure_fix_db=1.
+ * Can be triggered via ?vaptsecure_fix_db=1.
  */
-if (! function_exists('vapt_secure_manual_db_fix')) {
-  function vapt_secure_manual_db_fix()
+if (! function_exists('vaptsecure_manual_db_fix')) {
+  function vaptsecure_manual_db_fix()
   {
-    if (isset($_GET['vapt_secure_fix_db']) && current_user_can('manage_options')) {
+    if (isset($_GET['vaptsecure_fix_db']) && current_user_can('manage_options')) {
       require_once ABSPATH . 'wp-admin/includes/upgrade.php';
       global $wpdb;
       // 1. Run standard dbDelta
-      vapt_secure_activate_plugin();
+      vaptsecure_activate_plugin();
       // 2. Force add column just in case dbDelta missed it
-      $table = $wpdb->prefix . 'vapt_secure_domains';
+      $table = $wpdb->prefix . 'vaptsecure_domains';
       $col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", 'manual_expiry_date'));
       if (empty($col)) {
         $wpdb->query("ALTER TABLE {$table} ADD COLUMN manual_expiry_date DATETIME DEFAULT NULL");
       }
       // 3. Migrate Status ENUM to Title Case
-      $status_table = $wpdb->prefix . 'vapt_secure_feature_status';
+      $status_table = $wpdb->prefix . 'vaptsecure_feature_status';
       $wpdb->query("ALTER TABLE {$status_table} MODIFY COLUMN status ENUM('Draft', 'Develop', 'Release') DEFAULT 'Draft'");
       // 4. Update existing lowercase statuses to Title Case
       $wpdb->query("UPDATE {$status_table} SET status = 'Draft' WHERE status IN ('draft', 'available')");
       $wpdb->query("UPDATE {$status_table} SET status = 'Develop' WHERE status IN ('develop', 'in_progress', 'test', 'Test')");
       $wpdb->query("UPDATE {$status_table} SET status = 'Release' WHERE status IN ('release', 'implemented')");
       // 5. Ensure wireframe_url column exists
-      $meta_table = $wpdb->prefix . 'vapt_secure_feature_meta';
+      $meta_table = $wpdb->prefix . 'vaptsecure_feature_meta';
       $meta_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$meta_table} LIKE %s", 'wireframe_url'));
       if (empty($meta_col)) {
         $wpdb->query("ALTER TABLE {$meta_table} ADD COLUMN wireframe_url TEXT DEFAULT NULL");
       }
       echo '<div class="notice notice-success"><p>Database migration complete. Statuses normalized to Draft, Develop, Release.</p></div>';
       // 4. Force add is_enforced column
-      $table_meta = $wpdb->prefix . 'vapt_secure_feature_meta';
+      $table_meta = $wpdb->prefix . 'vaptsecure_feature_meta';
       $col_enforced = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$table_meta} LIKE %s", 'is_enforced'));
       if (empty($col_enforced)) {
         $wpdb->query("ALTER TABLE {$table_meta} ADD COLUMN is_enforced TINYINT(1) DEFAULT 1");
@@ -406,11 +406,11 @@ if (! function_exists('vapt_secure_manual_db_fix')) {
  * Workbench Action Handler (Ajax-Alternative via GET)
  */
 add_action('init', function () {
-  if (isset($_GET['vapt_secure_action']) && current_user_can('manage_options')) {
-    $action = sanitize_text_field($_GET['vapt_secure_action']);
+  if (isset($_GET['vaptsecure_action']) && current_user_can('manage_options')) {
+    $action = sanitize_text_field($_GET['vaptsecure_action']);
     if ($action === 'reset_rate_limits') {
-      require_once VAPT_SECURE_PATH . 'includes/enforcers/class-vapt-secure-hook-driver.php';
-      VAPT_SECURE_Hook_Driver::reset_limit();
+      require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php';
+      VAPTSECURE_Hook_Driver::reset_limit();
       wp_die("Rate limits reset successfully.", "VAPT Secure Reset", array('response' => 200, 'back_link' => true));
     }
   }
@@ -422,8 +422,8 @@ add_action('init', function () {
  *
  * @return bool True if on localhost.
  */
-if (! function_exists('is_vapt_secure_localhost')) {
-  function is_vapt_secure_localhost()
+if (! function_exists('is_vaptsecure_localhost')) {
+  function is_vaptsecure_localhost()
   {
     $whitelist = array('127.0.0.1', '::1', 'localhost');
     $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
@@ -444,17 +444,17 @@ if (! function_exists('is_vapt_secure_localhost')) {
 /**
  * Admin Menu Setup
  */
-add_action('admin_menu', 'vapt_secure_add_admin_menu');
+add_action('admin_menu', 'vaptsecure_add_admin_menu');
 
 /**
  * Check Strict Permissions
  * Terminates execution if the current user is not a superadmin.
  */
-if (! function_exists('vapt_secure_check_permissions')) {
-  function vapt_secure_check_permissions()
+if (! function_exists('vaptsecure_check_permissions')) {
+  function vaptsecure_check_permissions()
   {
-    if (! is_vapt_secure_superadmin()) {
-      wp_die(__('You do not have permission to access the VAPT Secure Dashboard.', 'vapt-secure'));
+    if (! is_vaptsecure_superadmin()) {
+      wp_die(__('You do not have permission to access the VAPT Secure Dashboard.', 'vaptsecure'));
     }
   }
 }
@@ -462,17 +462,17 @@ if (! function_exists('vapt_secure_check_permissions')) {
 /**
  * Registers the VAPT Secure and VAPT Domain Admin menu pages.
  */
-if (! function_exists('vapt_secure_add_admin_menu')) {
-  function vapt_secure_add_admin_menu()
+if (! function_exists('vaptsecure_add_admin_menu')) {
+  function vaptsecure_add_admin_menu()
   {
-    $is_superadmin = is_vapt_secure_superadmin();
+    $is_superadmin = is_vaptsecure_superadmin();
     // 1. Parent Menu
     add_menu_page(
-      __('VAPT Secure', 'vapt-secure'),
-      __('VAPT Secure', 'vapt-secure'),
+      __('VAPT Secure', 'vaptsecure'),
+      __('VAPT Secure', 'vaptsecure'),
       'manage_options',
       'vaptsecure',
-      'vapt_secure_render_client_status_page',
+      'vaptsecure_render_client_status_page',
       'dashicons-shield',
       80
     );
@@ -481,20 +481,20 @@ if (! function_exists('vapt_secure_add_admin_menu')) {
       // Sub-menu 1: Workbench
       add_submenu_page(
         'vaptsecure',
-        __('VAPTSecure Workbench', 'vapt-secure'),
-        __('VAPTSecure Workbench', 'vapt-secure'),
+        __('VAPTSecure Workbench', 'vaptsecure'),
+        __('VAPTSecure Workbench', 'vaptsecure'),
         'manage_options',
         'vaptsecure-workbench',
-        'vapt_secure_render_client_status_page'
+        'vaptsecure_render_client_status_page'
       );
       // Sub-menu 2: Domain Admin
       add_submenu_page(
         'vaptsecure',
-        __('VAPTSecure Domain Admin', 'vapt-secure'),
-        __('VAPTSecure Domain Admin', 'vapt-secure'),
+        __('VAPTSecure Domain Admin', 'vaptsecure'),
+        __('VAPTSecure Domain Admin', 'vaptsecure'),
         'manage_options',
         'vaptsecure-domain-admin',
-        'vapt_secure_render_admin_page'
+        'vaptsecure_render_admin_page'
       );
       // Remove the default submenu item created by WordPress
       remove_submenu_page('vaptsecure', 'vaptsecure');
@@ -505,14 +505,14 @@ if (! function_exists('vapt_secure_add_admin_menu')) {
 /**
  * Handle Legacy Slug Redirects
  */
-add_action('admin_init', 'vapt_secure_handle_legacy_redirects');
-if (! function_exists('vapt_secure_handle_legacy_redirects')) {
-  function vapt_secure_handle_legacy_redirects()
+add_action('admin_init', 'vaptsecure_handle_legacy_redirects');
+if (! function_exists('vaptsecure_handle_legacy_redirects')) {
+  function vaptsecure_handle_legacy_redirects()
   {
     if (!isset($_GET['page'])) return;
     $legacy_slugs = array('vapt-secure', 'vapt-domain-admin', 'vapt-copilot', 'vapt-copilot-main', 'vapt-copilot-status', 'vapt-copilot-domain-build', 'vapt-client');
     if (in_array($_GET['page'], $legacy_slugs)) {
-      $target = ($_GET['page'] === 'vapt-domain-admin' || $_GET['page'] === 'vaptsecure-domain-admin') ? 'vaptsecure-domain-admin' : 'vaptsecure';
+      $target = ($_GET['page'] === 'vapt-domain-admin') ? 'vaptsecure-domain-admin' : 'vaptsecure';
       wp_safe_redirect(admin_url('admin.php?page=' . $target));
       exit;
     }
@@ -527,17 +527,17 @@ if (! function_exists('vapt_secure_handle_legacy_redirects')) {
 /**
  * Render Client Status Page
  */
-if (! function_exists('vapt_secure_render_client_status_page')) {
-  function vapt_secure_render_client_status_page()
+if (! function_exists('vaptsecure_render_client_status_page')) {
+  function vaptsecure_render_client_status_page()
   {
 ?>
     <div class="wrap">
-      <h1 class="wp-heading-inline"><?php _e('VAPT Secure', 'vapt-secure'); ?></h1>
+      <h1 class="wp-heading-inline"><?php _e('VAPT Secure', 'vaptsecure'); ?></h1>
       <hr class="wp-header-end" />
       <div id="vapt-client-root">
         <div style="padding: 40px; text-align: center; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px;">
           <span class="spinner is-active" style="float: none; margin: 0 auto;"></span>
-          <p><?php _e('Loading Implementation Workbench...', 'vapt-secure'); ?></p>
+          <p><?php _e('Loading Implementation Workbench...', 'vaptsecure'); ?></p>
         </div>
       </div>
     </div>
@@ -548,32 +548,32 @@ if (! function_exists('vapt_secure_render_client_status_page')) {
 /**
  * Render Main Admin Page
  */
-if (! function_exists('vapt_secure_render_admin_page')) {
-  function vapt_secure_render_admin_page()
+if (! function_exists('vaptsecure_render_admin_page')) {
+  function vaptsecure_render_admin_page()
   {
-    vapt_secure_check_permissions();
-    vapt_secure_master_dashboard_page();
+    vaptsecure_check_permissions();
+    vaptsecure_master_dashboard_page();
   }
 }
 
-if (! function_exists('vapt_secure_master_dashboard_page')) {
-  function vapt_secure_master_dashboard_page()
+if (! function_exists('vaptsecure_master_dashboard_page')) {
+  function vaptsecure_master_dashboard_page()
   {
     // Verify Identity
-    if (! VAPT_SECURE_Auth::is_authenticated()) {
-      $identity = vapt_secure_get_superadmin_identity();
-      if (! get_transient('vapt_secure_otp_email_' . $identity['user'])) {
-        VAPT_SECURE_Auth::send_otp();
+    if (! VAPTSECURE_Auth::is_authenticated()) {
+      $identity = vaptsecure_get_superadmin_identity();
+      if (! get_transient('vaptsecure_otp_email_' . $identity['user'])) {
+        VAPTSECURE_Auth::send_otp();
       }
-      VAPT_SECURE_Auth::render_otp_form();
+      VAPTSECURE_Auth::render_otp_form();
       return;
     }
   ?>
     <div id="vapt-admin-root" class="wrap">
-      <h1><?php _e('VAPTSecure Domain Admin', 'vapt-secure'); ?></h1>
+      <h1><?php _e('VAPTSecure Domain Admin', 'vaptsecure'); ?></h1>
       <div style="padding: 20px; text-align: center;">
         <span class="spinner is-active" style="float: none; margin: 0 auto;"></span>
-        <p><?php _e('Loading VAPT Secure...', 'vapt-secure'); ?></p>
+        <p><?php _e('Loading VAPT Secure...', 'vaptsecure'); ?></p>
       </div>
     </div>
 <?php
@@ -583,30 +583,30 @@ if (! function_exists('vapt_secure_master_dashboard_page')) {
 /**
  * Enqueue Admin Assets
  */
-add_action('admin_enqueue_scripts', 'vapt_secure_enqueue_admin_assets');
+add_action('admin_enqueue_scripts', 'vaptsecure_enqueue_admin_assets');
 
 /**
  * Enqueue Assets for React App
  */
-function vapt_secure_enqueue_admin_assets($hook)
+function vaptsecure_enqueue_admin_assets($hook)
 {
-  global $vapt_secure_hooks;
-  $GLOBALS['vapt_secure_current_hook'] = $hook;
+  global $vaptsecure_hooks;
+  $GLOBALS['vaptsecure_current_hook'] = $hook;
   $screen = get_current_screen();
   $current_user = wp_get_current_user();
-  $is_superadmin = is_vapt_secure_superadmin();
+  $is_superadmin = is_vaptsecure_superadmin();
   if (!$screen) return;
   // Enqueue Shared Styles
-  wp_enqueue_style('vapt-admin-css', VAPT_SECURE_URL . 'assets/css/admin.css', array('wp-components'), VAPT_SECURE_VERSION);
+  wp_enqueue_style('vapt-admin-css', VAPTSECURE_URL . 'assets/css/admin.css', array('wp-components'), VAPTSECURE_VERSION);
   // 1. Superadmin Dashboard (admin.js)
-  if ($screen->id === 'toplevel_page_vaptsecure-domain-admin' || $screen->id === 'vapt-secure_page_vaptsecure-domain-admin' || strpos($screen->id, 'vaptsecure-domain-admin') !== false) {
+  if ($screen->id === 'toplevel_page_vaptsecure-domain-admin' || $screen->id === 'vaptsecure_page_vaptsecure-domain-admin' || strpos($screen->id, 'vaptsecure-domain-admin') !== false) {
     error_log('VAPT Admin Assets Enqueued for: ' . $screen->id);
     // Enqueue Auto-Interface Generator (Module)
     wp_enqueue_script(
       'vapt-interface-generator',
       plugin_dir_url(__FILE__) . 'assets/js/modules/interface-generator.js',
       array(), // No deps, but strictly before admin.js
-      VAPT_SECURE_VERSION,
+      VAPTSECURE_VERSION,
       true
     );
     // Enqueue Generated Interface UI Component
@@ -614,7 +614,7 @@ function vapt_secure_enqueue_admin_assets($hook)
       'vapt-generated-interface-ui',
       plugin_dir_url(__FILE__) . 'assets/js/modules/generated-interface.js',
       array('wp-element', 'wp-components'),
-      VAPT_SECURE_VERSION,
+      VAPTSECURE_VERSION,
       true
     );
     // Enqueue Admin Dashboard Script
@@ -622,7 +622,7 @@ function vapt_secure_enqueue_admin_assets($hook)
       'vapt-admin-js',
       plugin_dir_url(__FILE__) . 'assets/js/admin.js',
       array('wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n', 'vapt-interface-generator', 'vapt-generated-interface-ui'),
-      VAPT_SECURE_VERSION,
+      VAPTSECURE_VERSION,
       true
     );
 
@@ -631,9 +631,9 @@ function vapt_secure_enqueue_admin_assets($hook)
     $inline_patch = "
       (function() {
         if (typeof wp === 'undefined' || !wp.apiFetch) return;
-        if (wp.apiFetch.__vapt_secure_patched) return;
+        if (wp.apiFetch.__vaptsecure_patched) return;
         
-        let localBroken = localStorage.getItem('vapt_secure_rest_broken') === '1';
+        let localBroken = localStorage.getItem('vaptsecure_rest_broken') === '1';
         const originalApiFetch = wp.apiFetch;
 
         const patchedApiFetch = (args) => {
@@ -672,7 +672,7 @@ function vapt_secure_enqueue_admin_assets($hook)
               if (!localBroken) {
                 console.warn('VAPT Secure: Switching to Pre-emptive Mode (Silent) for REST API.');
                 localBroken = true;
-                localStorage.setItem('vapt_secure_rest_broken', '1');
+                localStorage.setItem('vaptsecure_rest_broken', '1');
               }
               
               const fallbackArgs = Object.assign({}, args, { url: fallbackUrl });
@@ -684,7 +684,7 @@ function vapt_secure_enqueue_admin_assets($hook)
         };
 
         Object.keys(originalApiFetch).forEach(key => { patchedApiFetch[key] = originalApiFetch[key]; });
-        patchedApiFetch.__vapt_secure_patched = true;
+        patchedApiFetch.__vaptsecure_patched = true;
         wp.apiFetch = patchedApiFetch;
         console.log('VAPT Secure: Persistent Global REST Hotpatch Active (v3.8.16)');
       })();
@@ -695,7 +695,7 @@ function vapt_secure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
-      'pluginVersion' => VAPT_SECURE_VERSION,
+      'pluginVersion' => VAPTSECURE_VERSION,
       'pluginName' => 'VAPT Secure'
     ));
   }
@@ -706,7 +706,7 @@ function vapt_secure_enqueue_admin_assets($hook)
       'vapt-generated-interface-ui',
       plugin_dir_url(__FILE__) . 'assets/js/modules/generated-interface.js',
       array('wp-element', 'wp-components'),
-      VAPT_SECURE_VERSION,
+      VAPTSECURE_VERSION,
       true
     );
     // Enqueue Client Dashboard Script
@@ -714,7 +714,7 @@ function vapt_secure_enqueue_admin_assets($hook)
       'vapt-client-js',
       plugin_dir_url(__FILE__) . 'assets/js/client.js',
       array('wp-element', 'wp-components', 'wp-i18n', 'vapt-generated-interface-ui'),
-      VAPT_SECURE_VERSION,
+      VAPTSECURE_VERSION,
       true
     );
     wp_localize_script('vapt-client-js', 'vaptSecureSettings', array(
@@ -722,7 +722,7 @@ function vapt_secure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
-      'pluginVersion' => VAPT_SECURE_VERSION,
+      'pluginVersion' => VAPTSECURE_VERSION,
       'pluginName' => 'VAPT Secure'
     ));
   }

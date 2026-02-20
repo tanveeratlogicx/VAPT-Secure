@@ -1,13 +1,13 @@
 <?php
 
 /**
- * VAPT_SECURE_Htaccess_Driver
+ * VAPTSECURE_Htaccess_Driver
  * Handles enforcement of rules into .htaccess
  */
 
 if (!defined('ABSPATH')) exit;
 
-class VAPT_SECURE_Htaccess_Driver
+class VAPTSECURE_Htaccess_Driver
 {
   /**
    * Whitelist of allowed .htaccess directives for security
@@ -270,11 +270,11 @@ class VAPT_SECURE_Htaccess_Driver
       $result = @file_put_contents($htaccess_path, trim($new_content) . "\n");
       if ($result !== false) {
         $log .= "Write SUCCESS: " . strlen($new_content) . " bytes written to $htaccess_path. Backup created.\n";
-        delete_transient('vapt_secure_active_enforcements');
+        delete_transient('vaptsecure_active_enforcements');
       } else {
         $log .= "Write FAILURE: Could not write to $htaccess_path. Check file permissions.\n";
         error_log("VAPT: Failed to write .htaccess to $htaccess_path.");
-        set_transient('vapt_secure_htaccess_write_error_' . time(), "Failed to update .htaccess file. check perms.", 300);
+        set_transient('vaptsecure_htaccess_write_error_' . time(), "Failed to update .htaccess file. check perms.", 300);
         return false;
       }
     } else {
@@ -363,13 +363,13 @@ class VAPT_SECURE_Htaccess_Driver
     $modules = [];
     $others = [];
     $headers = [];
-    $vapt_secure_ids = [];
+    $vaptsecure_ids = [];
 
     foreach ($rules as $rule) {
       // Extract VAPTID if present at the start of rule (v3.12.14 formatting)
       if (preg_match('/^# VAPTID-([a-f0-9]+)/i', $rule, $id_match)) {
-        if (!in_array($id_match[0], $vapt_secure_ids)) {
-          $vapt_secure_ids[] = $id_match[0];
+        if (!in_array($id_match[0], $vaptsecure_ids)) {
+          $vaptsecure_ids[] = $id_match[0];
         }
         // Remove the VAPTID line from the rule for further processing
         $rule = trim(preg_replace('/^# VAPTID-[a-f0-9]+/i', '', $rule));
@@ -402,8 +402,8 @@ class VAPT_SECURE_Htaccess_Driver
 
     // 1. Add VAPTIDs at the top (joined to next element with only one \n)
     $ids_and_first = "";
-    if (!empty($vapt_secure_ids)) {
-      $ids_and_first = implode("\n", $vapt_secure_ids) . "\n";
+    if (!empty($vaptsecure_ids)) {
+      $ids_and_first = implode("\n", $vaptsecure_ids) . "\n";
     }
 
     // 2. Add mod_headers

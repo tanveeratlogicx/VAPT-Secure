@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
   exit;
 }
 
-class VAPT_SECURE_Admin
+class VAPTSECURE_Admin
 {
 
   public function __construct()
@@ -20,7 +20,7 @@ class VAPT_SECURE_Admin
 
   public function show_nginx_notice()
   {
-    if (!is_vapt_secure_superadmin()) return;
+    if (!is_vaptsecure_superadmin()) return;
 
     $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
     if (strpos($server, 'nginx') === false) return;
@@ -47,42 +47,42 @@ class VAPT_SECURE_Admin
 
   public function enqueue_scripts($hook)
   {
-    if ($hook !== 'toplevel_page_vapt-auditor' && $hook !== 'vapt-secure_page_vapt-auditor') {
+    if ($hook !== 'toplevel_page_vapt-auditor' && $hook !== 'vaptsecure_page_vapt-auditor') {
       return;
     }
 
     // 1. Enqueue Dependencies
-    wp_enqueue_script('vapt-interface-generator', VAPT_SECURE_URL . 'assets/js/modules/interface-generator.js', array(), VAPT_SECURE_VERSION, true);
-    wp_enqueue_script('vapt-generated-interface-ui', VAPT_SECURE_URL . 'assets/js/modules/generated-interface.js', array('wp-element', 'wp-components'), VAPT_SECURE_VERSION, true);
+    wp_enqueue_script('vapt-interface-generator', VAPTSECURE_URL . 'assets/js/modules/interface-generator.js', array(), VAPTSECURE_VERSION, true);
+    wp_enqueue_script('vapt-generated-interface-ui', VAPTSECURE_URL . 'assets/js/modules/generated-interface.js', array('wp-element', 'wp-components'), VAPTSECURE_VERSION, true);
 
     // 2. Enqueue Admin Dashboard Script with full dependency block
     wp_enqueue_script(
       'vapt-admin-js',
-      VAPT_SECURE_URL . 'assets/js/admin.js',
+      VAPTSECURE_URL . 'assets/js/admin.js',
       array('wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n', 'vapt-interface-generator', 'vapt-generated-interface-ui'),
-      VAPT_SECURE_VERSION,
+      VAPTSECURE_VERSION,
       true
     );
 
-    wp_enqueue_style('vapt-admin-css', VAPT_SECURE_URL . 'assets/css/admin.css', array('wp-components'), VAPT_SECURE_VERSION);
+    wp_enqueue_style('vapt-admin-css', VAPTSECURE_URL . 'assets/css/admin.css', array('wp-components'), VAPTSECURE_VERSION);
 
     wp_localize_script('vapt-admin-js', 'vaptSecureSettings', array(
       'root' => esc_url_raw(rest_url()),
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
-      'isSuper' => is_vapt_secure_superadmin(),
-      'pluginVersion' => VAPT_SECURE_VERSION
+      'isSuper' => is_vaptsecure_superadmin(),
+      'pluginVersion' => VAPTSECURE_VERSION
     ));
 
-    wp_localize_script('vapt-admin-js', 'vapt_secure_ajax', array(
+    wp_localize_script('vapt-admin-js', 'vaptsecure_ajax', array(
       'ajax_url' => admin_url('admin-ajax.php'),
-      'nonce' => wp_create_nonce('vapt_secure_scan_nonce')
+      'nonce' => wp_create_nonce('vaptsecure_scan_nonce')
     ));
   }
 
 
   public function admin_page()
   {
-    wp_die(__('The VAPT Auditor has been removed.', 'vapt-secure'));
+    wp_die(__('The VAPT Auditor has been removed.', 'vaptsecure'));
   }
 }

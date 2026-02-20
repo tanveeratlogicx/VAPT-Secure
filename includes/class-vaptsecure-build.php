@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
   exit;
 }
 
-class VAPT_SECURE_Build
+class VAPTSECURE_Build
 {
   /**
    * Generate a build ZIP for a specific domain
@@ -48,7 +48,7 @@ class VAPT_SECURE_Build
     // 2. Output Config Content (Generated)
     $active_data_file_name = null;
     if (isset($data['include_data']) && ($data['include_data'] === true || $data['include_data'] === 'true' || $data['include_data'] === 1)) {
-      $active_data_file_name = get_option('vapt_secure_active_feature_file', 'Feature-List-99.json');
+      $active_data_file_name = get_option('vaptsecure_active_feature_file', 'Feature-List-99.json');
     }
 
     $license_scope = isset($data['license_scope']) ? $data['license_scope'] : 'single';
@@ -64,7 +64,7 @@ class VAPT_SECURE_Build
     }
 
     // 3. Full Build: Copy Plugin Files Recursively
-    self::copy_plugin_files(VAPT_SECURE_PATH, $plugin_dir, $active_data_file_name);
+    self::copy_plugin_files(VAPTSECURE_PATH, $plugin_dir, $active_data_file_name);
 
     // 4. Inject Config File (If Requested)
     if (!isset($data['include_config']) || $data['include_config'] === true || $data['include_config'] === 'true' || $data['include_config'] === 1) {
@@ -102,18 +102,18 @@ class VAPT_SECURE_Build
     $config .= "if ( ! defined( 'ABSPATH' ) ) { exit; }\n\n";
 
     $config .= "// Domain Locking & Licensing\n";
-    $config .= "define( 'VAPT_SECURE_DOMAIN_LOCKED', '" . esc_sql($domain) . "' );\n";
-    $config .= "define( 'VAPT_SECURE_BUILD_VERSION', '" . esc_sql($version) . "' );\n";
-    $config .= "define( 'VAPT_SECURE_LICENSE_SCOPE', '" . esc_sql($license_scope) . "' );\n";
-    $config .= "define( 'VAPT_SECURE_DOMAIN_LIMIT', " . intval($domain_limit) . " );\n";
+    $config .= "define( 'VAPTSECURE_DOMAIN_LOCKED', '" . esc_sql($domain) . "' );\n";
+    $config .= "define( 'VAPTSECURE_BUILD_VERSION', '" . esc_sql($version) . "' );\n";
+    $config .= "define( 'VAPTSECURE_LICENSE_SCOPE', '" . esc_sql($license_scope) . "' );\n";
+    $config .= "define( 'VAPTSECURE_DOMAIN_LIMIT', " . intval($domain_limit) . " );\n";
 
     if ($active_data_file) {
-      $config .= "define( 'VAPT_SECURE_ACTIVE_DATA_FILE', '" . esc_sql($active_data_file) . "' );\n";
+      $config .= "define( 'VAPTSECURE_ACTIVE_DATA_FILE', '" . esc_sql($active_data_file) . "' );\n";
     }
 
     $config .= "\n// Active Features\n";
     foreach ($features as $key) {
-      $config .= "define( 'VAPT_SECURE_FEATURE_" . strtoupper(str_replace('-', '_', $key)) . "', true );\n";
+      $config .= "define( 'VAPTSECURE_FEATURE_" . strtoupper(str_replace('-', '_', $key)) . "', true );\n";
     }
 
     return $config;
@@ -158,8 +158,8 @@ class VAPT_SECURE_Build
 
   private static function rewrite_main_plugin_file($plugin_dir, $plugin_slug, $white_label, $version, $domain)
   {
-    // We need to copy vapt-secure.php to [plugin-slug].php and modify headers
-    $source_main = VAPT_SECURE_PATH . 'vapt-secure.php';
+    // We need to copy vaptsecure.php to [plugin-slug].php and modify headers
+    $source_main = VAPTSECURE_PATH . 'vaptsecure.php';
     $dest_main = $plugin_dir . '/' . $plugin_slug . '.php'; // Rename main file
 
     $content = file_get_contents($source_main);
@@ -185,30 +185,30 @@ class VAPT_SECURE_Build
     $guard_code .= "}\n\n";
 
     $guard_code .= "// Domain Integrity & Multi-Site Guard\n";
-    $guard_code .= "if ( defined('VAPT_SECURE_LICENSE_SCOPE') ) {\n";
+    $guard_code .= "if ( defined('VAPTSECURE_LICENSE_SCOPE') ) {\n";
     $guard_code .= "    \$current_host = \$_SERVER['HTTP_HOST'];\n";
-    $guard_code .= "    if ( VAPT_SECURE_LICENSE_SCOPE === 'single' ) {\n";
-    $guard_code .= "        if ( \$current_host !== VAPT_SECURE_DOMAIN_LOCKED ) {\n";
-    $guard_code .= "            vapt_secure_handle_unauthorized_domain( \$current_host, VAPT_SECURE_DOMAIN_LOCKED );\n";
+    $guard_code .= "    if ( VAPTSECURE_LICENSE_SCOPE === 'single' ) {\n";
+    $guard_code .= "        if ( \$current_host !== VAPTSECURE_DOMAIN_LOCKED ) {\n";
+    $guard_code .= "            vaptsecure_handle_unauthorized_domain( \$current_host, VAPTSECURE_DOMAIN_LOCKED );\n";
     $guard_code .= "        }\n";
-    $guard_code .= "    } else if ( VAPT_SECURE_LICENSE_SCOPE === 'multisite' ) {\n";
-    $guard_code .= "        \$allowed_limit = defined('VAPT_SECURE_DOMAIN_LIMIT') ? intval(VAPT_SECURE_DOMAIN_LIMIT) : 0;\n";
+    $guard_code .= "    } else if ( VAPTSECURE_LICENSE_SCOPE === 'multisite' ) {\n";
+    $guard_code .= "        \$allowed_limit = defined('VAPTSECURE_DOMAIN_LIMIT') ? intval(VAPTSECURE_DOMAIN_LIMIT) : 0;\n";
     $guard_code .= "        if ( \$allowed_limit > 0 ) {\n";
-    $guard_code .= "            \$activated_domains = get_option('vapt_secure_activated_domains', array());\n";
+    $guard_code .= "            \$activated_domains = get_option('vaptsecure_activated_domains', array());\n";
     $guard_code .= "            if ( !in_array(\$current_host, \$activated_domains) ) {\n";
     $guard_code .= "                if ( count(\$activated_domains) >= \$allowed_limit ) {\n";
-    $guard_code .= "                    vapt_secure_handle_unauthorized_domain( \$current_host, 'Multi-Site Limit Exceeded' );\n";
+    $guard_code .= "                    vaptsecure_handle_unauthorized_domain( \$current_host, 'Multi-Site Limit Exceeded' );\n";
     $guard_code .= "                } else {\n";
     $guard_code .= "                    \$activated_domains[] = \$current_host;\n";
-    $guard_code .= "                    update_option('vapt_secure_activated_domains', \$activated_domains);\n";
+    $guard_code .= "                    update_option('vaptsecure_activated_domains', \$activated_domains);\n";
     $guard_code .= "                }\n";
     $guard_code .= "            }\n";
     $guard_code .= "        }\n";
     $guard_code .= "    }\n";
     $guard_code .= "}\n\n";
 
-    $guard_code .= "function vapt_secure_handle_unauthorized_domain( \$host, \$target ) {\n";
-    $guard_code .= "    \$admin_email = '" . sanitize_email(VAPT_SECURE_SUPERADMIN_EMAIL) . "';\n";
+    $guard_code .= "function vaptsecure_handle_unauthorized_domain( \$host, \$target ) {\n";
+    $guard_code .= "    \$admin_email = '" . sanitize_email(VAPTSECURE_SUPERADMIN_EMAIL) . "';\n";
     $guard_code .= "    \$subject = 'Security Alert: Unauthorized VAPT Secure Usage';\n";
     $guard_code .= "    \$message = 'The VAPT Secure plugin was detected on an unauthorized domain: ' . \$host . ' (Locked to: ' . \$target . ')';\n";
     $guard_code .= "    wp_mail(\$admin_email, \$subject, \$message);\n\n";
@@ -221,7 +221,7 @@ class VAPT_SECURE_Build
     $content = str_replace("if (! defined('ABSPATH')) {\n  exit;\n}", "if (! defined('ABSPATH')) {\n  exit;\n}\n" . $guard_code, $content);
 
     // Remove the original file from the copy if it was copied by the recursive copier
-    if (file_exists($plugin_dir . '/vapt-secure.php')) unlink($plugin_dir . '/vapt-secure.php');
+    if (file_exists($plugin_dir . '/vaptsecure.php')) unlink($plugin_dir . '/vaptsecure.php');
     if (file_exists($plugin_dir . '/vapt-copilot.php')) unlink($plugin_dir . '/vapt-copilot.php');
 
     file_put_contents($dest_main, $content);

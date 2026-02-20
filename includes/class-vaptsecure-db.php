@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
   exit;
 }
 
-class VAPT_SECURE_DB
+class VAPTSECURE_DB
 {
 
   /**
@@ -17,7 +17,7 @@ class VAPT_SECURE_DB
   public static function get_feature_statuses()
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_status';
+    $table = $wpdb->prefix . 'vaptsecure_feature_status';
     $results = $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
 
     $statuses = [];
@@ -33,7 +33,7 @@ class VAPT_SECURE_DB
   public static function update_feature_status($key, $status)
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_status';
+    $table = $wpdb->prefix . 'vaptsecure_feature_status';
 
     $data = array(
       'feature_key' => $key,
@@ -59,7 +59,7 @@ class VAPT_SECURE_DB
   public static function get_feature($key)
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_status';
+    $table = $wpdb->prefix . 'vaptsecure_feature_status';
     return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE feature_key = %s", $key), ARRAY_A);
   }
 
@@ -69,7 +69,7 @@ class VAPT_SECURE_DB
   public static function get_feature_statuses_full()
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_status';
+    $table = $wpdb->prefix . 'vaptsecure_feature_status';
     return $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
   }
 
@@ -79,7 +79,7 @@ class VAPT_SECURE_DB
   public static function get_feature_meta($key)
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_meta';
+    $table = $wpdb->prefix . 'vaptsecure_feature_meta';
     return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE feature_key = %s", $key), ARRAY_A);
   }
 
@@ -89,9 +89,9 @@ class VAPT_SECURE_DB
   public static function update_feature_meta($key, $data)
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_feature_meta';
+    $table = $wpdb->prefix . 'vaptsecure_feature_meta';
 
-    // 1. Define Strict Column-Format Mapping (Must match DB Schema in vapt-secure.php)
+    // 1. Define Strict Column-Format Mapping (Must match DB Schema in vaptsecure.php)
     // NOTE: 'override_schema' and 'override_implementation_data' are not in current schema version.
     $schema_map = array(
       'feature_key'                   => '%s',
@@ -155,7 +155,7 @@ class VAPT_SECURE_DB
   public static function get_domains()
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_domains';
+    $table = $wpdb->prefix . 'vaptsecure_domains';
     return $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
   }
 
@@ -165,7 +165,7 @@ class VAPT_SECURE_DB
   public static function update_domain($domain, $is_wildcard = 0, $is_enabled = 1, $id = null, $license_id = '', $license_type = 'standard', $manual_expiry_date = null, $auto_renew = 0, $renewals_count = 0, $renewal_history = null, $license_scope = 'single', $installation_limit = 1)
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_domains';
+    $table = $wpdb->prefix . 'vaptsecure_domains';
 
     // [SAFETY] Check if essential columns exist
     $id_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s", 'id'));
@@ -251,7 +251,7 @@ class VAPT_SECURE_DB
   public static function record_build($domain, $version, $features)
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_domain_builds';
+    $table = $wpdb->prefix . 'vaptsecure_domain_builds';
 
     return $wpdb->insert(
       $table,
@@ -271,7 +271,7 @@ class VAPT_SECURE_DB
   public static function get_build_history($domain = '')
   {
     global $wpdb;
-    $table = $wpdb->prefix . 'vapt_secure_domain_builds';
+    $table = $wpdb->prefix . 'vaptsecure_domain_builds';
     if ($domain) {
       return $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE domain = %s ORDER BY timestamp DESC", $domain), ARRAY_A);
     }
@@ -284,8 +284,8 @@ class VAPT_SECURE_DB
   public static function delete_domain($domain_id)
   {
     global $wpdb;
-    $wpdb->delete($wpdb->prefix . 'vapt_secure_domains', array('id' => $domain_id), array('%d'));
-    $wpdb->delete($wpdb->prefix . 'vapt_secure_domain_features', array('domain_id' => $domain_id), array('%d'));
+    $wpdb->delete($wpdb->prefix . 'vaptsecure_domains', array('id' => $domain_id), array('%d'));
+    $wpdb->delete($wpdb->prefix . 'vaptsecure_domain_features', array('domain_id' => $domain_id), array('%d'));
     return true;
   }
   /**
@@ -298,8 +298,8 @@ class VAPT_SECURE_DB
 
     $ids_string = implode(',', array_map('intval', $domain_ids));
 
-    $wpdb->query("DELETE FROM {$wpdb->prefix}vapt_secure_domains WHERE id IN ($ids_string)");
-    $wpdb->query("DELETE FROM {$wpdb->prefix}vapt_secure_domain_features WHERE domain_id IN ($ids_string)");
+    $wpdb->query("DELETE FROM {$wpdb->prefix}vaptsecure_domains WHERE id IN ($ids_string)");
+    $wpdb->query("DELETE FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id IN ($ids_string)");
 
     return true;
   }

@@ -87,8 +87,8 @@
     // 1. Header Probe: Verifies HTTP response headers
     check_headers: async (siteUrl, control, featureData, featureKey) => {
       const url = resolveUrl('/', control.config?.url);
-      const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vapt_secure_test_context=login' : '';
-      const resp = await fetch(url + '?vapt_secure_header_check=' + Date.now() + contextParam, { method: 'GET', cache: 'no-store' });
+      const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vaptsecure_test_context=login' : '';
+      const resp = await fetch(url + '?vaptsecure_header_check=' + Date.now() + contextParam, { method: 'GET', cache: 'no-store' });
       const headers = {};
       resp.headers.forEach((v, k) => { headers[k] = v; });
       console.log("[VAPT] Full Response Headers:", headers);
@@ -118,7 +118,7 @@
         let contextParam = '';
         const loginKeywords = ['login', 'brute', 'auth', 'password', 'email', 'reset'];
         if (featureKey && loginKeywords.some(kw => featureKey.toLowerCase().includes(kw))) {
-          contextParam = '&vapt_secure_test_context=login';
+          contextParam = '&vaptsecure_test_context=login';
         }
 
         if (isNaN(rpm)) {
@@ -165,7 +165,7 @@
         for (let i = 0; i < load; i++) {
           try {
             const url = resolveUrl('/', control.config?.url);
-            const r = await fetch(url + '?vapt_secure_test_spike=' + i + contextParam, { cache: 'no-store' });
+            const r = await fetch(url + '?vaptsecure_test_spike=' + i + contextParam, { cache: 'no-store' });
             const respData = { status: r.status, headers: r.headers };
             responses.push(respData);
 
@@ -292,7 +292,7 @@
       return PROBE_REGISTRY.block_null_byte_injection(siteUrl, control, featureData);
     },
     block_null_byte_injection: async (siteUrl, control, featureData) => {
-      const target = resolveUrl('/', control.config?.url) + '?vapt_secure_test_param=safe&vapt_secure_attack=test%00payload';
+      const target = resolveUrl('/', control.config?.url) + '?vaptsecure_test_param=safe&vaptsecure_attack=test%00payload';
       const resp = await fetch(target, { cache: 'no-store' });
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
@@ -306,7 +306,7 @@
     // 6. Version Hide Probe
     hide_wp_version: async (siteUrl, control, featureData) => {
       const url = resolveUrl('/', control.config?.url);
-      const resp = await fetch(url + '?vapt_secure_version_check=1', { method: 'GET', cache: 'no-store' });
+      const resp = await fetch(url + '?vaptsecure_version_check=1', { method: 'GET', cache: 'no-store' });
       const text = await resp.text();
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
@@ -332,11 +332,11 @@
       const expectedHeaders = config.expected_headers;
 
       let url = resolveUrl(path, config.url, featureKey);
-      const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? 'vapt_secure_test_context=login' : '';
+      const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? 'vaptsecure_test_context=login' : '';
 
       if (method === 'GET') {
         const urlParams = new URLSearchParams(params);
-        if (contextParam) urlParams.append('vapt_secure_test_context', 'login');
+        if (contextParam) urlParams.append('vaptsecure_test_context', 'login');
         const qs = urlParams.toString();
         if (qs) url = url + (url.includes('?') ? '&' : '?') + qs;
       } else if (contextParam) {
@@ -489,7 +489,7 @@
 
     // 8. Default Generic Probe
     default: async (siteUrl, control) => {
-      const resp = await fetch(siteUrl + '?vapt_secure_ping=1');
+      const resp = await fetch(siteUrl + '?vaptsecure_ping=1');
       return { success: resp.ok, message: `Probe result: HTTP ${resp.status}` };
     }
   };
@@ -505,7 +505,7 @@
 
     return el('div', { className: 'vapt-evidence-gallery', style: { marginTop: '10px' } }, [
       el('div', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#64748b', marginBottom: '6px' } },
-        sprintf(__('%d Evidence Captured', 'vapt-secure'), screenshots.length)
+        sprintf(__('%d Evidence Captured', 'vaptsecure'), screenshots.length)
       ),
       el('div', {
         style: {
@@ -537,7 +537,7 @@
       )),
 
       selectedImage && el(Modal, {
-        title: __('Evidence Detail', 'vapt-secure'),
+        title: __('Evidence Detail', 'vaptsecure'),
         onRequestClose: () => setSelectedImage(null),
         style: { maxWidth: '90vw', maxHeight: '90vh' }
       }, [
@@ -545,7 +545,7 @@
           el('img', { src: selectedImage, style: { maxWidth: '100%', maxHeight: '70vh' } })
         ),
         el('div', { style: { marginTop: '15px', textAlign: 'right' } },
-          el(Button, { isPrimary: true, onClick: () => setSelectedImage(null) }, __('Close', 'vapt-secure'))
+          el(Button, { isPrimary: true, onClick: () => setSelectedImage(null) }, __('Close', 'vaptsecure'))
         )
       ])
     ]);
@@ -555,12 +555,12 @@
    * File Inspector Component (v3.5.2)
    * Specialized rendering for file contents/directory listings
    */
-  const FileInspector = ({ content, label = __('Inspector Output', 'vapt-secure') }) => {
+  const FileInspector = ({ content, label = __('Inspector Output', 'vaptsecure') }) => {
     if (!content) return null;
 
     // Auto-detect if content implies a directory listing
     const isDir = content.includes('Index of /') || content.includes('Parent Directory');
-    const displayLabel = isDir ? __('Directory Listing Exposed', 'vapt-secure') : label;
+    const displayLabel = isDir ? __('Directory Listing Exposed', 'vaptsecure') : label;
 
     return el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column' } }, [
       el('div', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#b91c1c', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' } }, [
@@ -597,7 +597,7 @@
       className: 'vapt-sync-async-toggle',
       style: { display: 'flex', alignItems: 'center', gap: '6px' }
     }, [
-      el(Tooltip, { text: isAsync ? __('Async: Runs via background process (Simulated)', 'vapt-secure') : __('Sync: Runs directly in browser session', 'vapt-secure') },
+      el(Tooltip, { text: isAsync ? __('Async: Runs via background process (Simulated)', 'vaptsecure') : __('Sync: Runs directly in browser session', 'vaptsecure') },
         el(Button, {
           isSmall: true,
           variant: 'tertiary',
@@ -692,7 +692,7 @@
         el('div', { style: { background: '#2563eb', width: `${(progress.current / progress.total) * 100}%`, height: '100%', transition: 'width 0.3s' } })
       ]),
       status === 'running' && progress && el('div', { style: { display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '10px', color: '#64748b' } }, [
-        el('span', null, sprintf(__('Testing: %d/%d requests...', 'vapt-secure'), progress.current, progress.total)),
+        el('span', null, sprintf(__('Testing: %d/%d requests...', 'vaptsecure'), progress.current, progress.total)),
         el('div', { style: { display: 'flex', gap: '8px' } }, [
           el('span', { style: { color: '#10b981' } }, `${progress.accepted} Accepted`),
           el('span', { style: { color: progress.blocked > 0 ? '#ef4444' : '#64748b' } }, `${progress.blocked} Blocked`)
@@ -704,16 +704,16 @@
       status !== 'running' && control.test_logic === 'spam_requests' && el('div', { style: { marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' } }, [
         el('div', { style: { flex: 1 } }, [
           el(TextControl, {
-            label: __('Number of Tests to Run', 'vapt-secure'),
+            label: __('Number of Tests to Run', 'vaptsecure'),
             value: numTests,
             type: 'number',
-            placeholder: sprintf(__('Default: %d', 'vapt-secure'), rpmValue),
+            placeholder: sprintf(__('Default: %d', 'vaptsecure'), rpmValue),
             onChange: (val) => setNumTests(val),
             style: { marginBottom: 0 }
           })
         ]),
         el('div', { style: { fontSize: '11px', color: '#64748b', marginTop: '20px' } },
-          numTests ? sprintf(__('Target: %d requests', 'vapt-secure'), Math.ceil(parseInt(numTests) * 1.25)) : ''
+          numTests ? sprintf(__('Target: %d requests', 'vaptsecure'), Math.ceil(parseInt(numTests) * 1.25)) : ''
         )
       ]),
 
@@ -770,7 +770,7 @@
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${window.vaptSecureSettings.root}vapt-secure/v1/features/${featureKey}/stats`, {
+        const response = await fetch(`${window.vaptSecureSettings.root}vaptsecure/v1/features/${featureKey}/stats`, {
           headers: { 'X-WP-Nonce': window.vaptSecureSettings.nonce }
         });
         const data = await response.json();
@@ -783,10 +783,10 @@
     };
 
     const resetStats = async () => {
-      if (!confirm(__('Are you sure you want to reset all active rate limit blocks for this feature?', 'vapt-secure'))) return;
+      if (!confirm(__('Are you sure you want to reset all active rate limit blocks for this feature?', 'vaptsecure'))) return;
       setResetting(true);
       try {
-        await fetch(`${window.vaptSecureSettings.root}vapt-secure/v1/features/${featureKey}/reset`, {
+        await fetch(`${window.vaptSecureSettings.root}vaptsecure/v1/features/${featureKey}/reset`, {
           method: 'POST',
           headers: { 'X-WP-Nonce': window.vaptSecureSettings.nonce }
         });
@@ -833,7 +833,7 @@
     }, [
       el('div', { style: { display: 'flex', gap: '20px' } }, [
         el('div', null, [
-          el('div', { style: { fontSize: '10px', textTransform: 'uppercase', color: '#64748b', fontWeight: '700' } }, __('Active Blocks (IPs)', 'vapt-secure')),
+          el('div', { style: { fontSize: '10px', textTransform: 'uppercase', color: '#64748b', fontWeight: '700' } }, __('Active Blocks (IPs)', 'vaptsecure')),
           el('div', { style: { fontSize: '18px', fontWeight: '800', color: stats.active_ips > 0 ? '#ef4444' : '#10b981' } }, stats.active_ips)
         ])
         // Total Attempts removed as requested (redundant with Verification results - v3.6.24)
@@ -847,7 +847,7 @@
           isBusy: resetting,
           disabled: resetting || stats.active_ips === 0,
           style: { height: '32px' }
-        }, __('Reset Counter', 'vapt-secure'))
+        }, __('Reset Counter', 'vaptsecure'))
       ])
     ]);
   };
@@ -860,9 +860,9 @@
     if (schema && schema.type === 'manual') {
       schema = {
         controls: [
-          { type: 'header', label: __('Implementation Status', 'vapt-secure') },
-          { type: 'toggle', label: __('Enable Feature', 'vapt-secure'), key: 'feat_enabled', default: true },
-          { type: 'info', label: __('Manual Implementation Required', 'vapt-secure'), content: schema.instruction || __('Please refer to the manual verification protocol.', 'vapt-secure') }
+          { type: 'header', label: __('Implementation Status', 'vaptsecure') },
+          { type: 'toggle', label: __('Enable Feature', 'vaptsecure'), key: 'feat_enabled', default: true },
+          { type: 'info', label: __('Manual Implementation Required', 'vaptsecure'), content: schema.instruction || __('Please refer to the manual verification protocol.', 'vaptsecure') }
         ],
         enforcement: { driver: 'manual', mappings: {} },
         _instructions: schema.instruction
@@ -897,7 +897,7 @@
     const isRemovalContext = (key, currentVal) => {
       const status = statusMap[key];
       if (!status) return false;
-      return toBool(currentVal) && (status.message === __("Removing...", "vapt-secure") || status.message === __("Removed Successfully", "vapt-secure"));
+      return toBool(currentVal) && (status.message === __("Removing...", "vaptsecure") || status.message === __("Removed Successfully", "vaptsecure"));
     };
 
     const renderControl = (control, index) => {
@@ -918,7 +918,7 @@
             el(Button, {
               isSecondary: true,
               onClick: () => {
-                if (action === 'reset_validation_logs') setLocalAlert({ message: __('Reset signal sent.', 'vapt-secure'), type: 'success' });
+                if (action === 'reset_validation_logs') setLocalAlert({ message: __('Reset signal sent.', 'vaptsecure'), type: 'success' });
               }
             }, safeRender(label)),
             help && el('p', { style: { margin: '5px 0 0', fontSize: '12px', color: '#666' } }, safeRender(help))
@@ -936,8 +936,8 @@
               checked: toBool(value),
               onChange: (val) => {
                 const isRemoval = toBool(value) && !val;
-                const progressMsg = isRemoval ? __("Removing...", "vapt-secure") : __("Applying...", "vapt-secure");
-                const successMsg = isRemoval ? __("Removed Successfully", "vapt-secure") : __("Code Injected Successfully", "vapt-secure");
+                const progressMsg = isRemoval ? __("Removing...", "vaptsecure") : __("Applying...", "vaptsecure");
+                const successMsg = isRemoval ? __("Removed Successfully", "vaptsecure") : __("Code Injected Successfully", "vaptsecure");
 
                 setStatusMap(prev => ({ ...prev, [key]: { message: progressMsg, type: "info" } }));
                 handleChange(key, val);
@@ -1018,7 +1018,7 @@
                 whiteSpace: 'pre-wrap'
               }
             }, [
-              el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', color: '#6366f1', textTransform: 'uppercase' } }, __('Live Protection Code (Superadmin Only)', 'vapt-secure')),
+              el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', color: '#6366f1', textTransform: 'uppercase' } }, __('Live Protection Code (Superadmin Only)', 'vaptsecure')),
               mapping
             ])
           ]);
@@ -1056,7 +1056,7 @@
               value: value,
               rows: rows || (type === 'code' ? 4 : 3),
               onChange: (val) => handleChange(key, val),
-              placeholder: value ? '' : __('No data available.', 'vapt-secure'),
+              placeholder: value ? '' : __('No data available.', 'vaptsecure'),
               __nextHasNoMarginBottom: true,
               style: type === 'code' ? { fontFamily: 'monospace', fontSize: '11px', background: '#f8fafc' } : { fontSize: '12px' }
             })
@@ -1310,7 +1310,7 @@
           padding: '15px'
         }
       }, [
-        el('h4', { style: { margin: '0 0 10px 0', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#9a3412' } }, __('Threat Coverage', 'vapt-secure')),
+        el('h4', { style: { margin: '0 0 10px 0', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#9a3412' } }, __('Threat Coverage', 'vaptsecure')),
         riskControls.map(renderControl),
         otherVerificationControls.map(renderControl)
       ]),
@@ -1340,7 +1340,7 @@
           padding: '15px'
         }
       }, [
-        el('summary', { style: { fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#334155', cursor: 'pointer', outline: 'none' } }, __('Manual Verification Protocol', 'vapt-secure')),
+        el('summary', { style: { fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#334155', cursor: 'pointer', outline: 'none' } }, __('Manual Verification Protocol', 'vaptsecure')),
         el('ol', { style: { margin: '15px 0 0 0', paddingLeft: '20px', fontSize: '12px', color: '#475569' } },
           (Array.isArray(protocolSteps) ? protocolSteps : [protocolSteps]).map((s, i) => {
             let stepText = typeof s === 'object' ? (s.action || s.description || s.step || JSON.stringify(s)) : s;
@@ -1352,7 +1352,7 @@
       ]),
 
       localAlert && el(Modal, {
-        title: localAlert.type === 'error' ? __('Error', 'vapt-secure') : __('Notice', 'vapt-secure'),
+        title: localAlert.type === 'error' ? __('Error', 'vaptsecure') : __('Notice', 'vaptsecure'),
         onRequestClose: () => setLocalAlert(null),
         style: { maxWidth: '400px' }
       }, [
@@ -1361,12 +1361,12 @@
           el('p', { style: { fontSize: '14px', color: '#1f2937', margin: 0 } }, safeRender(localAlert.message))
         ]),
         el('div', { style: { textAlign: 'right' } },
-          el(Button, { isPrimary: true, onClick: () => setLocalAlert(null) }, __('OK', 'vapt-secure'))
+          el(Button, { isPrimary: true, onClick: () => setLocalAlert(null) }, __('OK', 'vaptsecure'))
         )
       ])
 
     ]);
   };
 
-  window.VAPT_SECURE_GeneratedInterface = GeneratedInterface;
+  window.VAPTSECURE_GeneratedInterface = GeneratedInterface;
 })();

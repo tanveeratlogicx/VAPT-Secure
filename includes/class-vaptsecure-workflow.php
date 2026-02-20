@@ -5,10 +5,10 @@ if (! defined('ABSPATH')) {
 }
 
 /**
- * Class VAPT_SECURE_Workflow
+ * Class VAPTSECURE_Workflow
  * Manages the state machine and history for security features.
  */
-class VAPT_SECURE_Workflow
+class VAPTSECURE_Workflow
 {
   /**
    * Validate if a transition from old status to new status is allowed.
@@ -38,8 +38,8 @@ class VAPT_SECURE_Workflow
   public static function transition_feature($feature_key, $new_status, $note = '', $user_id = 0)
   {
     global $wpdb;
-    $table_status = $wpdb->prefix . 'vapt_secure_feature_status';
-    $table_history = $wpdb->prefix . 'vapt_secure_feature_history';
+    $table_status = $wpdb->prefix . 'vaptsecure_feature_status';
+    $table_history = $wpdb->prefix . 'vaptsecure_feature_history';
 
     // Get current status
     $current = $wpdb->get_row($wpdb->prepare(
@@ -50,7 +50,7 @@ class VAPT_SECURE_Workflow
     $old_status = $current ? $current->status : 'draft';
 
     if (! self::is_transition_allowed($old_status, $new_status)) {
-      return new WP_Error('invalid_transition', sprintf(__('Transition from %s to %s is not allowed.', 'vapt-secure'), $old_status, $new_status));
+      return new WP_Error('invalid_transition', sprintf(__('Transition from %s to %s is not allowed.', 'vaptsecure'), $old_status, $new_status));
     }
 
     // Update Status
@@ -85,7 +85,7 @@ class VAPT_SECURE_Workflow
 
       // 2. Wipe Implementation Data (Meta)
       // We keep the row but nullify the data fields
-      $table_meta = $wpdb->prefix . 'vapt_secure_feature_meta';
+      $table_meta = $wpdb->prefix . 'vaptsecure_feature_meta';
       $wpdb->update($table_meta, array(
         'generated_schema' => null,
         'implementation_data' => null,
@@ -104,7 +104,7 @@ class VAPT_SECURE_Workflow
   public static function get_history($feature_key)
   {
     global $wpdb;
-    $table_history = $wpdb->prefix . 'vapt_secure_feature_history';
+    $table_history = $wpdb->prefix . 'vaptsecure_feature_history';
 
     return $wpdb->get_results($wpdb->prepare(
       "SELECT h.*, u.display_name as user_name 

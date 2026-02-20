@@ -1,13 +1,13 @@
 <?php
 
 /**
- * VAPT_SECURE_Nginx_Driver
+ * VAPTSECURE_Nginx_Driver
  * Handles enforcement of rules for Nginx via a generated include file.
  */
 
 if (!defined('ABSPATH')) exit;
 
-class VAPT_SECURE_Nginx_Driver
+class VAPTSECURE_Nginx_Driver
 {
   /**
    * Generates a list of valid Nginx directives based on the provided data and schema.
@@ -134,7 +134,7 @@ class VAPT_SECURE_Nginx_Driver
     if ($result !== false) {
       // Set a persistent option to verify file matches current state?
       // Or just transient for admin notice?
-      set_transient('vapt_secure_nginx_rules_updated', $file_path, HOUR_IN_SECONDS * 24);
+      set_transient('vaptsecure_nginx_rules_updated', $file_path, HOUR_IN_SECONDS * 24);
       return true;
     }
 
