@@ -73,7 +73,7 @@
   const STATUS_LABELS = {
     'All': __('All Lifecycle', 'vapt-secure'),
     'Develop': __('Develop', 'vapt-secure'),
-    'Release': __('Release', 'vapt-secure')
+    'Release': __('Release', 'vaptsecure')
   };
 
   const ClientDashboard = () => {
@@ -129,7 +129,7 @@
       else setLoading(true);
 
       const domain = settings.currentDomain || window.location.hostname;
-      apiFetch({ path: `vapt-secure/v1/features?scope=client&domain=${domain}` })
+      apiFetch({ path: `vaptsecure/v1/features?scope=client&domain=${domain}` })
         .then(data => {
           // Dedup features by key to prevent list inflation
           const uniqueFeatures = Array.from(new Map((data.features || []).map(item => [item.key, item])).values());
@@ -155,7 +155,7 @@
       }
 
       return apiFetch({
-        path: 'vapt-secure/v1/features/update',
+        path: 'vaptsecure/v1/features/update',
         method: 'POST',
         data: { key, ...data }
       })
@@ -252,7 +252,7 @@
               label: featureKey.includes('xmlrpc') ? 'Test: XML-RPC Block' : 'Test: Rate Limit (Spike)',
               key: 'auto_verify_resilience',
               test_logic: featureKey.includes('xmlrpc') ? 'block_xmlrpc' : 'spam_requests',
-              help: __('Auto-injected verification test.', 'vapt-secure')
+              help: __('Auto-injected verification test.', 'vaptsecure')
             });
           }
           // 2. Generic Fallback
@@ -262,7 +262,7 @@
               label: 'Test: Basic Verification',
               key: 'auto_verify_generic',
               test_logic: 'default',
-              help: __('Basic availability check.', 'vapt-secure')
+              help: __('Basic availability check.', 'vaptsecure')
             });
           }
         }
@@ -344,10 +344,10 @@
                       // [v1.3.12] Inline per-feature status — no global toast
                       const implData = f.implementation_data || {};
                       const progressMsg = val
-                        ? __('Writing to configuration...', 'vapt-secure')
+                        ? __('Writing to configuration...', 'vaptsecure')
                         : __('Removing from configuration...', 'vapt-secure');
                       const successMsg = val
-                        ? __('✓ Code Injected Successfully', 'vapt-secure')
+                        ? __('✓ Code Injected Successfully', 'vaptsecure')
                         : __('✓ Removed Successfully', 'vapt-secure');
                       setEnforceStatus(f.key, progressMsg, 'info');
                       updateFeature(f.key, { is_enforced: val, implementation_data: implData }, null, true)
@@ -399,7 +399,7 @@
               el('h4', { style: { margin: '0 0 20px 0', fontSize: '14px', fontWeight: 700, color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' } }, [
                 el('span', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
                   el(Icon, { icon: 'admin-settings', size: 18 }),
-                  __('Functional Implementation', 'vapt-secure')
+                  __('Functional Implementation', 'vaptsecure')
                 ])
               ]),
               el('div', { style: { flex: 1 } }, [
@@ -425,7 +425,7 @@
               el('div', { style: { padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1, display: 'flex', flexDirection: 'column' } }, [
                 el('h4', { style: { margin: '0 0 15px 0', fontSize: '12px', fontWeight: 700, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' } }, [
                   el(Icon, { icon: 'yes-alt', size: 16 }),
-                  __('Automated Verification Engine', 'vapt-secure')
+                  __('Automated Verification Engine', 'vaptsecure')
                 ]),
                 el('div', { style: { flex: 1 } }, [
                   automControls.length > 0 ? el(GeneratedInterface, {
@@ -443,7 +443,7 @@
           !!f.include_operational_notes && noteControls.length > 0 && el('div', { style: { marginTop: '25px', padding: '15px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' } }, [
             el('h4', { style: { margin: '0 0 10px 0', fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' } }, [
               el(Icon, { icon: 'editor-help', size: 18 }),
-              __('Operational Notes', 'vapt-secure')
+              __('Operational Notes', 'vaptsecure')
             ]),
             el(GeneratedInterface, {
               feature: { ...f, generated_schema: { ...schema, controls: noteControls } },
@@ -507,7 +507,7 @@
             onClick: () => fetchData(true),
             disabled: loading || isRefreshing,
             isBusy: isRefreshing,
-            label: __('Refresh Data', 'vapt-secure')
+            label: __('Refresh Data', 'vaptsecure')
           })
         ]),
         el('div', { style: { display: 'flex', gap: '5px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' } },

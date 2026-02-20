@@ -48,10 +48,10 @@ class VAPT_SECURE_Auth
 
     // 1. Send Email
     $message = sprintf(
-      __('Your VAPT Secure verification code is: %s. This code will expire in 10 minutes.', 'vapt-secure'),
+      __('Your VAPT Secure verification code is: %s. This code will expire in 10 minutes.', 'vaptsecure'),
       $otp
     );
-    wp_mail($identity['email'], __('VAPT Secure - Verification Code', 'vapt-secure'), $message);
+    wp_mail($identity['email'], __('VAPT Secure - Verification Code', 'vaptsecure'), $message);
   }
 
   /**
@@ -81,7 +81,7 @@ class VAPT_SECURE_Auth
 
       delete_transient('vapt_secure_otp_email_' . $identity['user']);
 
-      wp_safe_redirect(admin_url('admin.php?page=vapt-domain-admin'));
+      wp_safe_redirect(admin_url('admin.php?page=vaptsecure-domain-admin'));
       exit;
     }
   }

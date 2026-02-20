@@ -3,12 +3,12 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           1.3.13
+ * Version:           2.0.0
  * Author:            Automated Penetration Testing Builder
  * Author URI:        https://vaptbuilder.com/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       vapt-secure
+ * Text Domain:       vaptsecure
  * Domain Path:       /languages
  */
 
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.3.14');
+  define('VAPT_SECURE_VERSION', '1.3.18');
 }
 if (! defined('VAPT_SECURE_PATH')) {
   define('VAPT_SECURE_PATH', plugin_dir_path(__FILE__));
@@ -107,13 +107,13 @@ function is_vapt_secure_superadmin()
 }
 
 // Include core classes (new Builder includes)
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-auth.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-rest.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-db.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-workflow.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-build.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-enforcer.php';
-require_once VAPT_SECURE_PATH . 'includes/class-vapt-secure-admin.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-auth.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-rest.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-db.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-workflow.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-build.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
+require_once VAPT_SECURE_PATH . 'includes/class-vaptsecure-admin.php';
 
 /**
  * Initialize Global Services
@@ -257,7 +257,7 @@ function vapt_secure_send_activation_email()
   $to = $identity['email'];
   $site_name = get_bloginfo('name');
   $site_url = get_site_url();
-  $admin_url = admin_url('admin.php?page=vapt-domain-admin');
+  $admin_url = admin_url('admin.php?page=vaptsecure-domain-admin');
 
   $subject = sprintf("[VAPT Alert] Plugin Activated on %s", $site_name);
   $message = "VAPT Secure has been activated on a new site.\n\n";
@@ -471,30 +471,33 @@ if (! function_exists('vapt_secure_add_admin_menu')) {
       __('VAPT Secure', 'vapt-secure'),
       __('VAPT Secure', 'vapt-secure'),
       'manage_options',
-      'vapt-secure',
+      'vaptsecure',
       'vapt_secure_render_client_status_page',
       'dashicons-shield',
       80
     );
-    // 2. Sub-menu 1: Status
-    add_submenu_page(
-      'vapt-secure',
-      __('VAPT Secure-Workbench', 'vapt-secure'),
-      __('VAPT Secure-Workbench', 'vapt-secure'),
-      'manage_options',
-      'vapt-secure',
-      'vapt_secure_render_client_status_page'
-    );
-    // 3. Sub-menu 2: Domain Admin (Superadmin Only)
+    // 2. Sub-menus (Superadmin Only)
     if ($is_superadmin) {
+      // Sub-menu 1: Workbench
       add_submenu_page(
-        'vapt-secure',
-        __('VAPT Domain Admin', 'vapt-secure'),
-        __('VAPT Domain Admin', 'vapt-secure'),
+        'vaptsecure',
+        __('VAPTSecure Workbench', 'vapt-secure'),
+        __('VAPTSecure Workbench', 'vapt-secure'),
         'manage_options',
-        'vapt-domain-admin',
+        'vaptsecure-workbench',
+        'vapt_secure_render_client_status_page'
+      );
+      // Sub-menu 2: Domain Admin
+      add_submenu_page(
+        'vaptsecure',
+        __('VAPTSecure Domain Admin', 'vapt-secure'),
+        __('VAPTSecure Domain Admin', 'vapt-secure'),
+        'manage_options',
+        'vaptsecure-domain-admin',
         'vapt_secure_render_admin_page'
       );
+      // Remove the default submenu item created by WordPress
+      remove_submenu_page('vaptsecure', 'vaptsecure');
     }
   }
 }
@@ -507,9 +510,10 @@ if (! function_exists('vapt_secure_handle_legacy_redirects')) {
   function vapt_secure_handle_legacy_redirects()
   {
     if (!isset($_GET['page'])) return;
-    $legacy_slugs = array('vapt-copilot', 'vapt-copilot-main', 'vapt-copilot-status', 'vapt-copilot-domain-build', 'vapt-client');
+    $legacy_slugs = array('vapt-secure', 'vapt-domain-admin', 'vapt-copilot', 'vapt-copilot-main', 'vapt-copilot-status', 'vapt-copilot-domain-build', 'vapt-client');
     if (in_array($_GET['page'], $legacy_slugs)) {
-      wp_safe_redirect(admin_url('admin.php?page=vapt-secure'));
+      $target = ($_GET['page'] === 'vapt-domain-admin' || $_GET['page'] === 'vaptsecure-domain-admin') ? 'vaptsecure-domain-admin' : 'vaptsecure';
+      wp_safe_redirect(admin_url('admin.php?page=' . $target));
       exit;
     }
   }
@@ -566,7 +570,7 @@ if (! function_exists('vapt_secure_master_dashboard_page')) {
     }
   ?>
     <div id="vapt-admin-root" class="wrap">
-      <h1><?php _e('VAPT Domain Admin', 'vapt-secure'); ?></h1>
+      <h1><?php _e('VAPTSecure Domain Admin', 'vapt-secure'); ?></h1>
       <div style="padding: 20px; text-align: center;">
         <span class="spinner is-active" style="float: none; margin: 0 auto;"></span>
         <p><?php _e('Loading VAPT Secure...', 'vapt-secure'); ?></p>
@@ -595,7 +599,7 @@ function vapt_secure_enqueue_admin_assets($hook)
   // Enqueue Shared Styles
   wp_enqueue_style('vapt-admin-css', VAPT_SECURE_URL . 'assets/css/admin.css', array('wp-components'), VAPT_SECURE_VERSION);
   // 1. Superadmin Dashboard (admin.js)
-  if ($screen->id === 'toplevel_page_vapt-domain-admin' || $screen->id === 'vapt-secure_page_vapt-domain-admin') {
+  if ($screen->id === 'toplevel_page_vaptsecure-domain-admin' || $screen->id === 'vapt-secure_page_vaptsecure-domain-admin' || strpos($screen->id, 'vaptsecure-domain-admin') !== false) {
     error_log('VAPT Admin Assets Enqueued for: ' . $screen->id);
     // Enqueue Auto-Interface Generator (Module)
     wp_enqueue_script(
@@ -696,7 +700,7 @@ function vapt_secure_enqueue_admin_assets($hook)
     ));
   }
   // 2. Client Dashboard (client.js) - "VAPT Secure" page
-  if ($screen->id === 'toplevel_page_vapt-secure' || $screen->id === 'vapt-secure_page_vapt-secure') {
+  if ($screen->id === 'toplevel_page_vaptsecure' || strpos($screen->id, 'vaptsecure-workbench') !== false) {
     // Enqueue Generated Interface UI Component (Shared)
     wp_enqueue_script(
       'vapt-generated-interface-ui',

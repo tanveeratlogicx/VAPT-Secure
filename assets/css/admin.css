@@ -659,8 +659,9 @@
 }
 
 /* Specific fix for our renamed menu */
-#adminmenu .wp-submenu a[href*="page=vapt-secure"] {
+#adminmenu .wp-submenu a[href*="page=vaptsecure"] {
     white-space: nowrap !important;
+    padding-right: 20px !important;
 }
 
 /* Design Implementation Modal Layout (v3.3.46 - Fixed) */
@@ -932,7 +933,7 @@
 /* Table Enhancements */
 .vapt-th-sortable {
     position: relative;
-    padding-left: 30px;
+    padding-left: 10px;
     padding-right: 10px;
     white-space: nowrap;
     cursor: pointer;
@@ -943,10 +944,8 @@
 }
 
 .vapt-sort-indicator {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
 }
 
 /* Design Modal Internals (v3.3.45 Cleanup) */
@@ -1139,4 +1138,24 @@
     padding: 15px;
     border-radius: 4px;
     /* margin-top: 15px; */
+}
+
+/* Compact Panel Enhancements (v1.3.23) */
+.components-panel__body.vapt-compact-panel {
+    margin-top: 0 !important;
+    border-top: none !important;
+}
+
+.vapt-compact-panel>.components-panel__body-title,
+.vapt-compact-panel>.components-panel__body-title .components-button {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    min-height: 28px !important;
+    height: auto !important;
+    box-sizing: border-box;
+}
+
+.vapt-compact-panel>.components-panel__body-title h2 {
+    margin: 0 !important;
+    font-size: 13px !important;
 }

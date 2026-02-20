@@ -147,7 +147,7 @@
         }
 
         try {
-          const resetRes = await fetch(siteUrl + '/wp-json/vapt-secure/v1/reset-limit', { method: 'POST', cache: 'no-store' });
+          const resetRes = await fetch(siteUrl + '/wp-json/vaptsecure/v1/reset-limit', { method: 'POST', cache: 'no-store' });
           const resetJson = await resetRes.json();
           console.log('[VAPT] Rate limit reset debug:', resetJson);
         } catch (e) {
@@ -875,7 +875,7 @@
 
     if (!schema || !schema.controls || !Array.isArray(schema.controls)) {
       return el('div', { style: { padding: '20px', textAlign: 'center', color: '#999', fontStyle: 'italic' } },
-        __('No functional controls defined for this implementation.', 'vapt-secure')
+        __('No functional controls defined for this implementation.', 'vaptsecure')
       );
     }
 
@@ -1001,7 +1001,7 @@
               }
             }, [
               el(Icon, { icon: 'editor-code', size: 12 }),
-              __('Code Injected', 'vapt-secure')
+              __('Code Injected', 'vaptsecure')
             ]),
             // 🛡️ Admin Preview Logic (v3.13.8): Visible ONLY when enabled (toBool(value))
             isDevelop && isSuperAdmin && mapping && toBool(value) && el('div', {
@@ -1282,7 +1282,7 @@
       }, [
         el('summary', { style: { fontWeight: '700', cursor: 'pointer', outline: 'none', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px' } }, [
           el(Icon, { icon: 'info', size: 16 }),
-          __('Business Impact & Security Benefit', 'vapt-secure')
+          __('Business Impact & Security Benefit', 'vaptsecure')
         ]),
         el('div', { style: { marginTop: '10px' } },
           typeof opNotes === 'string' ? linkify(opNotes) : JSON.stringify(opNotes)

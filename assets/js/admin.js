@@ -194,7 +194,7 @@ window.vaptScriptLoaded = true;
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-      apiFetch({ path: `vapt-secure/v1/features/${feature.key || feature.id}/history` })
+      apiFetch({ path: `vaptsecure/v1/features/${feature.key || feature.id}/history` })
         .then(res => {
           setHistory(res);
           setLoading(false);
@@ -1349,7 +1349,7 @@ window.vaptScriptLoaded = true;
           el('div', { style: { flex: 1 } }, [
             el('h2', { style: { margin: '0 0 2px 0', fontSize: '18px', fontWeight: '600', color: '#1d2327' } }, __('Mapping Configuration', 'vapt-secure')),
             el('p', { style: { margin: 0, fontSize: '12px', color: '#646970', lineHeight: '1.4' } },
-              __('Map JSON fields for context-aware prompts.', 'vapt-secure')
+              __('Map JSON fields for context-aware prompts.', 'vaptsecure')
             )
           ]),
           el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } }, [
@@ -1428,7 +1428,7 @@ window.vaptScriptLoaded = true;
               formData.append('title', 'Pasted Wireframe - ' + transitioning.key);
 
               wp.apiFetch({
-                path: 'vapt-secure/v1/upload-media',
+                path: 'vaptsecure/v1/upload-media',
                 method: 'POST',
                 body: formData
               }).then(res => {
@@ -1462,7 +1462,7 @@ window.vaptScriptLoaded = true;
               label: __('Wireframe / Design URL', 'vapt-secure'),
               value: formValues.wireframeUrl,
               onChange: (val) => setFormValues({ ...formValues, wireframeUrl: val }),
-              help: __('Paste image from clipboard directly into this modal.', 'vapt-secure')
+              help: __('Paste image from clipboard directly into this modal.', 'vaptsecure')
             }),
             modalSaveStatus && el(Notice, {
               status: modalSaveStatus.type,
@@ -1792,7 +1792,7 @@ window.vaptScriptLoaded = true;
                 onChange: () => onSelectFile('__all__'),
                 style: { margin: 0, width: '12px', height: '12px' }
               }),
-              __('All Data Files', 'vapt-secure')
+              __('All Data Files', 'vaptsecure')
             ]),
             // Individual Files
             ...dataFiles.map(file => {
@@ -1946,10 +1946,10 @@ window.vaptScriptLoaded = true;
               addDomain(d.domain, (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1), !currentEnabled, d.id);
             },
             style: { color: (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? '#d63638' : '#00a32a', fontWeight: 600, textDecoration: 'none' },
-            title: __('Click to toggle domain status', 'vapt-secure')
+            title: __('Click to toggle domain status', 'vaptsecure')
           }, [
             el(Dashicon, { icon: (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? 'hidden' : 'visibility', size: 16, style: { marginRight: '4px' } }),
-            (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? __('Disabled', 'vapt-secure') : __('Active', 'vapt-secure')
+            (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? __('Disabled', 'vapt-secure') : __('Active', 'vaptsecure')
           ])),
           el('td', null, el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
             el(Button, {
@@ -1961,7 +1961,7 @@ window.vaptScriptLoaded = true;
                 addDomain(d.domain, nextWildcard, !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0), d.id);
               },
               style: { textDecoration: 'none', color: (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1) ? '#2271b1' : '#64748b', fontWeight: 600 },
-              title: __('Click to toggle domain type', 'vapt-secure')
+              title: __('Click to toggle domain type', 'vaptsecure')
             }, (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1) ? __('Wildcard', 'vapt-secure') : __('Standard', 'vapt-secure')),
             el(Dashicon, { icon: 'update', size: 14, style: { opacity: 0.5 } })
           ])),
@@ -1988,7 +1988,7 @@ window.vaptScriptLoaded = true;
           }, `${d.features.length} ${__('Features', 'vapt-secure')}`) : `${(Array.isArray(d.features) ? d.features.length : 0)} ${__('Features', 'vapt-secure')}`),
           el('td', null, el('span', { style: { fontSize: '12px', color: (d.license_type !== 'developer' && d.manual_expiry_date && new Date(d.manual_expiry_date) < new Date()) ? '#dc2626' : 'inherit' } },
             d.license_type === 'developer'
-              ? __('Never', 'vapt-secure')
+              ? __('Never', 'vaptsecure')
               : (d.manual_expiry_date ? new Date(d.manual_expiry_date).toLocaleDateString() : '-')
           )),
           el('td', null, el('div', { style: { display: 'flex', gap: '8px' } }, [
@@ -2053,7 +2053,7 @@ window.vaptScriptLoaded = true;
             label: __('Enabled', 'vapt-secure'),
             checked: editDomainData.is_enabled,
             onChange: (val) => setEditDomainData({ ...editDomainData, is_enabled: val }),
-            help: __('Enable or disable all VAPT features for this domain.', 'vapt-secure')
+            help: __('Enable or disable all VAPT features for this domain.', 'vaptsecure')
           }),
           el('div', { style: { marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' } }, [
             el(Button, { isSecondary: true, onClick: () => setEditModalOpen(false) }, __('Cancel', 'vapt-secure')),
@@ -2405,7 +2405,7 @@ window.vaptScriptLoaded = true;
       const buildFeatures = selectedDomain ? (Array.isArray(selectedDomain.features) ? selectedDomain.features : []) : (Array.isArray(features) ? features : []).filter(f => f.status === 'implemented').map(f => f.key);
 
       apiFetch({
-        path: 'vapt-secure/v1/build/generate',
+        path: 'vaptsecure/v1/build/generate',
         method: 'POST',
         data: {
           domain: buildDomain.trim(),
@@ -2449,7 +2449,7 @@ window.vaptScriptLoaded = true;
       const buildFeatures = selectedDomain ? (Array.isArray(selectedDomain.features) ? selectedDomain.features : []) : [];
 
       apiFetch({
-        path: 'vapt-secure/v1/build/save-config',
+        path: 'vaptsecure/v1/build/save-config',
         method: 'POST',
         data: {
           domain: buildDomain.trim(),
@@ -2475,7 +2475,7 @@ window.vaptScriptLoaded = true;
       if (!buildDomain) return;
       setGenerating(true);
       apiFetch({
-        path: 'vapt-secure/v1/build/sync-config',
+        path: 'vaptsecure/v1/build/sync-config',
         method: 'POST',
         data: { domain: buildDomain }
       }).then(res => {
@@ -2511,7 +2511,7 @@ window.vaptScriptLoaded = true;
           el(CardHeader, { style: { background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '12px 20px' } }, [
             el('h3', { style: { margin: 0, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' } }, [
               el(Icon, { icon: 'admin-settings', size: 16 }),
-              __('Configuration Details', 'vapt-secure')
+              __('Configuration Details', 'vaptsecure')
             ])
           ]),
           el(CardBody, { style: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 } }, [
@@ -2629,7 +2629,7 @@ window.vaptScriptLoaded = true;
                 disabled: generating || !buildDomain
               }, [
                 el(Icon, { icon: 'upload', size: 18, style: { marginRight: '5px' } }),
-                __('Save to Server', 'vapt-secure')
+                __('Save to Server', 'vaptsecure')
               ]),
               el(Button, {
                 isPrimary: true,
@@ -2651,7 +2651,7 @@ window.vaptScriptLoaded = true;
           el(CardHeader, { style: { background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '12px 20px' } }, [
             el('h4', { style: { margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' } }, [
               el(Icon, { icon: 'info-outline', size: 16 }),
-              __('Build Status & History', 'vapt-secure')
+              __('Build Status & History', 'vaptsecure')
             ])
           ]),
           el(CardBody, { style: { padding: '20px' } }, [
@@ -2823,7 +2823,7 @@ window.vaptScriptLoaded = true;
                 const expiry = tomorrow.toISOString().split('T')[0];
 
                 apiFetch({
-                  path: 'vapt-secure/v1/domains/update',
+                  path: 'vaptsecure/v1/domains/update',
                   method: 'POST',
                   data: {
                     domain: hostname,
@@ -2989,7 +2989,7 @@ window.vaptScriptLoaded = true;
             el(TextControl, {
               label: __('Expiry Date', 'vapt-secure'),
               value: currentDomain.license_type === 'developer'
-                ? __('Never Expires', 'vapt-secure')
+                ? __('Never Expires', 'vaptsecure')
                 : (currentDomain.manual_expiry_date ? formatDate(currentDomain.manual_expiry_date) : ''),
               readOnly: true,
               style: {
@@ -3008,9 +3008,9 @@ window.vaptScriptLoaded = true;
 
           el('div', { className: 'vapt-desc-text' },
             currentDomain.license_type === 'developer'
-              ? __('Developer License: Perpetual access with no expiration.', 'vapt-secure')
+              ? __('Developer License: Perpetual access with no expiration.', 'vaptsecure')
               : (currentDomain.license_type === 'pro'
-                ? __('Pro License: Annual renewal cycle with premium features.', 'vapt-secure')
+                ? __('Pro License: Annual renewal cycle with premium features.', 'vaptsecure')
                 : __('Standard License: 30-day renewal cycle.', 'vapt-secure'))
           ),
 
@@ -3108,7 +3108,7 @@ window.vaptScriptLoaded = true;
             checked: formState.auto_renew,
             disabled: isSaving,
             onChange: (val) => setFormState({ ...formState, auto_renew: val }),
-            help: __('Automatically extend expiry if active.', 'vapt-secure')
+            help: __('Automatically extend expiry if active.', 'vaptsecure')
           }),
 
           el('div', { style: { display: 'flex', gap: '20px', marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '6px' } }, [
@@ -3259,7 +3259,7 @@ window.vaptScriptLoaded = true;
       el(VAPT_SECURE_ConfirmModal, {
         isOpen: confirmState.isOpen,
         message: confirmState.type === 'undo'
-          ? __('Are you sure you want to undo the last manual renewal?', 'vapt-secure')
+          ? __('Are you sure you want to undo the last manual renewal?', 'vaptsecure')
           : __('Are you sure you want to reset all consecutive manual renewals?', 'vapt-secure'),
         onConfirm: executeRollback,
         onCancel: () => setConfirmState({ isOpen: false, type: null }),
@@ -3552,8 +3552,8 @@ window.vaptScriptLoaded = true;
 
     // Update column defaults when schema changes if not already set
     useEffect(() => {
-      const savedOrder = localStorage.getItem(`vapt_secure_col_order_${selectedFile} `);
-      const savedVisible = localStorage.getItem(`vapt_secure_visible_cols_${selectedFile} `);
+      const savedOrder = localStorage.getItem(`vapt_secure_col_order_${selectedFile}`);
+      const savedVisible = localStorage.getItem(`vapt_secure_visible_cols_${selectedFile}`);
 
       console.log('[VAPT] Init Check:', { selectedFile, savedOrder: !!savedOrder, savedVisible: !!savedVisible });
 
@@ -3571,8 +3571,8 @@ window.vaptScriptLoaded = true;
     const activeCols = columnOrder.filter(c => visibleCols.includes(c));
 
     useEffect(() => {
-      localStorage.setItem(`vapt_secure_col_order_${selectedFile} `, JSON.stringify(columnOrder));
-      localStorage.setItem(`vapt_secure_visible_cols_${selectedFile} `, JSON.stringify(visibleCols));
+      localStorage.setItem(`vapt_secure_col_order_${selectedFile}`, JSON.stringify(columnOrder));
+      localStorage.setItem(`vapt_secure_visible_cols_${selectedFile}`, JSON.stringify(visibleCols));
     }, [columnOrder, visibleCols, selectedFile]);
 
     const [filterStatus, setFilterStatus] = useState(() => localStorage.getItem('vapt_secure_filter_status') || 'all');
@@ -3590,8 +3590,8 @@ window.vaptScriptLoaded = true;
         isFirstMount.current = false;
         return;
       }
-      localStorage.setItem(`vapt_secure_col_order_${selectedFile} `, JSON.stringify(columnOrder));
-      localStorage.setItem(`vapt_secure_visible_cols_${selectedFile} `, JSON.stringify(visibleCols));
+      localStorage.setItem(`vapt_secure_col_order_${selectedFile}`, JSON.stringify(columnOrder));
+      localStorage.setItem(`vapt_secure_visible_cols_${selectedFile}`, JSON.stringify(visibleCols));
       setColSaveStatus('Saved');
       const timer = setTimeout(() => setColSaveStatus(null), 2000);
       return () => clearTimeout(timer);
@@ -3838,6 +3838,10 @@ window.vaptScriptLoaded = true;
           'Draft': 1
         };
         comparison = (priority[a.status] || 0) - (priority[b.status] || 0);
+      } else {
+        const valA = String(a[sortBy] !== undefined ? a[sortBy] : '').toLowerCase();
+        const valB = String(b[sortBy] !== undefined ? b[sortBy] : '').toLowerCase();
+        comparison = valA.localeCompare(valB, undefined, { numeric: true });
       }
 
       return sortOrder === 'asc' ? comparison : -comparison;
@@ -3846,7 +3850,7 @@ window.vaptScriptLoaded = true;
 
 
     return el('div', { id: 'vapt-feature-list-tab', className: 'vapt-feature-list-tab-wrap' }, [
-      el(PanelBody, { id: 'vapt-feature-list-panel', title: __('Exhaustive Feature List', 'vapt-secure'), initialOpen: true }, [
+      el(PanelBody, { id: 'vapt-feature-list-panel', title: __('Exhaustive Feature List', 'vapt-secure'), className: 'vapt-compact-panel', initialOpen: true }, [
         // Top Controls & Unified Header
         el('div', { id: 'vapt-feature-list-header-controls', key: 'controls', style: { marginBottom: '10px' } }, [
           // Unified Header Block (Source, Columns, Manage, Upload)
@@ -3861,7 +3865,7 @@ window.vaptScriptLoaded = true;
                 onClick: onToggle,
                 className: 'vapt-toolbar-btn-icon',
                 'aria-expanded': isOpen,
-                title: __('Configure Table Columns', 'vapt-secure')
+                title: __('Configure Table Columns', 'vaptsecure')
               }, el(Icon, { icon: 'layout', size: 18 })),
               renderContent: ({ onClose }) => {
                 const activeFields = columnOrder.filter(c => visibleCols.includes(c) && allKeys.includes(c));
@@ -3884,10 +3888,10 @@ window.vaptScriptLoaded = true;
                     ])
                   ]),
                   el('p', { style: { fontSize: '12px', color: '#666', marginBottom: '20px' } }, __('Confirm the table sequence and add/remove fields.', 'vapt-secure')),
-                  el('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(280px, 1.2fr) 1fr 1fr', gap: '25px' } }, [
+                  el('div', { style: { display: 'grid', gridTemplateColumns: 'minmax(280px, 1.2fr) 1fr 1fr', gap: '15px' } }, [
                     el('div', null, [
-                      el('h5', { style: { margin: '0 0 10px 0', fontSize: '11px', textTransform: 'uppercase', color: '#2271b1', fontWeight: 'bold' } }, __('Active Table Sequence', 'vapt-secure')),
-                      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+                      el('h5', { style: { margin: '0 0 8px 0', fontSize: '11px', textTransform: 'uppercase', color: '#2271b1', fontWeight: 'bold' } }, __('Active Table Sequence', 'vapt-secure')),
+                      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
                         activeFields.map((field, activeIdx) => {
                           const masterIdx = columnOrder.indexOf(field);
                           return el('div', {
@@ -3898,7 +3902,7 @@ window.vaptScriptLoaded = true;
                             onDrop: (e) => handleDrop(e, field),
                             style: {
                               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              padding: '6px 10px',
+                              padding: '4px 8px',
                               background: draggedCol === field ? '#eef' : '#f0f6fb',
                               borderRadius: '4px',
                               border: '1px solid #c8d7e1',
@@ -3923,10 +3927,10 @@ window.vaptScriptLoaded = true;
                         })
                       )]),
                     el('div', null, [
-                      el('h5', { style: { margin: '0 0 10px 0', fontSize: '11px', textTransform: 'uppercase', color: '#666', fontWeight: 'bold' } }, __('Available Fields', 'vapt-secure')),
-                      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+                      el('h5', { style: { margin: '0 0 8px 0', fontSize: '11px', textTransform: 'uppercase', color: '#666', fontWeight: 'bold' } }, __('Available Fields', 'vapt-secure')),
+                      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
                         availableCol1.map((field) => (
-                          el('div', { key: field, style: { display: 'flex', alignItems: 'center', padding: '6px 10px', background: '#fff', borderRadius: '4px', border: '1px solid #e1e1e1' } }, [
+                          el('div', { key: field, style: { display: 'flex', alignItems: 'center', padding: '4px 8px', background: '#fff', borderRadius: '4px', border: '1px solid #e1e1e1' } }, [
                             el(CheckboxControl, {
                               label: field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' '),
                               checked: false,
@@ -3938,10 +3942,10 @@ window.vaptScriptLoaded = true;
                       )
                     ]),
                     el('div', null, [
-                      el('h5', { style: { margin: '0 0 10px 0', fontSize: '11px', textTransform: 'uppercase', color: '#666', fontWeight: 'bold' } }, __('Available Fields', 'vapt-secure')),
-                      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+                      el('h5', { style: { margin: '0 0 8px 0', fontSize: '11px', textTransform: 'uppercase', color: 'transparent', userSelect: 'none' } }, __('Available Fields', 'vapt-secure')),
+                      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
                         availableCol2.map((field) => (
-                          el('div', { key: field, style: { display: 'flex', alignItems: 'center', padding: '6px 10px', background: '#fff', borderRadius: '4px', border: '1px solid #e1e1e1' } }, [
+                          el('div', { key: field, style: { display: 'flex', alignItems: 'center', padding: '4px 8px', background: '#fff', borderRadius: '4px', border: '1px solid #e1e1e1' } }, [
                             el(CheckboxControl, {
                               label: field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' '),
                               checked: false,
@@ -4012,7 +4016,7 @@ window.vaptScriptLoaded = true;
                     onChange: () => onSelectFile('__all__'),
                     style: { margin: 0, width: '13px', height: '13px' }
                   }),
-                  __('All Data Files', 'vapt-secure')
+                  __('All Data Files', 'vaptsecure')
                 ]),
                 // Individual Files
                 ...dataFiles.map(file => {
@@ -4056,14 +4060,14 @@ window.vaptScriptLoaded = true;
             ]),
 
             // Sort Control
-            el('div', { style: { borderLeft: '1px solid #dcdcde', paddingLeft: '12px', display: 'flex', alignItems: 'center', gap: '8px' } }, [
+            el('div', { style: { borderLeft: '1px solid #dcdcde', paddingLeft: '12px', display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' } }, [
               el(CheckboxControl, {
                 label: __('Sort by Data Source', 'vapt-secure'),
                 checked: sortBySource,
                 onChange: (val) => setSortBySource(val),
                 className: 'vapt-sort-checkbox',
                 __nextHasNoMarginBottom: true,
-                style: { margin: 0 } // Explicitly remove margin for alignment
+                style: { margin: 0, whiteSpace: 'nowrap' } // Explicitly prevent wrap
               }),
               sortBySource && el(Button, {
                 icon: sortSourceDirection === 'asc' ? 'arrow-up' : 'arrow-down',
@@ -4193,7 +4197,7 @@ window.vaptScriptLoaded = true;
           ])
         ]),
         // Filters Row (Ultra-Slim)
-        el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'nowrap', alignItems: 'stretch', marginBottom: '15px' } }, [
+        el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'nowrap', alignItems: 'stretch', marginBottom: '0' } }, [
           // Search Box
           el('div', { style: { flex: '1 1 180px', background: '#f6f7f7', padding: '4px 10px', borderRadius: '4px', border: '1px solid #dcdcde', display: 'flex', flexDirection: 'column', justifyContent: 'center' } }, [
             el('label', { className: 'components-base-control__label', style: { display: 'block', marginBottom: '2px', fontWeight: '600', textTransform: 'uppercase', fontSize: '9px', color: '#666', letterSpacing: '0.02em' } }, __('Search Features', 'vapt-secure')),
@@ -4325,7 +4329,7 @@ window.vaptScriptLoaded = true;
             const width = isDescription ? 'auto' : '1%';
             const whiteSpace = isDescription ? 'normal' : 'nowrap';
 
-            const isSortable = ['title', 'name', 'category', 'severity'].includes(col);
+            const isSortable = ['title', 'name', 'category', 'severity'].includes(col) || col.toLowerCase().includes('risk');
             const isActive = sortBy === col || (col === 'title' && sortBy === 'name');
 
             return el('th', {
@@ -4334,21 +4338,23 @@ window.vaptScriptLoaded = true;
               onClick: isSortable ? () => toggleSort(col === 'title' ? 'name' : col) : null,
               className: `vapt-th-sortable ${isActive ? 'is-active' : ''} ${isSortable ? 'sortable' : ''}`,
               style: { width, whiteSpace }
-            }, [
+            }, el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+              label,
               isSortable && el('span', {
                 id: `vapt-sort-indicator-${col}`,
                 className: 'vapt-sort-indicator',
                 style: {
                   opacity: isActive ? 1 : 0.3,
-                  color: isActive ? '#2271b1' : '#72777c'
+                  color: isActive ? '#2271b1' : '#72777c',
+                  display: 'flex',
+                  alignItems: 'center'
                 }
               }, el(Icon, {
                 icon: isActive
                   ? (sortOrder === 'asc' ? 'arrow-up' : 'arrow-down')
                   : 'sort'
-              })),
-              label
-            ]);
+              }))
+            ]));
           }),
           el('th', { style: { width: '1%', whiteSpace: 'nowrap' } }, __('Lifecycle Status', 'vapt-secure')),
           el('th', { style: { width: '1%', whiteSpace: 'nowrap' } }, __('Include', 'vapt-secure')),
@@ -4459,7 +4465,7 @@ window.vaptScriptLoaded = true;
                       e.preventDefault();
                       setDesignFeature(f);
                     },
-                    title: isCustom ? __('Open Workbench Design Bench (Custom)', 'vapt-secure') : __('Open Workbench Design Bench (Default)', 'vapt-secure')
+                    title: isCustom ? __('Open Workbench Design Bench (Custom)', 'vapt-secure') : __('Open Workbench Design Bench (Default)', 'vaptsecure')
                   }, __('Workbench Design', 'vapt-secure'));
                 })()
               ])
@@ -4909,70 +4915,77 @@ window.vaptScriptLoaded = true;
     }
 
     return el('div', { id: 'vapt-admin-dashboard--main', className: 'vapt-admin-wrap' }, [
-      el('h1', null, [
-        __('VAPT Secure Dashboard', 'vapt-secure'),
-        el('span', { style: { fontSize: '0.5em', marginLeft: '10px', color: '#666', fontWeight: 'normal' } }, `v${settings.pluginVersion}`),
-        isSuper && el('span', {
-          style: {
-            marginLeft: '10px',
-            fontSize: '10px',
-            color: '#fff',
-            background: '#1e3a8a', // Dark Blue
-            padding: '4px 8px',
-            borderRadius: '5px',
-            fontWeight: '600',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            verticalAlign: 'middle',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-          }
-        }, 'SUPERADMIN'),
-        isSuper && catalogInfo.file && el('span', {
-          style: {
-            marginLeft: '10px',
-            fontSize: '10px',
-            color: '#1e3a8a',
-            background: '#eff6ff',
-            padding: '4px 8px',
-            border: '1px solid #dbeafe',
-            borderRadius: '5px',
-            fontWeight: '600',
-            verticalAlign: 'middle'
-          }
-        }, (() => {
-          const files = catalogInfo.file.split(',');
-          const mainFile = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
-          let label = '';
-          if (files.includes('__all__')) {
-            label = __('All Data Sources', 'vapt-secure');
-          } else if (files.length === 1) {
-            label = files[0] === mainFile ? __('Main Catalog', 'vapt-secure') : files[0].replace(/_/g, ' ');
-          } else {
-            const hasMain = files.includes(mainFile);
-            const othersCount = files.length - (hasMain ? 1 : 0);
-            label = hasMain ? `${__('Main Catalog', 'vapt-secure')} + ${othersCount} ${othersCount === 1 ? __('other', 'vapt-secure') : __('others', 'vapt-secure')}` : `${files.length} ${__('Sources', 'vapt-secure')}`;
-          }
-          return `${__('Source:', 'vapt-secure')} ${label} (${catalogInfo.count} ${__('items', 'vapt-secure')})`;
-        })())
+      el('div', {
+        className: 'vapt-dashboard-header-row',
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: '#fff',
+          padding: '0 20px',
+          borderBottom: '1px solid #ccd0d4',
+          marginBottom: '5px', // Reduced margin from 20px per request
+          boxShadow: '0 1px 1px rgba(0,0,0,0.04)'
+        }
+      }, [
+        // Left Column: Title
+        el('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px' } }, [
+          el('h1', { style: { margin: 0, fontSize: '20px', fontWeight: '600', color: '#1d2327', lineHeight: '1.2', padding: '15px 0' } }, __('VAPT Secure Dashboard', 'vapt-secure')),
+          el('span', { style: { fontSize: '11px', color: '#646970' } }, `v${settings.pluginVersion}`)
+        ]),
+
+        // Center Column: Custom Tabs
+        el('div', { style: { display: 'flex', gap: '0' } }, tabs.map(tab =>
+          el('button', {
+            key: tab.name,
+            className: `vapt-custom-tab ${activeTab === tab.name ? 'is-active' : ''}`,
+            onClick: () => {
+              setActiveTab(tab.name);
+              localStorage.setItem('vapt_secure_admin_active_tab', tab.name);
+            },
+            style: {
+              background: 'none',
+              border: 'none',
+              padding: '16px 15px',
+              fontSize: '13px',
+              fontWeight: activeTab === tab.name ? '600' : '400',
+              color: activeTab === tab.name ? '#2271b1' : '#646970',
+              borderBottom: activeTab === tab.name ? '3px solid #2271b1' : '3px solid transparent',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              margin: '0',
+              boxShadow: 'none',
+              outline: 'none'
+            }
+          }, tab.title)
+        )),
+
+        // Right Column: Badges
+        el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
+          isSuper && el('span', {
+            style: {
+              fontSize: '10px',
+              color: '#fff',
+              background: '#1e3a8a',
+              padding: '4px 8px',
+              borderRadius: '5px',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              verticalAlign: 'middle',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }
+          }, 'SUPERADMIN')
+        ])
       ]),
       saveStatus && el('div', {
         id: 'vapt-global-status-toast',
         className: `vapt-toast-notification is-${saveStatus.type === 'error' ? 'error' : 'success'}`
       }, saveStatus.message),
 
-      el(TabPanel, {
-        id: 'vapt-admin-main-tabs',
-        className: 'vapt-main-tabs',
-        activeClass: 'is-active',
-        initialTabName: activeTab,
-        onSelect: (tabName) => {
-          const name = typeof tabName === 'string' ? tabName : tabName.name;
-          setActiveTab(name);
-          localStorage.setItem('vapt_secure_admin_active_tab', name);
-        },
-        tabs: tabs
-      }, (tab) => {
-        switch (tab.name) {
+      (() => {
+        let currentTabObj = tabs.find(t => t.name === activeTab) || tabs[0];
+        switch (currentTabObj.name) {
           case 'features': return el(FeatureList, {
             key: selectedFile, // Force remount on file change to fix persistence
             features,
@@ -5012,7 +5025,7 @@ window.vaptScriptLoaded = true;
           case 'build': return el(BuildGenerator, { domains, features, activeFile: selectedFile, setAlertState });
           default: return null;
         }
-      }),
+      })(),
 
       // Global Modals
       historyFeature && el(HistoryModal, {

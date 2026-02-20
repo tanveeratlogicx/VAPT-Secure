@@ -316,7 +316,7 @@ class VAPT_SECURE_REST
       if (empty($schema) && !empty($current_schema)) $schema = $current_schema;
 
       foreach ($current_features as &$feature) {
-        $label = isset($feature['name']) ? $feature['name'] : (isset($feature['title']) ? $feature['title'] : (isset($feature['label']) ? $feature['label'] : __('Unnamed Feature', 'vapt-secure')));
+        $label = isset($feature['name']) ? $feature['name'] : (isset($feature['title']) ? $feature['title'] : (isset($feature['label']) ? $feature['label'] : __('Unnamed Feature', 'vaptsecure')));
         $feature['label'] = $label;
 
         // Hyper-Personalization: Attach source-specific root nodes to each feature (v3.13.1)
