@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPT_SECURE_VERSION')) {
-  define('VAPT_SECURE_VERSION', '1.3.18');
+  define('VAPT_SECURE_VERSION', '2.0.0');
 }
 if (! defined('VAPT_SECURE_PATH')) {
   define('VAPT_SECURE_PATH', plugin_dir_path(__FILE__));
