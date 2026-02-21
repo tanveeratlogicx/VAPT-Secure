@@ -26,6 +26,9 @@ class VAPTSECURE_Config_Driver
       if (isset($data[$key])) {
         $value = $data[$key];
 
+        // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
+        $constant = VAPTSECURE_Enforcer::extract_code_from_mapping($constant, 'wp-config.php');
+
         // [FIX v1.3.13] Skip if the value is falsey (for toggles)
         if ($value === false || $value === 0 || $value === '0' || $value === 'off') {
           continue;

@@ -30,9 +30,9 @@ class VAPTSECURE_Nginx_Driver
 
     foreach ($mappings as $key => $directive) {
       if (!empty($data[$key])) {
-        // Translation Layer: Convert Apache-style hints to Nginx if needed, 
-        // OR rely on direct Nginx mappings if provided in schema.
-        // For now, we assume mappings might need translation or are purely conceptual keys.
+        // [v1.4.1] Support for v1.1/v2.0 rich mappings (Platform Objects)
+        $directive = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'nginx');
+        if (empty($directive)) continue;
 
         $nginx_rule = self::translate_to_nginx($key, $directive);
 
@@ -44,11 +44,20 @@ class VAPTSECURE_Nginx_Driver
 
     if (!empty($rules)) {
       $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
-      array_unshift($rules, "# Rule for: $feature_key");
-      $rules[] = "add_header X-VAPT-Feature \"$feature_key\" always;"; // Marker for verify
+      $title = isset($schema['title']) ? $schema['title'] : '';
+
+      $wrapped_rules = array();
+      $wrapped_rules[] = "# BEGIN VAPT $feature_key" . ($title ? " \u2014 $title" : "");
+      foreach ($rules as $rule) {
+        $wrapped_rules[] = $rule;
+      }
+      $wrapped_rules[] = "add_header X-VAPT-Feature \"$feature_key\" always; # Marker for verify";
+      $wrapped_rules[] = "# END VAPT $feature_key";
+
+      return $wrapped_rules;
     }
 
-    return $rules;
+    return array(); // Return empty array if no rules were generated
   }
 
   /**

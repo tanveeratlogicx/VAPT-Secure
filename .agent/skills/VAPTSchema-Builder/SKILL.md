@@ -1,16 +1,16 @@
 ---
 name: VAPTSchema Builder
 description: Specialized skill for transforming VAPT-Risk-Catalogue-Full-125-v3.4.1.json definitions into highly accurate Interface Schema JSONs for the VAPTBuilder plugin. Uses a strict Enforcer Pattern Library to ensure >90% output accuracy.
-version: "1.0.0"
-schema_version: "3.4.1"
+version: "1.2.0"
+schema_version: "1.2.0"
 ---
 
-# VAPTSchema Builder Expert Skill
+# VAPTSchema Builder Expert Skill (v1.2.0)
 
-This skill acts as the precise translation layer between the raw VAPT Risk Catalogs (primarily `VAPT-Risk-Catalogue-Full-125-v3.4.1.json`) and the strict **Interface Schema JSON** format required by the VAPTBuilder Workbench.
+This skill acts as the precise translation layer between the raw VAPT Risk Catalogs and the strict **Interface Schema JSON** format. Version 1.2 focus is on **Rewrite Rule Placement Reliability** and **Platform Parity**.
 
 ## 🎯 Primary Goal
-To achieve **>90% accuracy** (zero hallucination) when instructing an AI Agent to convert catalog `protection` definitions into VAPTBuilder `enforcement` and `controls` schemas.
+To achieve **>90% accuracy** (zero hallucination) when instructing an AI Agent to convert catalog definitions into VAPTBuilder `enforcement` and `controls` schemas, specifically preventing "Dead Zone" rewrite failures.
 
 ## 🧠 Trigger Condition
 Use this skill whenever asked to **generate an Interface Schema**, **build VAPTBuilder UI configuration JSON**, or **translate a risk catalog item** into an enforcement schema.
@@ -19,95 +19,51 @@ Use this skill whenever asked to **generate an Interface Schema**, **build VAPTB
 
 ## 🏛️ The Enforcer Pattern Library (Mapping Rosetta Stone)
 
-To eliminate AI hallucination, you must STRICTLY map the `protection.automated_protection` source data to the target schema `enforcement` object using these deterministic patterns:
+To eliminate AI hallucination, you must STRICTLY map the source data to the target schema `enforcement` object using these deterministic patterns:
 
-### Pattern 1: `.htaccess` Enforcer
-*   **Condition**: The catalog's `protection.automated_protection.enforcer` contains `.htaccess` or the `implementation_targets` includes `.htaccess`.
+### Pattern 1: `.htaccess` Enforcer (v1.2 UPDATED)
+*   **Condition**: The catalog's enforcer or `implementation_targets` includes `.htaccess`.
 *   **Driver Assignment**: `"driver": "htaccess"`
 *   **Mapping Logic**:
-    *   **Key**: The `component_id` from `ui_configuration.components[0]` (e.g., `UI-RISK-002-001`).
-    *   **Value**: The EXACT string from `protection.automated_protection.implementation_steps[0].code`.
-    *   *Rule*: The value MUST be appropriately JSON-escaped (e.g., escaping quotes and newlines: `\n`). Do NOT wrap it in `# BEGIN VAPT` markers; the driver handles that. Wrap in `<IfModule>` if it's Apache rules and not already wrapped.
+    *   **Key**: The `component_id` from `ui_configuration.components[0]`.
+    *   **Value**: The EXACT code from `enforcer_pattern_library_v1.2.json`.
+    *   **CRITICAL v1.2 RULES**:
+        1.  **Placement**: Always use `insertion_point: "before_wordpress_rewrite"`.
+        2.  **Dead Zone Warning**: Do NOT place after `# END WordPress`. WordPress's `[L]` flag makes rules after it unreachable.
+        3.  **Mandatory Wrapper**: All rewrite blocks MUST be wrapped in `<IfModule mod_rewrite.c>` and include `RewriteEngine On` and `RewriteBase /`.
+        4.  **Target File**: For `RISK-020`, the target file MUST be `wp-content/uploads/.htaccess`.
 
 ### Pattern 2: `wp-config.php` Enforcer
-*   **Condition**: The catalog's `protection.automated_protection.enforcer` contains `wp-config.php`.
+*   **Condition**: The catalog's enforcer contains `wp-config.php`.
 *   **Driver Assignment**: `"driver": "wp-config"`
 *   **Mapping Logic**:
-    *   **Key**: The `component_id` (e.g., `UI-RISK-001-001`).
-    *   **Value**: The EXACT PHP constant definition from `implementation_steps[0].code` (e.g., `define('DISABLE_WP_CRON', true);`). No extra PHP tags.
+    *   **Key**: The `component_id`.
+    *   **Value**: The EXACT PHP constant definition. No extra PHP tags. Must be placed BEFORE `wp-settings.php` requirement.
 
 ### Pattern 3: Hook / PHP Function Enforcer
-*   **Condition**: The enforcer indicates `PHP Functions`, API, or unified plugin hooks.
+*   **Condition**: The enforcer indicates `PHP Functions`.
 *   **Driver Assignment**: `"driver": "hook"`
-*   **Mapping Logic**:
-    *   **Key**: The `component_id`.
-    *   **Value**: You MUST select the matching predefined hook driver method name. Examples include: `block_xmlrpc`, `limit_login_attempts`, `hide_wp_version`, `block_user_enumeration`, `disable_file_editors`, `add_security_headers`. Do NOT hallucinate raw PHP logic here.
+*   **Value**: Use predefined hook driver method names (e.g., `block_xmlrpc`, `block_user_enumeration`).
 
-### Pattern 4: Cloudflare Enforcer
-*   **Condition**: The catalog's `protection.automated_protection.enforcer` contains `Cloudflare` or specifies WAF/Edge rules.
-*   **Driver Assignment**: `"driver": "cloudflare"`
-*   **Mapping Logic**:
-    *   **Key**: The `component_id`.
-    *   **Value**: The exact Cloudflare API configuration JSON string (e.g., a Firewall Rule or Page Rule representation) from `implementation_steps[0].code`. Properly escaped if placed within a JSON string.
-
-### Pattern 5: IIS (`web.config`) Enforcer
-*   **Condition**: The catalog's `protection.automated_protection.enforcer` contains `IIS` or `web.config`.
-*   **Driver Assignment**: `"driver": "iis"`
-*   **Mapping Logic**:
-    *   **Key**: The `component_id`.
-    *   **Value**: The EXACT `<rule>` XML string from `implementation_steps[0].code`. Must be appropriately JSON-escaped (escaping quotes and newlines).
-
-### Pattern 6: Caddy Enforcer
-*   **Condition**: The catalog's `protection.automated_protection.enforcer` contains `Caddy` or `Caddyfile`.
-*   **Driver Assignment**: `"driver": "caddy"`
-*   **Mapping Logic**:
-    *   **Key**: The `component_id`.
-    *   **Value**: The EXACT directive string for the `Caddyfile` from `implementation_steps[0].code`. Properly escaped.
+### Pattern 4: Cloudflare/IIS/Caddy Enforcers
+*   **Driver Assignment**: `"driver": "cloudflare"`, `"driver": "iis"`, or `"driver": "caddy"`.
+*   **Logic**: Map to `web_config_snippet` (IIS), `caddyfile_snippet` (Caddy), or `waf_custom_rule` (Cloudflare).
+*   **Note**: If `implementation_type` is `notes_only`, output the note.
 
 ---
 
 ## 🎛️ UI Controls Translation Rules
 
-The `ui_configuration` object in the catalog tells you what UI elements to build. You must translate it into the `controls` array.
-
-1.  **Toggles**:
-    *   Locate `ui_configuration.components[type="toggle"]`.
-    *   Schema Output: `{"type": "toggle", "label": "{label}", "key": "{component_id}", "default": {default_value}}`.
-    *   *Critical*: The `key` MUST be the exact `component_id` used in the enforcement mapping above.
-2.  **Test Actions (Verification)**:
-    *   Translate `testing.test_payloads` where `automated: true` into a `test_action`.
-    *   Schema Output: `{"type": "test_action", "label": "Verify Protection", "key": "verify_{risk_id}", "test_logic": "universal_probe", "test_config": {...}}`.
-    *   Extract `test_config` details from the payload (e.g., map `method` to `method`, `url` to `path`, `expected_response` to `expected_status` as an integer).
-3.  **Operational Notes**:
-    *   If `protection.manual_steps` exist, add a layout-spanning textarea reading the manual steps as context/guidance for the user.
+1.  **Toggles**: Schema Output: `{"type": "toggle", "label": "{label}", "key": "{component_id}", "default": {default_value}}`.
+2.  **Test Actions (Verification)**: `{"type": "test_action", "label": "Verify Protection", "key": "verify_{risk_id}", "test_logic": "universal_probe", "test_config": {...}}`.
 
 ---
 
 ## 📋 Exact Output Template
 
-When generating output, provide ONLY the JSON in this strict structure. Do not invent new top-level keys.
-
 ```json
 {
-  "controls": [
-    {
-      "type": "toggle",
-      "label": "Extracted from ui_configuration.components[0].label",
-      "key": "Exact component_id (e.g., UI-RISK-001-001)",
-      "default": true
-    },
-    {
-      "type": "test_action",
-      "label": "Verify Protection",
-      "key": "verify_risk_xyz",
-      "test_logic": "universal_probe",
-      "test_config": {
-        "method": "Extracted from testing.test_payloads[0].method",
-        "path": "Extracted from url",
-        "expected_status": 403
-      }
-    }
-  ],
+  "controls": [ ... ],
   "enforcement": {
     "driver": "Mapped strictly via Enforcer Pattern Library",
     "mappings": {
@@ -117,10 +73,29 @@ When generating output, provide ONLY the JSON in this strict structure. Do not i
 }
 ```
 
-## ✅ Accuracy Checklist
+---
 
-Before returning the JSON, explicitly verify:
-- [ ] Is the `enforcement.driver` one of: `"htaccess"`, `"wp-config"`, `"hook"`, `"cloudflare"`, `"iis"`, or `"caddy"`?
-- [ ] Does the `enforcement.mappings` key EXACTLY match the `controls.key` of the primary toggle?
-- [ ] Is the mapping value raw, properly escaped directive/code (for htaccess/wp-config) or a predefined method string (for hook)? No hallucinations?
-- [ ] Is the `expected_status` in `test_config` an integer (e.g., `403` not `"403"`)?
+## ✅ Accuracy Checklist (v1.2 - 17 Point Rubric)
+
+Before returning the JSON, score it against this 17-point rubric. **Threshold: ≥16/19 points.**
+
+| # | Check Item | Weight |
+|---|---|---|
+| 1 | All component IDs match interface_schema exactly | 2 |
+| 2 | Enforcement code read from pattern library, not hallucinated | 2 |
+| 3 | Severity badge colors match `global_ui_config.severity_badge_colors` | 1 |
+| 4 | Handler names follow naming conventions (`handleRISK{NNN}{Type}Change`) | 1 |
+| 5 | Platform listed in `available_platforms` for this risk | 1 |
+| 6 | VAPT block markers present in all enforcement code output | 1 |
+| 7 | Verification command present and matches platform CLI | 1 |
+| 8 | No forbidden patterns violated | 1 |
+| 9 | **[HTACCESS]** No forbidden directives (`TraceEnable`, `ServerSignature`, etc.) | 2 |
+| 10 | **[HTACCESS]** `RewriteEngine On` present before every block | 1 |
+| 11 | **[HTACCESS]** `mod_headers` requirement noted for `Header` directives | 1 |
+| 12 | **[HTACCESS]** `AllowOverride` requirement noted for `Options` directives | 1 |
+| 13 | **[HTACCESS]** `target_file` = `wp-content/uploads/.htaccess` for RISK-020 | 1 |
+| 14 | **[IIS]** Snippet includes URL Rewrite Module 2.1 requirement | 1 |
+| 15 | **[CADDY]** Caddy output uses v2 syntax only | 1 |
+| 16 | **[V1.2]** Rewrite blocks use `insertion_point=before_wordpress_rewrite` | 2 |
+| 17 | **[V1.2]** Rewrite blocks wrapped in `<IfModule mod_rewrite.c>` with `RewriteBase /` | 2 |
+

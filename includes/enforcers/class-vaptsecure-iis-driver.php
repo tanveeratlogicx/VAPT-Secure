@@ -26,13 +26,31 @@ class VAPTSECURE_IIS_Driver
 
     foreach ($mappings as $key => $directive) {
       if (!empty($data[$key])) {
+        // [v1.4.1] Support for v1.1/v2.0 rich mappings (Platform Objects)
+        $directive = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'iis');
+        if (empty($directive)) continue;
+
         $iis_rule = self::translate_to_iis($key, $directive);
         if ($iis_rule) {
           $rules[] = $iis_rule;
         }
       }
     }
-    return $rules;
+
+    if (!empty($rules)) {
+      $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
+      $title = isset($schema['title']) ? $schema['title'] : '';
+
+      $wrapped_rules = array();
+      $wrapped_rules[] = "<!-- BEGIN VAPT $feature_key" . ($title ? ": $title" : "") . " -->";
+      $wrapped_rules = array_merge($wrapped_rules, $rules);
+      $wrapped_rules[] = "<!-- VAPT-Feature: $feature_key -->"; // Marker for verify
+      $wrapped_rules[] = "<!-- END VAPT $feature_key -->";
+
+      return $wrapped_rules;
+    }
+
+    return array();
   }
 
   /**

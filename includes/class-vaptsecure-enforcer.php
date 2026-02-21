@@ -119,6 +119,15 @@ class VAPTSECURE_Enforcer
         // Default to Apache/.htaccess
         self::rebuild_htaccess();
       }
+      self::rebuild_config();
+    } elseif ($driver_name === 'nginx') {
+      self::rebuild_nginx();
+    } elseif ($driver_name === 'iis') {
+      self::rebuild_iis();
+    } elseif ($driver_name === 'caddy') {
+      self::rebuild_caddy();
+    } elseif ($driver_name === 'cloudflare') {
+      self::rebuild_cloudflare();
     } elseif ($driver_name === 'config' || $driver_name === 'wp_config' || $driver_name === 'wp-config') {
       self::rebuild_config();
     } else {
@@ -156,7 +165,58 @@ class VAPTSECURE_Enforcer
   private static function rebuild_iis()
   {
     require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-iis-driver.php';
-    // Logic placeholder - similar structure to above
+    if (!class_exists('VAPTSECURE_IIS_Driver')) return;
+
+    $features = self::get_enforced_features();
+    $all_rules = [];
+
+    foreach ($features as $meta) {
+      $schema = self::resolve_schema($meta);
+      $impl = self::resolve_impl($meta);
+      $driver = $schema['enforcement']['driver'] ?? '';
+
+      if ($driver === 'iis' || $driver === 'htaccess') {
+        $rules = VAPTSECURE_IIS_Driver::generate_rules($impl, $schema);
+        if ($rules) $all_rules = array_merge($all_rules, $rules);
+      }
+    }
+
+    VAPTSECURE_IIS_Driver::write_batch($all_rules);
+  }
+
+  /**
+   * Rebuilds Caddy Rules File
+   */
+  private static function rebuild_caddy()
+  {
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-caddy-driver.php';
+    if (!class_exists('VAPTSECURE_Caddy_Driver')) return;
+
+    $features = self::get_enforced_features();
+    $all_rules = [];
+
+    foreach ($features as $meta) {
+      $schema = self::resolve_schema($meta);
+      $impl = self::resolve_impl($meta);
+      $driver = $schema['enforcement']['driver'] ?? '';
+
+      if ($driver === 'caddy' || $driver === 'htaccess') {
+        $rules = VAPTSECURE_Caddy_Driver::generate_rules($impl, $schema);
+        if ($rules) $all_rules = array_merge($all_rules, $rules);
+      }
+    }
+
+    VAPTSECURE_Caddy_Driver::write_batch($all_rules);
+  }
+
+  /**
+   * Rebuilds Cloudflare (Interface/API Meta)
+   */
+  private static function rebuild_cloudflare()
+  {
+    // Cloudflare enforcement is currently informational/manual via the dashboard instructions.
+    // In future versions, this would trigger an API sync.
+    error_log('VAPT: Cloudflare rebuild triggered (Informational - Manual Action required in Dashboard)');
   }
 
   // Helper to fetch enforced features (DRY)
@@ -293,6 +353,7 @@ class VAPTSECURE_Enforcer
     self::rebuild_config();
     self::rebuild_nginx();
     self::rebuild_iis();
+    self::rebuild_caddy();
     delete_transient('vaptsecure_active_enforcements');
   }
 
@@ -311,13 +372,86 @@ class VAPTSECURE_Enforcer
         $content = file_get_contents($path);
         $data = json_decode($content, true);
         if ($data) {
-          $features = $data['risk_catalog'] ?? $data['features'] ?? $data['wordpress_vapt'] ?? [];
-          foreach ($features as $f) {
-            $keys[] = $f['risk_id'] ?? $f['id'] ?? $f['key'] ?? '';
+          $features = $data['risk_catalog'] ?? $data['features'] ?? $data['wordpress_vapt'] ?? $data['risk_interfaces'] ?? null;
+
+          if ($features && (is_array($features) || is_object($features))) {
+            foreach ($features as $k => $v) {
+              if (is_array($v) || is_object($v)) {
+                $keys[] = $v['risk_id'] ?? $v['id'] ?? $v['key'] ?? (is_string($k) ? $k : '');
+              }
+            }
+          } else {
+            // Flat Object structure (v1.1)
+            foreach ($data as $k => $v) {
+              if (is_array($v) && (isset($v['risk_id']) || isset($v['id']) || isset($v['key']))) {
+                $keys[] = $v['risk_id'] ?? $v['id'] ?? $v['key'] ?? $k;
+              } else if (preg_match('/^RISK-\d+/', $k)) {
+                // Heuristic: If key looks like RISK-NNN, it's a feature
+                $keys[] = $k;
+              }
+            }
           }
         }
       }
     }
     return array_unique(array_filter($keys));
+  }
+
+  /**
+   * Robustly extract implementation code from a mapping.
+   * Handles strings, arrays, and JSON-encoded platform objects.
+   * 
+   * [v1.4.0] Support for v1.2/v2.0 Schema-First Architecture Platform Objects.
+   */
+  public static function extract_code_from_mapping($directive, $platform = 'htaccess')
+  {
+    if (empty($directive)) return '';
+
+    // If it's a JSON string, decode it first
+    if (is_string($directive) && strpos(trim($directive), '{') === 0) {
+      $decoded = json_decode($directive, true);
+      if (json_last_error() === JSON_ERROR_NONE) {
+        $directive = $decoded;
+      }
+    }
+
+    if (is_array($directive)) {
+      // 1. Check for specific platform keys
+      $platform_keys = [
+        $platform,
+        '.' . ltrim($platform, '.'), // .htaccess
+        str_replace('-', '_', $platform), // wp_config
+        str_replace('_', '-', $platform), // wp-config
+      ];
+
+      foreach ($platform_keys as $pK) {
+        if (isset($directive[$pK])) {
+          $inner = $directive[$pK];
+          return is_array($inner) ? ($inner['code'] ?? '') : $inner;
+        }
+      }
+
+      // 1b. Robust Iteration (Handle leading/trailing whitespace in keys)
+      foreach ($directive as $k => $v) {
+        $tk = trim((string)$k);
+        foreach ($platform_keys as $pK) {
+          if ($tk === $pK) {
+            return is_array($v) ? ($v['code'] ?? '') : $v;
+          }
+        }
+      }
+
+      // 2. Fallback to generic 'code' field
+      if (isset($directive['code'])) {
+        return $directive['code'];
+      }
+
+      // 3. Fallback to first non-array element (v3.12.5 legacy)
+      foreach ($directive as $v) {
+        if (is_string($v) && strlen($v) > 0) return $v;
+      }
+    }
+
+    return is_string($directive) ? $directive : '';
   }
 }

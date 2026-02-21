@@ -90,6 +90,10 @@ class VAPTSECURE_Htaccess_Driver
     foreach ($mappings as $key => $directive) {
       $key_lower = strtolower($key);
       if (!empty($data_map[$key_lower])) {
+        // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
+        $directive = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'htaccess');
+        if (empty($directive)) continue;
+
         // [ENHANCEMENT] Variable Substitution (v3.12.0)
         $directive = self::substitute_variables($directive);
 
@@ -214,7 +218,7 @@ class VAPTSECURE_Htaccess_Driver
       $header = $start_marker . "\n";
       // [FIX v3.12.14] Wrap global RewriteEngine in IfModule for safety
       if ($has_rewrite) {
-        $header .= "<IfModule mod_rewrite.c>\n    RewriteEngine On\n</IfModule>\n";
+        $header .= "<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n</IfModule>\n";
       }
       // [FIX v3.12.14] Ensure blank line after block header
       $header .= "\n";

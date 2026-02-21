@@ -1019,7 +1019,7 @@
               }
             }, [
               el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', color: '#6366f1', textTransform: 'uppercase' } }, __('Live Protection Code (Superadmin Only)', 'vaptsecure')),
-              mapping
+              safeRender(mapping)
             ])
           ]);
 

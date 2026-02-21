@@ -687,9 +687,9 @@ window.vaptScriptLoaded = true;
       const rawRemEffort = getMappedContent(feature, 'remediation_effort', 'remediation_effort', fieldMapping) || feature.remediation_effort || '';
       const rawPlatforms = getMappedContent(feature, 'available_platforms', 'available_platforms', fieldMapping) || feature.available_platforms || [];
       const rawPlatformImpl = getMappedContent(feature, 'platform_implementations', 'platform_implementations', fieldMapping) || feature.platform_implementations || {};
-      const rawRollback = getMappedContent(feature, 'rollback_steps', 'rollback_steps', fieldMapping) || feature.rollback_steps || [];
       const rawUiLayout = getMappedContent(feature, 'ui_layout', 'ui_layout', fieldMapping) || feature.ui_layout || {};
-      const rawReporting = getMappedContent(feature, 'reporting', 'reporting', fieldMapping) || feature.reporting || {};
+      const rawComponents = getMappedContent(feature, 'components', 'components', fieldMapping) || feature.components || [];
+      const rawActions = getMappedContent(feature, 'actions', 'actions', fieldMapping) || feature.actions || [];
 
       const formatValue = (val) => {
         if (Array.isArray(val)) return val.join('\n');
@@ -740,16 +740,15 @@ window.vaptScriptLoaded = true;
       // Protection Details — wired through new field mappings (interface_schema_full125.json)
       const protection = feature.protection || {};
       const protectionDetails = {
-        effort: rawRemEffort || protection.remediation_effort || 'Medium',
-        estimated_time: rawEstTime || protection.estimated_time || '30m',
-        priority_score: rawPriority || protection.priority_score || 5,
         available_platforms: Array.isArray(rawPlatforms) ? rawPlatforms : (protection.plugin_dependencies || []),
-        platform_implementations: rawPlatformImpl,
-        rollback: Array.isArray(rawRollback) ? rawRollback : (protection.rollback_steps || []),
-        ui_layout: rawUiLayout,
-        reporting: rawReporting
+        platform_implementations: rawPlatformImpl
       };
       contextJson = replaceAll(contextJson, 'protection_details', JSON.stringify(protectionDetails, null, 2));
+
+      // UI Schema Components for AI >95% Accuracy Workflow
+      contextJson = replaceAll(contextJson, 'ui_layout', JSON.stringify(rawUiLayout, null, 2));
+      contextJson = replaceAll(contextJson, 'components', JSON.stringify(rawComponents, null, 2));
+      contextJson = replaceAll(contextJson, 'actions', JSON.stringify(rawActions, null, 2));
 
       // Testing Specs
       const testingSpecsFull = {
@@ -821,7 +820,7 @@ window.vaptScriptLoaded = true;
       1. **Schema-First Generation**: ALWAYS use the provided context as ground truth. Never infer component types, default values, or sections.
       2. **Pattern Library Lookup**: Use the provided 'platform_implementations' for enforcement code. Never hallucinate security rules.
       3. **Enforcer Validation**: Verify the platform exists in 'available_platforms' before outputting.
-      4. **Self-Check Rubric**: You MUST score your own output against the rubric below. Only output if score \u2265 9/10.
+      4. **Self-Check Rubric**: You MUST score your own output against the rubric below. Only output if score \u2265 13/15.
 
       --- DESIGN CONTEXT (JSON) ---
       ${contextJson}
@@ -857,15 +856,19 @@ window.vaptScriptLoaded = true;
          - Do NOT change default_values from the schema.
          - Do NOT omit VAPT block markers.
 
-      --- SELF-CHECK RUBRIC (Score 1-10) ---
-      - [2pts] All component IDs and keys match context exactly.
-      - [2pts] Enforcement code matches platform patterns, not invented.
-      - [1pt] Severity badge colors match global_ui_config.
-      - [1pt] Handler names follow strict naming conventions.
-      - [1pt] Target platform (${prioritizedDriver}) is valid for this risk.
+      --- SELF-CHECK RUBRIC (Score 1-15) ---
+      - [2pts] All component IDs and keys match interface_schema exactly.
+      - [2pts] Enforcement code is from pattern library, not invented.
+      - [1pt] Severity badge colors match global_ui_config.severity_badge_colors.
+      - [1pt] Handler names follow strict naming conventions (PascalCase components).
+      - [1pt] Platform is listed in available_platforms for this risk.
       - [1pt] VAPT block markers are present in enforcement code.
-      - [1pt] Verification commands use absolute URLs.
-      - [1pt] No forbidden patterns violated.
+      - [1pt] Verification command is present and matches expected platform CLI.
+      - [1pt] No forbidden_patterns violated.
+      - [2pts] No forbidden .htaccess directives (TraceEnable, ServerSignature, ServerTokens, <Directory>) present in .htaccess output.
+      - [1pt] RewriteEngine On is present before every RewriteRule/RewriteCond block.
+      - [1pt] mod_headers requirement noted when Header directive used in .htaccess.
+      - [1pt] Score >= 13/15 required for output.
 
       --- JSON SKELETON ---
       \`\`\`json
@@ -1259,31 +1262,27 @@ window.vaptScriptLoaded = true;
         }
       };
 
-      autoMapField('description', ['description', 'desc', 'summary']);
-      autoMapField('severity', ['severity', 'level', 'risk_level']);
-      autoMapField('attack_scenario', ['attack_scenario', 'scenario', 'exploit']);
-      autoMapField('remediation', ['remediation', 'mitigation', 'protection']);
-      autoMapField('test_method', ['test_method', 'testmethod', 'testing_steps', 'method']);
-      autoMapField('verification_steps', ['verification_steps', 'verification', 'steps', 'manual_steps']);
-      autoMapField('verification_engine', ['verification_engine', 'verification_schema', 'json_schema', 'schema', 'engine']);
-      autoMapField('compliance', ['owasp_mapping', 'owasp', 'compliance', 'pci_dss']);
-      // interface_schema_full125.json specific fields
-      autoMapField('cvss_score', ['cvss_score', 'cvss', 'score']);
-      autoMapField('owasp', ['owasp', 'owasp_mapping', 'owasp_reference', 'compliance_references']);
-      autoMapField('priority', ['priority', 'priority_score']);
-      autoMapField('estimated_time', ['estimated_time', 'time_estimate', 'effort_estimate']);
-      autoMapField('remediation_effort', ['remediation_effort', 'implementation_effort', 'effort']);
+      autoMapField('description', ['summary', 'description', 'desc']);
+      autoMapField('severity', ['severity.level', 'severity', 'level', 'risk_level']);
+      autoMapField('ui_layout', ['ui_layout', 'layout', 'ui']);
+      autoMapField('components', ['components', 'ui_components', 'fields']);
+      autoMapField('actions', ['actions', 'ui_actions', 'buttons']);
+
+      // interface_schema_v2.0 fields
       autoMapField('available_platforms', ['available_platforms', 'platforms', 'platform_list']);
       autoMapField('platform_implementations', ['platform_implementations', 'implementations', 'enforcer_map']);
-      autoMapField('rollback_steps', ['rollback_steps', 'rollback', 'undo_steps']);
-      autoMapField('ui_layout', ['ui_layout', 'layout', 'card_layout']);
-      autoMapField('reporting', ['reporting', 'status_indicators', 'report']);
 
       setFieldMapping(newMapping);
       if (mappedCount === 0) {
         alert(__('No new matching fields found.', 'vaptsecure'));
       } else {
         alert(sprintf(__('Auto-mapped %d new fields.', 'vaptsecure'), mappedCount));
+      }
+    };
+
+    const handleReset = () => {
+      if (confirm(__('Are you sure you want to clear all field mappings?', 'vaptsecure'))) {
+        setFieldMapping({});
       }
     };
 
@@ -1304,37 +1303,37 @@ window.vaptScriptLoaded = true;
     }, [
       // Direct CSS injection to bypass WP Modal scaffolding
       el('style', null, `
-        .no - header - modal.components - modal__header {
-        display: none!important;
-      }
-        .no - header - modal.components - modal__content {
-    padding: 0!important;
-    margin: 0!important;
-    overflow: hidden!important;
-    display: flex!important;
-    flex - direction: column!important;
-    height: 100 % !important;
-  }
+        .no-header-modal .components-modal__header {
+          display: none !important;
+        }
+        .no-header-modal .components-modal__content {
+          padding: 0 !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+        }
         /* Refined scrollbar - High contrast and cross-browser support */
-        .vapt - mapping - scroll - body {
-    scrollbar - width: thin;
-    scrollbar - color: #949494 #f1f1f1; /* Firefox: thumb, track */
-  }
-        .vapt - mapping - scroll - body:: -webkit - scrollbar {
-    width: 10px;
-  }
-        .vapt - mapping - scroll - body:: -webkit - scrollbar - track {
-    background: #f1f1f1;
-  }
-        .vapt - mapping - scroll - body:: -webkit - scrollbar - thumb {
-    background: #949494; /* Darker grey for visibility */
-    border - radius: 5px;
-    border: 2px solid #f1f1f1;
-  }
-        .vapt - mapping - scroll - body:: -webkit - scrollbar - thumb:hover {
-    background: #787878;
-  }
-  `),
+        .vapt-mapping-scroll-body {
+          scrollbar-width: thin;
+          scrollbar-color: #949494 #f1f1f1; /* Firefox: thumb, track */
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar {
+          width: 10px;
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar-track {
+          background: #f1f1f1;
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar-thumb {
+          background: #949494; /* Darker grey for visibility */
+          border-radius: 5px;
+          border: 2px solid #f1f1f1;
+        }
+        .vapt-mapping-scroll-body::-webkit-scrollbar-thumb:hover {
+          background: #787878;
+        }
+      `),
 
       // Container
       el('div', {
@@ -1362,14 +1361,15 @@ window.vaptScriptLoaded = true;
             zIndex: 100
           }
         }, [
-          el('div', { style: { flex: 1 } }, [
-            el('h2', { style: { margin: '0 0 2px 0', fontSize: '18px', fontWeight: '600', color: '#1d2327' } }, __('Mapping Configuration', 'vaptsecure')),
-            el('p', { style: { margin: 0, fontSize: '12px', color: '#646970', lineHeight: '1.4' } },
+          el('div', { style: { flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: '4px', paddingRight: '20px' } }, [
+            el('h2', { style: { margin: '0', fontSize: '18px', fontWeight: '600', color: '#1d2327', whiteSpace: 'nowrap' } }, __('Mapping Configuration', 'vaptsecure')),
+            el('p', { style: { margin: '0', fontSize: '12px', color: '#646970', lineHeight: '1.4', whiteSpace: 'nowrap' } },
               __('Map JSON fields for context-aware prompts.', 'vaptsecure')
             )
           ]),
-          el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } }, [
+          el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 } }, [
             el(Button, { isSecondary: true, onClick: handleAutoMap, style: { height: '32px' } }, __('Auto Map', 'vaptsecure')),
+            el(Button, { isDestructive: true, isSecondary: true, onClick: handleReset, style: { height: '32px' } }, __('Reset', 'vaptsecure')),
             el(Button, { isTertiary: true, onClick: onClose, style: { height: '32px' } }, __('Cancel', 'vaptsecure')),
             el(Button, { isPrimary: true, onClick: onClose, style: { height: '32px' } }, __('Done', 'vaptsecure'))
           ])
@@ -1394,40 +1394,23 @@ window.vaptScriptLoaded = true;
             el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
             renderMappingSelect(__('Description / Summary', 'vaptsecure'), 'description'),
             renderMappingSelect(__('Severity Level', 'vaptsecure'), 'severity'),
-            renderMappingSelect(__('Attack Scenario', 'vaptsecure'), 'attack_scenario'),
 
-            // ── SECTION 2: Risk Scoring & OWASP (interface_schema_full125) ──
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Risk Scoring & OWASP')),
+            // ── SECTION 2: UI Schema Fields ──────────────────────────────────
+            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('UI Schema Parameters')),
             el('p', { style: { margin: '0 0 12px 0', fontSize: '12px', color: '#646970', lineHeight: '1.5' } },
-              __('Map the CVSS, OWASP, and priority fields from interface_schema_full125.json.', 'vaptsecure')
+              __('Fields required for generating >95% accurate interactive UI schema.', 'vaptsecure')
             ),
-            renderMappingSelect(__('CVSS Score (numeric)', 'vaptsecure'), 'cvss_score'),
-            renderMappingSelect(__('OWASP Reference (e.g. A06:2025)', 'vaptsecure'), 'owasp'),
-            renderMappingSelect(__('Priority Score (1–10)', 'vaptsecure'), 'priority'),
-            renderMappingSelect(__('Estimated Implementation Time', 'vaptsecure'), 'estimated_time'),
-            renderMappingSelect(__('Remediation Effort (low/medium/high)', 'vaptsecure'), 'remediation_effort'),
+            renderMappingSelect(__('UI Layout Object', 'vaptsecure'), 'ui_layout'),
+            renderMappingSelect(__('Components Array', 'vaptsecure'), 'components'),
+            renderMappingSelect(__('Actions Array', 'vaptsecure'), 'actions'),
 
             // ── SECTION 3: Platform & Enforcement ────────────────────────────
             el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Platform & Enforcement')),
             el('p', { style: { margin: '0 0 12px 0', fontSize: '12px', color: '#646970', lineHeight: '1.5' } },
-              __('Controls which platform list and rollback instructions are injected into the AI prompt.', 'vaptsecure')
+              __('Controls which platform list and implementations are injected into the AI prompt.', 'vaptsecure')
             ),
             renderMappingSelect(__('Available Platforms (array)', 'vaptsecure'), 'available_platforms'),
             renderMappingSelect(__('Platform Implementations (object)', 'vaptsecure'), 'platform_implementations'),
-            renderMappingSelect(__('Rollback Steps (array)', 'vaptsecure'), 'rollback_steps'),
-
-            // ── SECTION 4: Technical & Verification ──────────────────────────
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Technical & Verification Fields')),
-            renderMappingSelect(__('Remediation Strategy / Details', 'vaptsecure'), 'remediation'),
-            renderMappingSelect(__('Test Method (Protocol)', 'vaptsecure'), 'test_method'),
-            renderMappingSelect(__('Verification Steps (Manual)', 'vaptsecure'), 'verification_steps'),
-            renderMappingSelect(__('Compliance (OWASP/PCI)', 'vaptsecure'), 'compliance'),
-
-            // ── SECTION 5: Advanced / Layout ─────────────────────────────────
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Advanced Configuration')),
-            renderMappingSelect(__('Verification Engine (JSON Schema)', 'vaptsecure'), 'verification_engine'),
-            renderMappingSelect(__('UI Layout / Section (General|Advanced)', 'vaptsecure'), 'ui_layout'),
-            renderMappingSelect(__('Reporting / Status Indicators', 'vaptsecure'), 'reporting'),
           ])
         ])
       ])
@@ -3342,30 +3325,75 @@ window.vaptScriptLoaded = true;
     // Driver Detection (Skill Alignment)
     const targets = f.protection?.automated_protection?.implementation_targets || f.available_platforms || [];
     let detectedDriver = 'Manual / Hook (default)';
-    if (targets.includes('.htaccess')) detectedDriver = '.htaccess (Pattern 1)';
-    else if (targets.includes('wp-config.php')) detectedDriver = 'wp-config.php (Pattern 2)';
-    else if (targets.includes('PHP Hook') || targets.includes('WordPress')) detectedDriver = 'PHP Hook (Pattern 3)';
+    let safetyRules = [];
+    let driverKey = '';
+
+    if (targets.includes('.htaccess')) {
+      detectedDriver = '.htaccess (Pattern 1)';
+      driverKey = 'htaccess';
+      safetyRules = [
+        'Always use `# BEGIN VAPT {ID}` and `# END VAPT {ID}` markers.',
+        'Place rules BEFORE the `# BEGIN WordPress` block to ensure they execute.',
+        'Use `[L,F]` for blocking rules to stop processing immediately.',
+        'Ensure `mod_rewrite` is checked if using Rewrite rules.'
+      ];
+    }
+    else if (targets.includes('wp-config.php')) {
+      detectedDriver = 'wp-config.php (Pattern 2)';
+      driverKey = 'wp_config';
+      safetyRules = [
+        'Always use `/* BEGIN VAPT {ID} */` and `/* END VAPT {ID} */` markers.',
+        'Place constants BEFORE the `/* That\'s all, stop editing! */` line.',
+        'Check if constant is already defined before defining it.',
+        'Use correct boolean or string values as required by WP core.'
+      ];
+    }
+    else if (targets.includes('PHP Hook') || targets.includes('WordPress') || targets.includes('PHP Functions')) {
+      detectedDriver = 'PHP Hook (Pattern 3)';
+      driverKey = 'php_functions';
+      safetyRules = [
+        'Use specific WordPress action or filter hooks (e.g. `login_init`, `wp_authenticate`).',
+        'Prefix all functions with `vapt_` to avoid collisions.',
+        'Include a check for `ABSPATH` at the top of the logic if applicable.',
+        'Verify existing global variables or functions before usage.'
+      ];
+    }
     else if (targets.includes('Cloudflare')) detectedDriver = 'Cloudflare (Pattern 4)';
     else if (targets.includes('IIS')) detectedDriver = 'IIS / web.config (Pattern 5)';
     else if (targets.includes('Caddy')) detectedDriver = 'Caddy (Pattern 6)';
 
     const lines = [
-      `# VAPT Implementation Brief`,
-      `** Risk **: ${id} (${title})`,
-      `** Severity **: ${severity} | ** Priority **: ${priority} `,
+      `# VAPT Implementation Brief v2.0`,
+      `**Risk**: ${id} (${title})`,
+      `**Severity**: ${severity} | **Priority**: ${priority}`,
       ``,
       `## 🛡️ Strategic Mandate`,
-      `- ** Goal **: ${summary} `,
-      `- ** Primary Driver **: ${detectedDriver} `,
-      `- ** Ref **: Consult \`enforcer_pattern_library.json\` for exact patterns.`,
+      `- **Goal**: ${summary}`,
+      `- **Primary Driver**: ${detectedDriver}`,
+      `- **Compliance Reference**: Consult \`enforcer_pattern_library_v2.0.json\` for the \`${driverKey || 'general'}\` pattern.`,
       ``,
-      `> [!TIP]`,
+      `## ⚠️ Targeted Safety Guidelines`,
+      ...(safetyRules.length > 0 ? safetyRules.map(rule => `- ${rule}`) : [`- Follow standard WordPress security best practices.`]),
+      ``,
+      `## 🔍 Verification Protocol`,
+      `- **Success Criteria**: Protection must return a 403 Forbidden or 401 Unauthorized for probes.`,
+      `- **Mandatory Markers**: Code MUST be wrapped in BEGIN/END blocks.`,
+      `- **Rollback**: Deleting the wrapped block must restore system to previous state.`,
+      ``,
+      `## 📋 Self-Check Rubric (Target Score: 16/19)`,
+      `1. [ ] Correct Lib Key used?`,
+      `2. [ ] Block markers present?`,
+      `3. [ ] Correct insertion point?`,
+      `4. [ ] Variable/Path placeholders qualified?`,
+      `5. [ ] Syntax Guard validated?`,
+      ``,
+      `> [!IMPORTANT]`,
       `> This brief is designed to trigger the **VAPTSchema-Builder** skill patterns with ≥90% accuracy.`
     ];
 
     // Overlay custom user instructions if any existed previously
     if (f.dev_instruct && !f.dev_instruct.startsWith('# VAPT Implementation Brief')) {
-      lines.push(``, `## 📝 Custom Guidance`, f.dev_instruct);
+      lines.push(``, `## 📝 Custom/Legacy Guidance`, f.dev_instruct);
     }
 
     return lines.join('\n');
@@ -3515,6 +3543,10 @@ window.vaptScriptLoaded = true;
 
     // Smart Toggle Handling
     const handleSmartToggle = (feature, toggleKey) => {
+      const getNestedValue = (obj, path) => {
+        return path?.split('.').reduce((acc, part) => acc && acc[part], obj);
+      };
+
       const newVal = !feature[toggleKey];
       let updates = { [toggleKey]: newVal ? 1 : 0 }; // Ensure 1/0 for DB compatibility
 
@@ -3540,7 +3572,7 @@ window.vaptScriptLoaded = true;
 
           if (isEmpty) {
             const sourceKey = fieldMapping[mappingKey];
-            let sourceVal = feature[sourceKey];
+            let sourceVal = getNestedValue(feature, sourceKey);
             if (sourceVal) {
               if (contentField === 'generated_schema' && typeof sourceVal === 'string') {
                 try { sourceVal = JSON.parse(sourceVal); } catch (e) {
@@ -4318,7 +4350,7 @@ window.vaptScriptLoaded = true;
     const [schema, setSchema] = useState({ item_fields: [] });
     const [domains, setDomains] = useState([]);
     const [dataFiles, setDataFiles] = useState([]);
-    const [selectedFile, setSelectedFile] = useState('VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json');
+    const [selectedFile, setSelectedFile] = useState('interface_schema_v2.0.json');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isDomainModalOpen, setDomainModalOpen] = useState(false);
@@ -4354,14 +4386,15 @@ window.vaptScriptLoaded = true;
     const allKeys = useMemo(() => {
       if (!features || features.length === 0) return [];
 
-      const flattenKeys = (obj, prefix = '') => {
+      const flattenKeys = (obj, prefix = '', depth = 0) => {
         let keys = [];
+        if (depth > 1) return keys; // Restrict nesting depth to keep dropdown clean
         for (const key in obj) {
           if (!obj.hasOwnProperty(key)) continue;
           const newKey = prefix ? `${prefix}.${key}` : key;
 
           if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-            const childKeys = flattenKeys(obj[key], newKey);
+            const childKeys = flattenKeys(obj[key], newKey, depth + 1);
             // Include parent nested keys? Let's include child keys primarily
             if (childKeys.length > 0) keys = keys.concat(childKeys);
             // Also include the object key itself if it might be used directly
@@ -4446,7 +4479,7 @@ window.vaptScriptLoaded = true;
     }, []);
 
     const onSelectFile = (file) => {
-      const BASELINE_FILE = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
+      const BASELINE_FILE = 'interface_schema_v2.0.json';
       let nextFiles = [];
       const currentFiles = (selectedFile || '').split(',').filter(Boolean);
 
@@ -4467,7 +4500,7 @@ window.vaptScriptLoaded = true;
         }
       }
 
-      const nextFileStr = nextFiles.join(',') || 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json'; // Fallback to default if empty
+      const nextFileStr = nextFiles.join(',') || 'interface_schema_v2.0.json'; // Fallback to default if empty
       setSelectedFile(nextFileStr);
       fetchData(nextFileStr);
       // Persist to backend

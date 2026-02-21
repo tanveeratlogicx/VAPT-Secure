@@ -3,10 +3,10 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.1.0
- * Author:            Automated Penetration Testing Builder
- * Author URI:        https://vaptbuilder.com/
- * License:           GPL-2.0-or-later
+ * Version:           1.4.8
+ * Author:            VAPT Security
+ * Author URI:        https://hermasnet.com
+ * License:           GPL2+
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       vaptsecure
  * Domain Path:       /languages
@@ -25,7 +25,10 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '2.1.0');
+  define('VAPTSECURE_VERSION', '1.4.8');
+}
+if (! defined('VAPTSECURE_DATA_VERSION')) {
+  define('VAPTSECURE_DATA_VERSION', '2.0.0');
 }
 if (! defined('VAPTSECURE_PATH')) {
   define('VAPTSECURE_PATH', plugin_dir_path(__FILE__));
@@ -34,9 +37,16 @@ if (! defined('VAPTSECURE_URL')) {
   define('VAPTSECURE_URL', plugin_dir_url(__FILE__));
 }
 
-// Global Active Data File Configuration
 if (! defined('VAPTSECURE_ACTIVE_DATA_FILE')) {
-  define('VAPTSECURE_ACTIVE_DATA_FILE', get_option('vaptsecure_active_feature_file', 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json'));
+  define('VAPTSECURE_ACTIVE_DATA_FILE', get_option('vaptsecure_active_feature_file', 'interface_schema_v2.0.json'));
+}
+
+// v2.0 Schema Architecture Links
+if (! defined('VAPTSECURE_PATTERN_LIBRARY')) {
+  define('VAPTSECURE_PATTERN_LIBRARY', 'enforcer_pattern_library_v2.0.json');
+}
+if (! defined('VAPTSECURE_AI_INSTRUCTIONS')) {
+  define('VAPTSECURE_AI_INSTRUCTIONS', 'ai_agent_instructions_v2.0.json');
 }
 
 // Backward Compatibility Aliases
