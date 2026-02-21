@@ -1,0 +1,2322 @@
+{
+  "schema_version": "1.1.0",
+  "document_title": "AI Agent Instructions \u2014 VAPT Interface Schema Generator",
+  "generated_at": "2026-02-21",
+  "purpose": "Complete, deterministic instructions for an AI Agent to generate production-ready React/WordPress-Admin UI component schemas and platform-specific enforcement code for all 125 VAPT risks with \u226590% accuracy.",
+  "accuracy_strategy": {
+    "overview": "Accuracy is achieved through four pillars: (1) Strict schema-first generation using interface_schema.json as the single source of truth, (2) Pattern library lookup for platform-specific code \u2014 never hallucinate code, always read from enforcer_pattern_library.json, (3) Enforcer validation gates before outputting code, (4) Self-check rubric after generation.",
+    "pillars": [
+      {
+        "pillar": 1,
+        "name": "Schema-First Generation",
+        "rule": "ALWAYS load interface_schema.json for the target risk_id BEFORE writing any UI component. Never infer component type, default_value, section, or on_change handler name \u2014 read them directly from schema."
+      },
+      {
+        "pillar": 2,
+        "name": "Pattern Library Lookup",
+        "rule": "ALWAYS read enforcer_pattern_library.json[risk_id][platform] for the target platform before writing any enforcement code. Never write .htaccess, web.config, Caddyfile, or Cloudflare rule code from memory."
+      },
+      {
+        "pillar": 3,
+        "name": "Enforcer Validation Gate",
+        "rule": "Before outputting platform code: (a) verify the platform exists in available_platforms for that risk, (b) if platform is Cloudflare/IIS/Caddy and implementation_type is 'notes_only', output the note and a generic secondary-defense rule instead of fake code."
+      },
+      {
+        "pillar": 4,
+        "name": "Self-Check Rubric",
+        "rule": "After generating output, score it against the rubric in self_check_rubric section. Only output if score \u2265 9/10."
+      },
+      {
+        "pillar": 5,
+        "name": ".htaccess Syntax Guard",
+        "rule": "Before emitting any .htaccess code, validate against the .htaccess syntax guard rules in htaccess_syntax_guard. If the code fails any guard, substitute the corrected version from htaccess_corrected in the pattern library. Never emit TraceEnable, ServerSignature, ServerTokens, or <Directory> blocks in .htaccess output."
+      },
+      {
+        "pillar": 6,
+        "name": "Module Pre-flight Check",
+        "rule": "Before emitting .htaccess Header directives, emit a pre-flight check comment: 'Requires mod_headers \u2014 verify with: apache2ctl -M | grep headers'. Before emitting RewriteRule/RewriteCond, always include RewriteEngine On on the preceding line. Before emitting Options directives, note AllowOverride requirement."
+      }
+    ]
+  },
+  "input_files": {
+    "source_catalogue": "VAPT-Risk-Catalogue-Full-125-v3_4_1.json",
+    "interface_schema": "interface_schema.json",
+    "enforcer_pattern_library": "enforcer_pattern_library.json"
+  },
+  "task_types": {
+    "generate_ui_component_schema": {
+      "description": "Generate the UI component schema JSON for one or more VAPT risks",
+      "prompt_template": "Using interface_schema.json as ground truth, generate a complete React component schema for {risk_id}. Output must exactly match the schema's components, layout, and actions structure. Do not invent fields.",
+      "required_inputs": [
+        "risk_id"
+      ],
+      "output_format": "JSON matching ui_component_schema_template",
+      "steps": [
+        "1. Read interface_schema.risk_interfaces[risk_id]",
+        "2. Extract: title, severity, category, summary, ui_layout, components, actions",
+        "3. Map each component to its React component type using global_ui_config.component_types",
+        "4. Apply severity_badge_colors from global_ui_config",
+        "5. Apply status_indicator_system from global_ui_config",
+        "6. Output the JSON schema using ui_component_schema_template",
+        "7. Run self_check_rubric"
+      ]
+    },
+    "generate_enforcement_code": {
+      "description": "Generate platform-specific enforcement code for a risk",
+      "prompt_template": "Using enforcer_pattern_library.json, output the enforcement code for {risk_id} on platform {platform}. If implementation_type is 'notes_only', explain why and offer a secondary defense rule.",
+      "required_inputs": [
+        "risk_id",
+        "platform"
+      ],
+      "output_format": "Code block with platform header, VAPT block markers, and verification command",
+      "steps": [
+        "1. Read enforcer_pattern_library.patterns[risk_id][platform_key]",
+        "2. Check implementation_type \u2014 if 'notes_only', output note + secondary rule",
+        "3. Output the code snippet from the appropriate field (caddyfile_snippet / web_config_snippet / waf_custom_rule / transform_rule)",
+        "4. Wrap with platform block markers (see enforcer_templates[platform])",
+        "5. Append verification command",
+        "6. Run self_check_rubric"
+      ]
+    },
+    "generate_full_risk_package": {
+      "description": "Generate both UI schema + all platform enforcement codes for a risk",
+      "required_inputs": [
+        "risk_id",
+        "platforms[]"
+      ],
+      "output_format": "JSON package with ui_schema + enforcement_codes keyed by platform",
+      "steps": [
+        "1. Run generate_ui_component_schema",
+        "2. For each platform in platforms[], run generate_enforcement_code",
+        "3. Assemble into full_risk_package_template",
+        "4. Run self_check_rubric"
+      ]
+    },
+    "generate_bulk_schema": {
+      "description": "Generate full interface schema for all 125 risks",
+      "required_inputs": [
+        "filter_by_category (optional)",
+        "filter_by_severity (optional)"
+      ],
+      "output_format": "Array of ui_component_schema objects",
+      "steps": [
+        "1. Load interface_schema.risk_interfaces",
+        "2. Apply filters if provided",
+        "3. For each risk, run generate_ui_component_schema",
+        "4. Return array sorted by ui_layout.order"
+      ]
+    }
+  },
+  "output_templates": {
+    "ui_component_schema_template": {
+      "description": "Standard output JSON for a single risk UI component",
+      "structure": {
+        "risk_id": "string \u2014 e.g. RISK-001",
+        "component_name": "string \u2014 PascalCase, e.g. Risk001WpCronProtection",
+        "title": "string \u2014 from schema",
+        "severity_badge": {
+          "level": "critical|high|medium|low",
+          "bg_class": "string \u2014 Tailwind bg class from severity_badge_colors",
+          "text_class": "string \u2014 Tailwind text class",
+          "label": "string \u2014 e.g. HIGH"
+        },
+        "card_layout": {
+          "section": "General|Advanced",
+          "order": "integer",
+          "collapsible": "boolean",
+          "default_expanded": "boolean",
+          "card_id": "string"
+        },
+        "props": {
+          "riskId": "string",
+          "title": "string",
+          "severity": "string",
+          "isEnabled": "boolean \u2014 default from first toggle component",
+          "status": "protected|unprotected|partial|scanning|error",
+          "onToggle": "function \u2014 from on_change handler name",
+          "onSave": "function",
+          "onScan": "function",
+          "onRollback": "function"
+        },
+        "state_shape": {
+          "enabled": "boolean",
+          "status": "string",
+          "isLoading": "boolean",
+          "error": "string|null",
+          "lastScanned": "string|null"
+        },
+        "sub_components": "array \u2014 one per component in ui_configuration.components",
+        "actions": "array \u2014 from ui_configuration.actions",
+        "wp_api_integration": {
+          "settings_key": "string \u2014 vapt_{risk_id_lower}_settings",
+          "nonce_action": "string \u2014 vapt_save_{risk_id_lower}",
+          "rest_endpoint": "string \u2014 /wp-json/vapt/v1/{risk_id_lower}"
+        }
+      }
+    },
+    "enforcement_code_package_template": {
+      "risk_id": "string",
+      "platform": "string",
+      "implementation_type": "string",
+      "code": "string \u2014 the actual enforcement code",
+      "wrapped_code": "string \u2014 code wrapped with VAPT block markers",
+      "verification": {
+        "command": "string",
+        "expected_result": "string"
+      },
+      "rollback": "string \u2014 rollback instruction",
+      "notes": "array of strings"
+    }
+  },
+  "enforcer_selection_rules": {
+    "description": "Decision tree for selecting the correct enforcer per deployment environment",
+    "primary_rule": "Always check available_platforms in interface_schema for the risk before selecting a platform.",
+    "platform_priority": {
+      ".htaccess": "Use when server is Apache and .htaccess override is enabled (AllowOverride All)",
+      "wp-config.php": "Use for WordPress-level constants \u2014 always available on any WP installation",
+      "PHP Functions": "Use when server-level config is unavailable; hooks into WordPress action/filter system",
+      "Nginx": "Use when server is Nginx \u2014 requires SSH/server admin access",
+      "fail2ban": "Use for rate limiting and brute force protection \u2014 requires server admin access",
+      "Cloudflare": "Use as edge-layer secondary defense or primary when no server access. Check implementation_type \u2014 some risks cannot be fully enforced at CF edge.",
+      "IIS": "Use on Windows Server IIS deployments. Requires URL Rewrite module for path rules.",
+      "Caddy": "Use when Caddy is the webserver. Most Apache rules have direct Caddy equivalents.",
+      "WordPress": "Use for WordPress core filter hooks when no file system access",
+      "Server Cron": "Use only for RISK-001 (wp-cron replacement) and similar cron-related risks"
+    },
+    "cloudflare_limitations": [
+      "Cannot enforce PHP-level constants (wp-config.php) \u2014 these must be set at origin",
+      "Cannot control server Options like -Indexes \u2014 set at origin",
+      "Cannot directly set Apache ServerTokens/ServerSignature \u2014 set at origin + use Cloudflare to strip Server header via Transform Rule",
+      "Rate limiting requires Cloudflare Pro or higher plan for advanced rules",
+      "Workers required for complex logic \u2014 adds latency consideration"
+    ],
+    "iis_requirements": [
+      "URL Rewrite module must be installed for RewriteRule equivalents",
+      "Application Request Routing (ARR) required for reverse proxy rules",
+      "Web.config changes take effect immediately without restart in most cases",
+      "Use appcmd.exe to validate: appcmd validate config"
+    ],
+    "caddy_requirements": [
+      "Caddy v2+ syntax only (JSON config or Caddyfile v2)",
+      "Run 'caddy validate --config /etc/caddy/Caddyfile' before reload",
+      "Run 'caddy reload --config /etc/caddy/Caddyfile' to apply",
+      "Admin API must not be disabled if using API-based config management"
+    ],
+    "htaccess_limitations": {
+      "description": "These Apache directives appear to work in .htaccess but are SILENTLY IGNORED at runtime",
+      "silently_ignored": [
+        "TraceEnable \u2014 server-level only",
+        "ServerSignature \u2014 server-level only",
+        "ServerTokens \u2014 server-level only",
+        "<Directory> blocks \u2014 server-level only, use <FilesMatch> instead",
+        "<VirtualHost> blocks \u2014 server-level only"
+      ],
+      "requires_allowoverride": {
+        "FileInfo": [
+          "RewriteRule",
+          "RewriteCond",
+          "Header",
+          "AddType",
+          "ErrorDocument"
+        ],
+        "Options": [
+          "Options"
+        ],
+        "Limit": [
+          "<Files>",
+          "<FilesMatch>",
+          "Order",
+          "Deny",
+          "Allow",
+          "Require"
+        ],
+        "All": "All of the above"
+      },
+      "requires_modules": {
+        "mod_rewrite": [
+          "RewriteEngine",
+          "RewriteRule",
+          "RewriteCond"
+        ],
+        "mod_headers": [
+          "Header always set",
+          "Header unset",
+          "Header always unset"
+        ],
+        "mod_authz_host": [
+          "Order Deny,Allow",
+          "Deny from",
+          "Allow from"
+        ],
+        "mod_authz_core": [
+          "Require all denied",
+          "Require ip"
+        ]
+      }
+    },
+    "wp_config_insertion_rules": {
+      "mandatory_position": "All constants must be defined BEFORE: require_once ABSPATH . 'wp-settings.php';",
+      "block_marker_template": "/* BEGIN VAPT {risk_id} */\n{code}\n/* END VAPT {risk_id} */",
+      "target_constants_lookup": "Read target_constants[] from pattern_library.patterns[risk_id].wp_config_enriched",
+      "verification_cmd": "wp config get {CONSTANT_NAME}",
+      "rollback_cmd": "wp config delete {CONSTANT_NAME}"
+    }
+  },
+  "quality_rules": {
+    "naming_conventions": {
+      "component_name": "Risk{NNN}{TitleCamelCase} \u2014 e.g. Risk001WpCronProtection",
+      "handler_name": "handleRISK{NNN}{EventType}Change \u2014 e.g. handleRISK001ToggleChange",
+      "settings_key": "vapt_risk_{nnn}_settings \u2014 e.g. vapt_risk_001_settings",
+      "action_id": "ACTION-{NNN}-{SEQ} \u2014 e.g. ACTION-001-001",
+      "component_id": "UI-RISK-{NNN}-{SEQ} \u2014 e.g. UI-RISK-001-001"
+    },
+    "validation_rules": {
+      "toggle_components": "Must have boolean default_value, on_change handler, optional dependencies array",
+      "dropdown_components": "Must have string default_value matching one of options[], required:true validation, dependencies array",
+      "actions": "Must have action_id, type, label, confirmation_required boolean, processing_message, success_message, error_handler",
+      "layout": "section must be 'General' or 'Advanced'; order must be unique integer; collapsible boolean; default_expanded boolean"
+    },
+    "forbidden_patterns": [
+      "Do NOT invent component IDs \u2014 use the exact IDs from interface_schema",
+      "Do NOT change default_value \u2014 use exactly what is in the schema",
+      "Do NOT add components not defined in the schema",
+      "Do NOT write enforcement code from memory \u2014 always read from pattern library",
+      "Do NOT use IIS web.config <rewrite> rules without noting 'URL Rewrite module required'",
+      "Do NOT output Cloudflare rules for implementation_type=notes_only without also outputting the note",
+      "Do NOT use Apache syntax in Caddy snippets",
+      "Do NOT omit VAPT block markers in enforcement code output"
+    ]
+  },
+  "self_check_rubric": {
+    "description": "Score generated output 1-10. Output only if \u22659.",
+    "checks": [
+      {
+        "id": 1,
+        "weight": 2,
+        "check": "All component IDs match interface_schema exactly"
+      },
+      {
+        "id": 2,
+        "weight": 2,
+        "check": "Enforcement code is from pattern library, not invented"
+      },
+      {
+        "id": 3,
+        "weight": 1,
+        "check": "Severity badge colors match global_ui_config.severity_badge_colors"
+      },
+      {
+        "id": 4,
+        "weight": 1,
+        "check": "Handler names follow naming_conventions"
+      },
+      {
+        "id": 5,
+        "weight": 1,
+        "check": "Platform is listed in available_platforms for this risk"
+      },
+      {
+        "id": 6,
+        "weight": 1,
+        "check": "VAPT block markers are present in enforcement code"
+      },
+      {
+        "id": 7,
+        "weight": 1,
+        "check": "Verification command is present and matches expected platform CLI"
+      },
+      {
+        "id": 8,
+        "weight": 1,
+        "check": "No forbidden_patterns violated"
+      },
+      {
+        "id": 9,
+        "weight": 2,
+        "check": "No forbidden .htaccess directives (TraceEnable, ServerSignature, ServerTokens, <Directory>) present in .htaccess output"
+      },
+      {
+        "id": 10,
+        "weight": 1,
+        "check": "RewriteEngine On is present before every RewriteRule/RewriteCond block"
+      },
+      {
+        "id": 11,
+        "weight": 1,
+        "check": "mod_headers requirement noted when Header directive used in .htaccess"
+      },
+      {
+        "id": 12,
+        "weight": 1,
+        "check": "AllowOverride requirement noted when Options directive used in .htaccess"
+      },
+      {
+        "id": 13,
+        "weight": 1,
+        "check": "target_file is wp-content/uploads/.htaccess for RISK-020"
+      },
+      {
+        "id": 14,
+        "weight": 1,
+        "check": "IIS web.config output includes URL Rewrite Module requirement note when <rewrite> section used"
+      },
+      {
+        "id": 15,
+        "weight": 1,
+        "check": "Caddy output uses v2 syntax only (no Apache directives, no semicolons, no Order/Deny)"
+      }
+    ],
+    "score_formula": "Sum of weights for passing checks (max 15 from v1.1). Score must be \u226513 to output. Fail: identify failing checks and regenerate."
+  },
+  "example_prompts": {
+    "single_risk_ui": {
+      "user_prompt": "Generate the UI component schema for RISK-014 (Missing X-Frame-Options Header)",
+      "agent_steps": [
+        "1. Load interface_schema.risk_interfaces.RISK-014",
+        "2. Read: title='Missing X-Frame-Options Header', severity='medium', section='Advanced', components=[{type:toggle,...}]",
+        "3. Apply severity_badge_colors.medium",
+        "4. Generate component_name: Risk014MissingXFrameOptions",
+        "5. Generate handler: handleRISK014ToggleChange",
+        "6. Output ui_component_schema_template filled in for RISK-014",
+        "7. Self-check: score 10/10 \u2192 output"
+      ]
+    },
+    "enforcement_cloudflare": {
+      "user_prompt": "Generate Cloudflare enforcement for RISK-014",
+      "agent_steps": [
+        "1. Load enforcer_pattern_library.patterns.RISK-014.cloudflare",
+        "2. Read: implementation_type='transform_rule', transform_rule.name='X-Frame-Options', value='SAMEORIGIN'",
+        "3. Output Transform Rule config for Cloudflare dashboard",
+        "4. Wrap with Cloudflare VAPT marker comment",
+        "5. Output verification: check response headers with curl -I",
+        "6. Self-check: score 10/10 \u2192 output"
+      ]
+    },
+    "enforcement_iis": {
+      "user_prompt": "Generate IIS web.config for RISK-014",
+      "agent_steps": [
+        "1. Load enforcer_pattern_library.patterns.RISK-014.iis",
+        "2. Read: implementation_type='web_config_http_headers', web_config_snippet contains customHeaders add X-Frame-Options SAMEORIGIN",
+        "3. Output the web_config_snippet wrapped with IIS VAPT markers",
+        "4. Append note: 'Restart App Pool after applying'",
+        "5. Append verification: curl -I https://yoursite.com | findstr X-Frame-Options",
+        "6. Self-check: score 10/10 \u2192 output"
+      ]
+    },
+    "bulk_category": {
+      "user_prompt": "Generate enforcement code for all Authentication risks on Cloudflare",
+      "agent_steps": [
+        "1. Filter interface_schema.risk_interfaces where category='Authentication'",
+        "2. For each risk: load enforcer_pattern_library.patterns[risk_id].cloudflare",
+        "3. For implementation_type='notes_only': output note only, skip code",
+        "4. For implementation_type='waf_custom_rule': output WAF expression",
+        "5. For implementation_type='transform_rule': output Transform Rule",
+        "6. Assemble into ordered array by priority desc",
+        "7. Self-check all entries"
+      ]
+    },
+    "htaccess_corrected_flow": {
+      "user_prompt": "Generate .htaccess enforcement for RISK-023 (Trace Method Enabled)",
+      "agent_steps": [
+        "1. Read enforcer_pattern_library.patterns.RISK-023.htaccess_corrected",
+        "2. Check htaccess_syntax_guard \u2014 'TraceEnable off' is FORBIDDEN in .htaccess",
+        "3. Read corrected_code: mod_rewrite TRACE blocker (RewriteCond %{REQUEST_METHOD} ^TRACE)",
+        "4. Emit pre-flight: 'Requires mod_rewrite \u2014 AllowOverride FileInfo or All'",
+        "5. Emit: # BEGIN VAPT RISK-023 + corrected code + # END VAPT RISK-023",
+        "6. Emit server_config note: 'For full enforcement: add TraceEnable off to httpd.conf'",
+        "7. Self-check: rubric checks 9 (no forbidden directives \u2713), 10 (RewriteEngine On \u2713) \u2192 score 15/15 \u2192 output"
+      ]
+    },
+    "uploads_php_block": {
+      "user_prompt": "Generate protection for RISK-020 (PHP File Execution in Uploads)",
+      "agent_steps": [
+        "1. Read enforcer_pattern_library.patterns.RISK-020.htaccess_corrected",
+        "2. Read target_file: 'wp-content/uploads/.htaccess'",
+        "3. Check htaccess_syntax_guard \u2014 <Directory> is FORBIDDEN in .htaccess",
+        "4. Read corrected_code: <FilesMatch '\\.php$'> with Deny from all",
+        "5. Emit: 'This rule must be placed in wp-content/uploads/.htaccess (a separate file)'",
+        "6. Emit the FilesMatch block wrapped with VAPT markers",
+        "7. Emit Apache 2.4+ alternative: Require all denied",
+        "8. Self-check: rubric check 13 (target_file = uploads/.htaccess \u2713) \u2192 score 15/15"
+      ]
+    }
+  },
+  "platform_verification_commands": {
+    ".htaccess": {
+      "validate": "apachectl -t",
+      "reload": "service apache2 reload",
+      "test_header": "curl -sI https://yoursite.com | grep -i 'header-name'"
+    },
+    "IIS": {
+      "validate": "appcmd.exe validate config",
+      "reload": "iisreset /restart OR Recycle App Pool in IIS Manager",
+      "test_header": "curl -sI https://yoursite.com | findstr header-name",
+      "url_rewrite_check": "appcmd list module /name:RewriteModule"
+    },
+    "Caddy": {
+      "validate": "caddy validate --config /etc/caddy/Caddyfile",
+      "reload": "caddy reload --config /etc/caddy/Caddyfile",
+      "test_header": "curl -sI https://yoursite.com | grep -i 'header-name'"
+    },
+    "Cloudflare": {
+      "validate": "Review rule expression in CF Dashboard > Security > WAF > Custom Rules",
+      "reload": "Rules activate immediately upon save",
+      "test_header": "curl -sI https://yoursite.com | grep -i 'cf-'"
+    },
+    "Nginx": {
+      "validate": "nginx -t",
+      "reload": "nginx -s reload",
+      "test_header": "curl -sI https://yoursite.com | grep -i 'header-name'"
+    },
+    "fail2ban": {
+      "validate": "fail2ban-client -t",
+      "reload": "fail2ban-client reload",
+      "test_header": "fail2ban-client status wordpress-auth"
+    }
+  },
+  "risk_index": [
+    {
+      "risk_id": "RISK-001",
+      "title": "wp-cron.php Enabled Leads to DoS Attack",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-002",
+      "title": "Xmlrpc enabled Leads to Ping back attack",
+      "category": "Information Disclosure",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-003",
+      "title": "Username Enumeration via WordPress REST API",
+      "category": "Authentication",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-004",
+      "title": "Email Flooding via Password Reset",
+      "category": "Authentication",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-005",
+      "title": "Exposed WordPress Admin Username via Author Query",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-006",
+      "title": "Endpoint Disclosure (auto-generated WP REST routes)",
+      "category": "API Security",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress Core"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-007",
+      "title": "Lack of Rate Limiting on WordPress Login",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-008",
+      "title": "Username Enumeration via wp-login.php",
+      "category": "Authentication",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-009",
+      "title": "Lack of Rate Limiting on Contact and Registration Forms",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-010",
+      "title": "Server Banner Grabbing",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-011",
+      "title": "Information Disclosure via readme.html",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-012",
+      "title": "HSTS Not Implemented",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-013",
+      "title": "Directory Listing Enabled",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-014",
+      "title": "Missing X-Frame-Options Header",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-015",
+      "title": "Missing X-Content-Type-Options Header",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-016",
+      "title": "Missing X-XSS-Protection Header",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-017",
+      "title": "Missing Referrer-Policy Header",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-018",
+      "title": "Missing Permissions-Policy Header",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-019",
+      "title": "Sensitive Files Accessible",
+      "category": "Information Disclosure",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-020",
+      "title": "PHP File Execution in Uploads Directory",
+      "category": "Configuration",
+      "severity": "critical",
+      "cvss": 9.8,
+      "priority": 10,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-021",
+      "title": "WordPress Config File Accessible",
+      "category": "Information Disclosure",
+      "severity": "critical",
+      "cvss": 9.1,
+      "priority": 10,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-022",
+      "title": "Missing Content-Security-Policy Header",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-023",
+      "title": "Trace Method Enabled",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-024",
+      "title": "Server Signature Enabled",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-025",
+      "title": "ETags Information Leakage",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-026",
+      "title": "Symbolic Links Following Enabled",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-027",
+      "title": "WordPress Install File Accessible",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-028",
+      "title": "WordPress Upgrade File Accessible",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-029",
+      "title": "Backup Files Accessible",
+      "category": "Information Disclosure",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-030",
+      "title": "Log Files Accessible",
+      "category": "Information Disclosure",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-031",
+      "title": "Missing Cross-Origin-Resource-Policy",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-032",
+      "title": "Missing Cross-Origin-Embedder-Policy",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-033",
+      "title": "Missing Cross-Origin-Opener-Policy",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-034",
+      "title": "WordPress Debug Log Exposed",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-035",
+      "title": "Apache Status Page Accessible",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        ".htaccess"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-036",
+      "title": "PHP Error Display Enabled",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-037",
+      "title": "PHP Version Exposed in Headers",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-038",
+      "title": "WordPress Version Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-039",
+      "title": "Plugin Version Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-040",
+      "title": "WordPress Login Page Not Protected",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-041",
+      "title": "Weak Password Policy",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-042",
+      "title": "Session Timeout Not Configured",
+      "category": "Authentication",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-043",
+      "title": "No Account Lockout Policy",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-044",
+      "title": "User Registration Without Verification",
+      "category": "Authentication",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-045",
+      "title": "Default Admin Account Exists",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-046",
+      "title": "No Two-Factor Authentication",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-047",
+      "title": "File Upload Without Validation",
+      "category": "Configuration",
+      "severity": "critical",
+      "cvss": 9.8,
+      "priority": 10,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-048",
+      "title": "SQL Injection via Search",
+      "category": "Injection",
+      "severity": "critical",
+      "cvss": 9.1,
+      "priority": 10,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-049",
+      "title": "Cross-Site Scripting in Comments",
+      "category": "Injection",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-050",
+      "title": "CSRF Protection Missing",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-051",
+      "title": "Unfiltered HTML in Posts",
+      "category": "Injection",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-052",
+      "title": "Theme Editor Enabled",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-053",
+      "title": "Plugin Editor Enabled",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-054",
+      "title": "XML External Entity Processing",
+      "category": "Injection",
+      "severity": "critical",
+      "cvss": 9.1,
+      "priority": 10,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-055",
+      "title": "PHP Deserialization Vulnerability",
+      "category": "Injection",
+      "severity": "critical",
+      "cvss": 9.8,
+      "priority": 10,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-056",
+      "title": "Open Redirect Vulnerability",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-057",
+      "title": "Information Leak via JSON API",
+      "category": "Information Disclosure",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-058",
+      "title": "Comment Spam Not Protected",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-059",
+      "title": "Pingback XML-RPC Enabled",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-060",
+      "title": "Trackback Enabled",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "PHP Functions"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-061",
+      "title": "WordPress Salts Not Configured",
+      "category": "Configuration",
+      "severity": "critical",
+      "cvss": 9.8,
+      "priority": 10,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-062",
+      "title": "Database Credentials Exposed",
+      "category": "Configuration",
+      "severity": "critical",
+      "cvss": 9.8,
+      "priority": 10,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-063",
+      "title": "Debug Mode Enabled in Production",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-064",
+      "title": "Script Debug Enabled",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-065",
+      "title": "Save Queries Enabled",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-066",
+      "title": "File Edit Not Disabled",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-067",
+      "title": "File Modification Not Restricted",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-068",
+      "title": "Automatic Updates Disabled",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-069",
+      "title": "SSL Not Enforced for Admin",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-070",
+      "title": "SSL Not Enforced for Login",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-071",
+      "title": "Cookie Domain Not Set",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-072",
+      "title": "Cookie Path Not Restricted",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-073",
+      "title": "Trash Auto-Delete Not Configured",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-074",
+      "title": "Post Revisions Unlimited",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-075",
+      "title": "Autosave Interval Too Long",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-076",
+      "title": "Memory Limit Too Low",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-077",
+      "title": "Max Memory Limit Not Set",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-078",
+      "title": "Table Prefix Default",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-079",
+      "title": "Database Host Exposed",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-080",
+      "title": "Custom User Table Not Defined",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "wp-config.php"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-081",
+      "title": "XML-RPC Brute Force Not Blocked",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-082",
+      "title": "WP-Admin Brute Force Not Blocked",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-083",
+      "title": "404 Exploit Scanning Not Blocked",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-084",
+      "title": "Comment Spam Not Rate Limited",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-085",
+      "title": "Registration Spam Not Blocked",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-086",
+      "title": "REST API Abuse Not Blocked",
+      "category": "API Security",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-087",
+      "title": "Password Reset Abuse Not Blocked",
+      "category": "Authentication",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-088",
+      "title": "File Upload Abuse Not Blocked",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-089",
+      "title": "Search Query Abuse Not Blocked",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-090",
+      "title": "Bot Traffic Not Blocked",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-091",
+      "title": "HTTP Method Abuse Not Blocked",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-092",
+      "title": "User Agent Abuse Not Blocked",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-093",
+      "title": "XML-RPC Pingback Abuse Not Blocked",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-094",
+      "title": "WooCommerce Login Not Protected",
+      "category": "Authentication",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-095",
+      "title": "Long Duration Attacks Not Blocked",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "fail2ban"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-096",
+      "title": "WordPress Cron Not Replaced with Server Cron",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-097",
+      "title": "No Automated Backup Schedule",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-098",
+      "title": "No Security Scan Schedule",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-099",
+      "title": "No Log Rotation Configured",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-100",
+      "title": "No Plugin Update Schedule",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-101",
+      "title": "No Core Update Schedule",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-102",
+      "title": "No Database Optimization Schedule",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-103",
+      "title": "No Spam Cleanup Schedule",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-104",
+      "title": "No Failed Login Log Rotation",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-105",
+      "title": "No SSL Certificate Renewal",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Server Cron"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-106",
+      "title": "Inactive Plugins Present",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-107",
+      "title": "Inactive Themes Present",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-108",
+      "title": "Default Theme Not Deleted",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-109",
+      "title": "Hello Dolly Plugin Active",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-110",
+      "title": "WordPress Version Publicly Visible",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-111",
+      "title": "Emoji Scripts Loaded",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-112",
+      "title": "oEmbed Discovery Enabled",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-113",
+      "title": "RSD Link Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-114",
+      "title": "WLWManifest Link Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-115",
+      "title": "Shortlink Header Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "WordPress"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-116",
+      "title": "Nginx Version Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-117",
+      "title": "Apache Version Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Apache"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-118",
+      "title": "Nginx Buffer Size Misconfigured",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-119",
+      "title": "Nginx Timeout Not Configured",
+      "category": "Configuration",
+      "severity": "medium",
+      "cvss": 5.3,
+      "priority": 6,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-120",
+      "title": "Nginx Rate Limiting Not Configured",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-121",
+      "title": "Apache ModSecurity Not Enabled",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Apache"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-122",
+      "title": "Nginx Gzip Compression Not Configured",
+      "category": "Configuration",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-123",
+      "title": "Caddy Server Version Exposed",
+      "category": "Information Disclosure",
+      "severity": "low",
+      "cvss": 3.7,
+      "priority": 4,
+      "original_enforcers": [
+        "Caddy"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-124",
+      "title": "Caddy Admin Interface Exposed",
+      "category": "Configuration",
+      "severity": "critical",
+      "cvss": 9.8,
+      "priority": 10,
+      "original_enforcers": [
+        "Caddy"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    },
+    {
+      "risk_id": "RISK-125",
+      "title": "Nginx SSL Configuration Weak",
+      "category": "Configuration",
+      "severity": "high",
+      "cvss": 7.5,
+      "priority": 8,
+      "original_enforcers": [
+        "Nginx"
+      ],
+      "has_cloudflare_equivalent": true,
+      "has_iis_equivalent": true,
+      "has_caddy_equivalent": true
+    }
+  ],
+  "htaccess_syntax_guard": {
+    "description": "These are hard rules for .htaccess generation. Violation = silent failure at runtime. All are derived from the audit of the v1.0 pattern library.",
+    "critical_forbidden_directives": {
+      "TraceEnable": {
+        "reason": "Server-level only directive \u2014 SILENTLY IGNORED in .htaccess",
+        "correct_alternative": "Use mod_rewrite: RewriteCond %{REQUEST_METHOD} ^TRACE [NC] \u2192 RewriteRule .* - [F,L]",
+        "server_config_note": "Add 'TraceEnable off' to httpd.conf or VirtualHost for authoritative enforcement"
+      },
+      "ServerSignature": {
+        "reason": "Server-level only directive \u2014 SILENTLY IGNORED in .htaccess",
+        "correct_alternative": "Use mod_headers: Header unset Server && Header always unset X-Powered-By",
+        "server_config_note": "Add 'ServerSignature Off' and 'ServerTokens Prod' to httpd.conf for full effect"
+      },
+      "ServerTokens": {
+        "reason": "Server-level only directive \u2014 SILENTLY IGNORED in .htaccess",
+        "correct_alternative": "Use mod_headers: Header unset Server",
+        "server_config_note": "Add 'ServerTokens Prod' to httpd.conf"
+      },
+      "<Directory ...>": {
+        "reason": "<Directory> blocks in .htaccess are SILENTLY IGNORED by Apache",
+        "correct_alternative": "Use <Files>, <FilesMatch>, or <Limit> blocks instead. For subdirectory scope, create a separate .htaccess in that subdirectory.",
+        "example_fix": "RISK-020: <Directory '/wp-content/uploads'> \u2192 create wp-content/uploads/.htaccess with <FilesMatch '\\.php$'>"
+      }
+    },
+    "required_companions": {
+      "RewriteRule": {
+        "requires": "RewriteEngine On must appear before any RewriteCond/RewriteRule in the same block",
+        "allowoverride_required": "AllowOverride FileInfo or AllowOverride All",
+        "module": "mod_rewrite"
+      },
+      "RewriteCond": {
+        "requires": "RewriteEngine On must precede the first RewriteCond",
+        "allowoverride_required": "AllowOverride FileInfo or AllowOverride All",
+        "module": "mod_rewrite"
+      },
+      "Header": {
+        "requires": "Apache mod_headers must be loaded",
+        "enable_command": "sudo a2enmod headers && sudo service apache2 restart",
+        "allowoverride_required": "AllowOverride FileInfo or AllowOverride All",
+        "module": "mod_headers"
+      },
+      "Options": {
+        "requires": "AllowOverride Options or AllowOverride All in server config",
+        "allowoverride_required": "AllowOverride Options or AllowOverride All",
+        "note": "Without correct AllowOverride, Options directive is silently ignored"
+      }
+    },
+    "block_directive_rules": {
+      "valid_in_htaccess": [
+        "<Files>",
+        "<FilesMatch>",
+        "<Limit>",
+        "<LimitExcept>",
+        "<IfModule>",
+        "<IfDefine>"
+      ],
+      "invalid_in_htaccess": [
+        "<Directory>",
+        "<VirtualHost>",
+        "<Global>"
+      ],
+      "conditionally_valid": {
+        "<Location>": "Valid in .htaccess syntax but behavior is unreliable \u2014 prefer httpd.conf for <Location> blocks"
+      }
+    },
+    "insertion_point_tokens": {
+      "beginning_of_file": "Insert at the very top of .htaccess, before any WordPress-generated content",
+      "before_wordpress_rewrite": "Insert BEFORE the # BEGIN WordPress comment block",
+      "after_wordpress_rewrite": "Insert AFTER the # END WordPress comment block",
+      "after_rewrite_engine": "Insert after RewriteEngine On, within the WordPress rewrite section",
+      "end_of_file": "Append at the very end of .htaccess"
+    },
+    "apache_24_compatibility": {
+      "note": "Apache 2.4+ deprecated Order/Deny/Allow syntax. Both work but 2.4+ syntax is preferred.",
+      "old_syntax": "Order Deny,Allow\nDeny from all",
+      "new_syntax_24plus": "Require all denied",
+      "agent_rule": "Always include both syntaxes or at minimum a comment noting the Apache 2.4+ alternative"
+    },
+    "target_file_rules": {
+      "RISK-020": {
+        "target_file": "wp-content/uploads/.htaccess",
+        "reason": "PHP execution block for uploads must be in a .htaccess within the uploads directory itself \u2014 a <FilesMatch> in the root .htaccess does NOT apply to subdirectories in the same way"
+      },
+      "all_other_risks": {
+        "target_file": ".htaccess",
+        "location": "WordPress root directory (same directory as wp-config.php)"
+      }
+    },
+    "complete_block_template": {
+      "description": "Use this template for any .htaccess code block to ensure correctness",
+      "template": "# BEGIN VAPT {risk_id} \u2014 {title}\n# Requires: {module} | AllowOverride: {allowoverride}\n{code}\n# END VAPT {risk_id}"
+    }
+  }
+}

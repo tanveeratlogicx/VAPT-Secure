@@ -1431,7 +1431,102 @@ class VAPTSECURE_REST
       $schema['enforcement']['rollback_on_disable'] = $schema['enforcement']['rollback_on_disable'] ?? true;
     }
 
+    // 🛡️ Global Enforcement Bridge (v3.13.5)
+    // If enforcement mappings are missing, try to resolve them from the 125-item catalogue
+    if ($driver !== 'hook' && empty($schema['enforcement']['mappings'])) {
+      $resolved_code = self::resolve_enforcement_from_catalogue($feature_key, $driver);
+      if ($resolved_code) {
+        error_log("VAPT Intelligence: Auto-resolved $driver enforcement for $feature_key from catalogue.");
+        $schema['enforcement']['mappings'] = [
+          'feat_enabled' => $resolved_code
+        ];
+      }
+    }
+
+    // 🛡️ Verification Path Self-Healing (v3.13.5)
+    // Many 125-item risks default to root path verification which fails if the protection targets a specific endpoint.
+    if (!empty($schema['verification'])) {
+      foreach ($schema['verification'] as &$check) {
+        if (($check['test_logic'] ?? '') === 'universal_probe' && ($check['test_config']['path'] ?? '') === '/') {
+          $target_endpoint = self::resolve_target_endpoint_from_catalogue($feature_key);
+          if ($target_endpoint && $target_endpoint !== '/') {
+            error_log("VAPT Intelligence: Re-targeting verification for $feature_key from / to $target_endpoint");
+            $check['test_config']['path'] = $target_endpoint;
+          }
+        }
+      }
+    }
+
     return $schema;
+  }
+
+  /**
+   * 🛡️ RESOLVE ENFORCEMENT FROM CATALOGUE (v3.13.5)
+   */
+  private static function resolve_enforcement_from_catalogue($feature_key, $driver)
+  {
+    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
+    if (!file_exists($catalog_path)) return null;
+
+    $catalog = json_decode(file_get_contents($catalog_path), true);
+    if (!isset($catalog['risk_catalog'])) return null;
+
+    foreach ($catalog['risk_catalog'] as $item) {
+      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
+      if ($id === $feature_key) {
+        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
+        foreach ($steps as $step) {
+          $enforcer = strtolower($step['enforcer'] ?? '');
+          if (($driver === 'htaccess' && strpos($enforcer, 'htaccess') !== false) ||
+            ($driver === 'wp-config' && strpos($enforcer, 'config') !== false)
+          ) {
+            if (!empty($step['code'])) return $step['code'];
+          }
+        }
+        $examples = $item['code_examples'] ?? [];
+        foreach ($examples as $ex) {
+          $desc = strtolower($ex['description'] ?? '');
+          if (($driver === 'htaccess' && (strpos($desc, 'htaccess') !== false || strpos($desc, 'apache') !== false)) ||
+            ($driver === 'wp-config' && strpos($desc, 'config') !== false)
+          ) {
+            $code = $ex['code'] ?? '';
+            if (preg_match('/```(?:apache|php|htaccess)?\s*(.*?)\s*```/is', $code, $m)) {
+              $code = $m[1];
+            }
+            return trim($code);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 🛡️ RESOLVE TARGET ENDPOINT (v3.13.5)
+   */
+  private static function resolve_target_endpoint_from_catalogue($feature_key)
+  {
+    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
+    if (!file_exists($catalog_path)) return null;
+
+    $catalog = json_decode(file_get_contents($catalog_path), true);
+    if (!isset($catalog['risk_catalog'])) return null;
+
+    foreach ($catalog['risk_catalog'] as $item) {
+      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
+      if ($id === $feature_key) {
+        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
+        foreach ($steps as $step) {
+          $path = !empty($step['target_pattern']) ? $step['target_pattern'] : (!empty($step['target']) ? $step['target'] : '');
+          if ($path) return trim(ltrim(rtrim($path, '$'), '^'));
+        }
+        $rollback = $item['protection']['rollback_steps'] ?? [];
+        foreach ($rollback as $rb) {
+          if (!empty($rb['target'])) return trim(ltrim(rtrim($rb['target'], '$'), '^'));
+        }
+      }
+    }
+    return null;
   }
 
   /**

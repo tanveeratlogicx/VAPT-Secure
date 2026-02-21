@@ -807,65 +807,79 @@ window.vaptScriptLoaded = true;
         - **Testing Protocol**: ${formatValue(rawMethod) || 'N/A'}
       `.trim();
 
-      // 5. Assemble PRODUCTION READY PROMPT (v3.13.1 - VAPT Secure Skill Aligned)
+      // 5. Assemble PRODUCTION READY PROMPT (v3.14.0 - VAPT 125-Risk Aligned)
+      const homeUrl = (settings.homeUrl || '').replace(/\/$/, '');
+      const currentDomain = (settings.currentDomain || window.location.hostname || 'hermasnet.local').split(':')[0];
+      const includeProtocol = feature.include_manual_protocol !== false;
+      const includeNotes = feature.include_operational_notes !== false;
+
       const finalPrompt = `
       --- ROLE & OBJECTIVE ---
-      You are the **VAPT Security Expert**. Your mandate is to implement security controls in the **${settings.pluginName || 'VAPT Secure'}** plugin using standardized JSON schemas. You MUST provide a **Production-Ready** deployment for the **${settings.pluginName || 'VAPT Secure'}** security workbench that is precise, straightforward, and targeted.
+      You are the **VAPT Security Expert Agent**. Your mandate is to generate production-ready Interface Schema JSONs for the **${settings.pluginName || 'VAPT Secure'}** workbench. You MUST achieve \u226590% accuracy by following the deterministic instructions below.
+
+      --- THE FOUR PILLARS OF ACCURACY ---
+      1. **Schema-First Generation**: ALWAYS use the provided context as ground truth. Never infer component types, default values, or sections.
+      2. **Pattern Library Lookup**: Use the provided 'platform_implementations' for enforcement code. Never hallucinate security rules.
+      3. **Enforcer Validation**: Verify the platform exists in 'available_platforms' before outputting.
+      4. **Self-Check Rubric**: You MUST score your own output against the rubric below. Only output if score \u2265 9/10.
 
       --- DESIGN CONTEXT (JSON) ---
       ${contextJson}
-      --- 
 
-      --- SECURITY OBJECTIVE (PERSONAL ATTENTION) ---
+      --- SECURITY OBJECTIVE ---
       ${securityObjective}
-      --- 
 
       --- OPERATIONAL & GLOBAL CONTEXT ---
       ${operationalContext}
-      ---
 
       --- MANUAL PROTOCOL CONTEXT ---
       ${protocolContext}
-      ---
 
-      --- SOURCE-SPECIFIC AI AGENT INSTRUCTIONS ---
+      --- AI AGENT INSTRUCTIONS ---
       ${displayInstruct}
-      ---
 
       --- REFERENCE CODE ---
       ${referenceCode || 'No specific reference code provided.'}
-      ---
 
       --- INSTRUCTIONS & CRITICAL RULES ---
-      1. **Response Format**: Provide ONLY a JSON block. No preamble. No commentary.
-      2. **Fully Qualified URLs (MANDATORY)**: You MUST use the provided **site_context.home_url** (${settings.homeUrl || ''}) to qualify every single URL, endpoint, or path in your generated JSON. Do NOT return relative paths. Every 'url' or 'path' field MUST be an absolute URL targeting the specific security check (e.g. http://site.com/wp-cron.php).
-      3. **Single Enforcer Strategy**: You MUST target ONLY the **${prioritizedDriver}** driver. Valid drivers are: hook, htaccess, wp-config, manual. Do NOT suggest hybrid or multi-driver implementations.${driverContextInstruction}
-      4. **No Internal IDs in Code (CRITICAL)**: Do NOT use internal IDs like 'RISK-001', 'VAPT-ID', or any specific feature ID in the 'mappings' code or comments. Use generic markers like '/* BEGIN VAPT PROTECTION */' and '/* END VAPT PROTECTION */'. Codes/comments MUST be suitable for a client's server configuration.
-      5. **Global Settings = Hard Constraints**: You MUST strictly adhere to the provided **global_settings**. These are not suggestions; they are architectural mandates for the **${settings.pluginName || 'VAPT Secure'}** environment.
-      6. **Personal Attention Requirement**: Every field in your generated JSON (labels, descriptions, mapping code) MUST be personalized for **${feature.label}**. Do NOT use generic placeholders.
-      7. **UI Blueprint Alignment**: Prioritize the components defined in 'ui_blueprint' for the 'controls' array. Keep labels and keys consistent where possible.
-      8. **Strict Key Enforcement**: EVERY control object in the 'controls' array MUST have a unique "key" field. If the blueprint uses "component_id" or "id", map it to "key". A control without a "key" is invalid.
-      9. **Interactive Verification**: Convert the 'verification_steps' into interactive 'test_action' controls. Each step should be a separate 'test_action' using 'universal_probe' as the 'test_logic'. The 'test_config' MUST contain an absolute 'url' or 'path' field targeting the specific endpoint.
-      10. **Toggle-Aware Mappings**: If a control is a 'toggle', the mapping MUST be the literal string/code to be injected when the toggle is ON. Mappings must be direct and production-ready.
-      ${includeProtocol ? `11. **Manual Protocol Requirement**: The user has requested a Manual Verification Protocol. You MUST include a 'manual_protocol' object in the root of the JSON schema containing a 'steps' array. EVERY step mentioning a URL MUST use the fully qualified absolute URL.` : ''}
-      ${includeNotes ? `${includeProtocol ? '12' : '11'}. **Operational Notes Requirement**: The user has requested an Operational Notes Section. You MUST include an 'operational_notes' string in the root of the JSON schema summarizing the business impact and security benefits tailored to this feature's unique role.` : ''}
-      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '13' : '12') : '11'}. **Production Precision**:
-         - Simplify the 'controls' array. Avoid presentational clutter.
-         - Ensure 'mappings' are precise for the chosen driver.
-         - For 'htaccess', protect directives with '<IfModule>' block if possible.
-      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '14' : '13') : '12'}. **JSON Skeleton**:
+      1. **Output Format**: Provide ONLY a JSON block. No preamble. No conversational filler.
+      2. **Fully Qualified URLs**: Use **site_context.home_url** (${settings.homeUrl || ''}) for ALL URLs and endpoints (e.g. ${homeUrl}/wp-cron.php). No relative paths.
+      3. **Single Enforcer Strategy**: Target ONLY the **${prioritizedDriver}** driver. Valid: hook, htaccess, wp-config, manual. Do NOT suggest multi-driver implementations.
+      4. **Naming Conventions**: 
+         - Component: Risk{NNN}{TitleCamelCase} (e.g. Risk001WpCronProtection)
+         - Handlers: handleRISK{NNN}{EventType}Change (e.g. handleRISK001ToggleChange)
+         - Settings: vapt_risk_{nnn}_settings
+      5. **No Internal IDs in Code**: Use '/* BEGIN VAPT PROTECTION */' markers. Never include 'RISK-001' or internal IDs inside the generated configuration code.
+      6. **Key Enforcement**: EVERY control MUST have a unique "key" field.
+      7. **Interactive Verification**: Convert 'verification_steps' into 'test_action' controls using 'universal_probe'.
+      8. **Forbidden Patterns**: 
+         - Do NOT invent component IDs.
+         - Do NOT change default_values from the schema.
+         - Do NOT omit VAPT block markers.
+
+      --- SELF-CHECK RUBRIC (Score 1-10) ---
+      - [2pts] All component IDs and keys match context exactly.
+      - [2pts] Enforcement code matches platform patterns, not invented.
+      - [1pt] Severity badge colors match global_ui_config.
+      - [1pt] Handler names follow strict naming conventions.
+      - [1pt] Target platform (${prioritizedDriver}) is valid for this risk.
+      - [1pt] VAPT block markers are present in enforcement code.
+      - [1pt] Verification commands use absolute URLs.
+      - [1pt] No forbidden patterns violated.
+
+      --- JSON SKELETON ---
       \`\`\`json
       {
         "metadata": {
-          "risk_id": "V-PROT-GENERIC",
+          "risk_id": "${feature.id || 'N/A'}",
           "severity": "${(typeof feature.severity === 'object' ? feature.severity.level : feature.severity) || 'High'}",
           "category": "${feature.category || 'General'}"
         },
         ${includeProtocol ? '"manual_protocol": { "steps": ["Step 1...", "Step 2..."] },' : ''}
         ${includeNotes ? '"operational_notes": "Summary of risks and benefits...",' : ''}
         "controls": [
-          { "type": "toggle", "label": "Enable Feature", "key": "feat_enabled", "default": false, "description": "Protects against enumeration." },
-          { "type": "test_action", "label": "Verify Step 1", "key": "verify_step_1", "test_logic": "universal_probe", "test_config": { ... } }
+          { "type": "toggle", "label": "Enable Protection", "key": "prot_enabled", "default": false, "description": "Description..." },
+          { "type": "test_action", "label": "Verify Configuration", "key": "verify_prot", "test_logic": "universal_probe", "test_config": { "url": "${homeUrl}/...", "method": "GET", "expected_status": 403 } }
         ],
         "enforcement": {
           "driver": "${prioritizedDriver}",
@@ -873,22 +887,16 @@ window.vaptScriptLoaded = true;
           "backup": true,
           "rollback_on_disable": true,
           "mappings": {
-            "feat_enabled": "/* Literal Code/Directive to Inject when ON */"
+            "prot_enabled": "/* Literal Code to Inject */"
           }
         }
       }
       \`\`\`
-      ${(includeProtocol || includeNotes) ? (includeProtocol && includeNotes ? '15' : '14') : '13'}. **Escaping**: Escape backslashes (\\\\) and quotes properly for JSON compatibility.
 
-      Feature Name: ${feature.label || 'Unnamed Feature'}
-      Feature ID: ${feature.id || 'N/A'}
+      Feature: ${feature.label || 'Unnamed'} (${feature.id || 'N/A'})
       `;
 
       // 6. Fully Qualify URLs & Personalize Domain (v3.13.2)
-      // These are already defined at the top of the function.
-      const homeUrl = (settings.homeUrl || '').replace(/\/$/, '');
-      const currentDomain = (settings.currentDomain || window.location.hostname || 'hermasnet.local').split(':')[0];
-
       let qualifiedPrompt = finalPrompt;
 
       // Transformation A: Replace Domain Placeholders with Fully Qualified Home URL
@@ -1008,7 +1016,7 @@ window.vaptScriptLoaded = true;
     }, [
       saveStatus && el('div', {
         id: 'vapt-design-modal-banner',
-        className: `vapt-modal-banner is-${saveStatus.type === 'error' ? 'error' : 'success'}`
+        className: `vapt - modal - banner is - ${saveStatus.type === 'error' ? 'error' : 'success'} `
       }, [
         el(Icon, { icon: saveStatus.type === 'error' ? 'warning' : 'yes', size: 20 }),
         saveStatus.message
@@ -1296,37 +1304,37 @@ window.vaptScriptLoaded = true;
     }, [
       // Direct CSS injection to bypass WP Modal scaffolding
       el('style', null, `
-        .no-header-modal .components-modal__header { 
-          display: none !important; 
-        }
-        .no-header-modal .components-modal__content { 
-          padding: 0 !important; 
-          margin: 0 !important; 
-          overflow: hidden !important; 
-          display: flex !important;
-          flex-direction: column !important;
-          height: 100% !important;
-        }
+        .no - header - modal.components - modal__header {
+        display: none!important;
+      }
+        .no - header - modal.components - modal__content {
+    padding: 0!important;
+    margin: 0!important;
+    overflow: hidden!important;
+    display: flex!important;
+    flex - direction: column!important;
+    height: 100 % !important;
+  }
         /* Refined scrollbar - High contrast and cross-browser support */
-        .vapt-mapping-scroll-body {
-          scrollbar-width: thin;
-          scrollbar-color: #949494 #f1f1f1; /* Firefox: thumb, track */
-        }
-        .vapt-mapping-scroll-body::-webkit-scrollbar {
-          width: 10px;
-        }
-        .vapt-mapping-scroll-body::-webkit-scrollbar-track {
-          background: #f1f1f1;
-        }
-        .vapt-mapping-scroll-body::-webkit-scrollbar-thumb {
-          background: #949494; /* Darker grey for visibility */
-          border-radius: 5px;
-          border: 2px solid #f1f1f1;
-        }
-        .vapt-mapping-scroll-body::-webkit-scrollbar-thumb:hover {
-          background: #787878;
-        }
-      `),
+        .vapt - mapping - scroll - body {
+    scrollbar - width: thin;
+    scrollbar - color: #949494 #f1f1f1; /* Firefox: thumb, track */
+  }
+        .vapt - mapping - scroll - body:: -webkit - scrollbar {
+    width: 10px;
+  }
+        .vapt - mapping - scroll - body:: -webkit - scrollbar - track {
+    background: #f1f1f1;
+  }
+        .vapt - mapping - scroll - body:: -webkit - scrollbar - thumb {
+    background: #949494; /* Darker grey for visibility */
+    border - radius: 5px;
+    border: 2px solid #f1f1f1;
+  }
+        .vapt - mapping - scroll - body:: -webkit - scrollbar - thumb:hover {
+    background: #787878;
+  }
+  `),
 
       // Container
       el('div', {
@@ -1612,19 +1620,19 @@ window.vaptScriptLoaded = true;
     };
 
     return el(Fragment, null, [
-      el('div', { id: `vapt-lifecycle-controls-${feature.key}`, className: 'vapt-flex-row', style: { fontSize: '12px' } }, [
+      el('div', { id: `vapt - lifecycle - controls - ${feature.key} `, className: 'vapt-flex-row', style: { fontSize: '12px' } }, [
         ...steps.map((step) => {
           const isChecked = step.id === activeStep;
           return el('label', {
-            id: `vapt-lifecycle-label-${feature.key}-${step.id}`,
+            id: `vapt - lifecycle - label - ${feature.key} -${step.id} `,
             key: step.id,
             style: { cursor: 'pointer', color: isChecked ? '#2271b1' : 'inherit', fontWeight: isChecked ? '600' : 'normal' },
             className: 'vapt-flex-row'
           }, [
             el('input', {
-              id: `vapt-lifecycle-radio-${feature.key}-${step.id}`,
+              id: `vapt - lifecycle - radio - ${feature.key} -${step.id} `,
               type: 'radio',
-              name: `lifecycle_${feature.key || feature.id}_${Math.random()}`,
+              name: `lifecycle_${feature.key || feature.id}_${Math.random()} `,
               checked: isChecked,
               onChange: () => handleSelection(step.id),
               style: { margin: 0 }
@@ -2019,7 +2027,7 @@ window.vaptScriptLoaded = true;
               setViewFeaturesModalDomain(d);
               setViewFeaturesModalOpen(true);
             }
-          }, `${d.features.length} ${__('Features', 'vaptsecure')}`) : `${(Array.isArray(d.features) ? d.features.length : 0)} ${__('Features', 'vaptsecure')}`),
+          }, `${d.features.length} ${__('Features', 'vaptsecure')} `) : `${(Array.isArray(d.features) ? d.features.length : 0)} ${__('Features', 'vaptsecure')} `),
           el('td', null, el('span', { style: { fontSize: '12px', color: (d.license_type !== 'developer' && d.manual_expiry_date && new Date(d.manual_expiry_date) < new Date()) ? '#dc2626' : 'inherit' } },
             d.license_type === 'developer'
               ? __('Never', 'vaptsecure')
@@ -2236,7 +2244,7 @@ window.vaptScriptLoaded = true;
                 ]),
                 el('div', { className: 'vapt-feature-grid' }, catFeatures.map(f => el('div', {
                   key: f.key,
-                  className: `vapt-domain-feature-card ${f.exists_in_multiple_files ? 'vapt-feature-multi-file' : (f.is_from_active_file === false ? 'vapt-feature-inactive-only' : '')}`,
+                  className: `vapt - domain - feature - card ${f.exists_in_multiple_files ? 'vapt-feature-multi-file' : (f.is_from_active_file === false ? 'vapt-feature-inactive-only' : '')} `,
                   style: {
                     padding: '20px',
                     border: '1px solid #e2e8f0',
@@ -2252,7 +2260,7 @@ window.vaptScriptLoaded = true;
                     el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' } }, [
                       el('h4', { style: { margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' } }, f.label),
                       el('span', {
-                        className: `vapt-status-pill status-${(f.status || '').toLowerCase()}`,
+                        className: `vapt - status - pill status - ${(f.status || '').toLowerCase()} `,
                         style: {
                           fontSize: '9px',
                           fontWeight: 700,
@@ -2271,7 +2279,7 @@ window.vaptScriptLoaded = true;
                     el('p', { style: { margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5' } }, f.description)
                   ]),
                   el('div', {
-                    id: `vapt-domain-feature-footer-${f.key}`,
+                    id: `vapt - domain - feature - footer - ${f.key} `,
                     style: {
                       marginTop: 'auto',
                       paddingTop: '15px',
@@ -2281,7 +2289,7 @@ window.vaptScriptLoaded = true;
                       justifyContent: 'space-between'
                     }
                   }, [
-                    el('span', { id: `vapt-domain-feature-status-text-${f.key}`, style: { fontSize: '12px', fontWeight: 600, color: '#475569' } }, (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key) ? __('Active', 'vaptsecure') : __('Disabled', 'vaptsecure')),
+                    el('span', { id: `vapt - domain - feature - status - text - ${f.key} `, style: { fontSize: '12px', fontWeight: 600, color: '#475569' } }, (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key) ? __('Active', 'vaptsecure') : __('Disabled', 'vaptsecure')),
                     el(ToggleControl, {
                       checked: (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key),
                       onChange: (val) => {
@@ -2411,7 +2419,7 @@ window.vaptScriptLoaded = true;
 
       const desc = `${whiteLabel.name} Build for ${buildDomain || 'Universal Scope'} is a specialized security hardening package providing comprehensive defense against OWASP Top 10 vulnerabilities. ` +
         `This build integrates ${featCount} active security modules tailored for WordPress environments. ` +
-        `Requires PHP 7.4 or higher and WordPress 5.8+; optimized for Apache/htaccess enforcement. ` +
+        `Requires PHP 7.4 or higher and WordPress 5.8 +; optimized for Apache / htaccess enforcement. ` +
         `Generated by VAPT Secure.`;
 
       setWhiteLabel(prev => ({
@@ -2515,7 +2523,7 @@ window.vaptScriptLoaded = true;
       }).then(res => {
         if (res.success) {
           setImportedAt(res.imported_at);
-          setAlertState({ message: `Config Re-Imported! Found ${res.features_count} features.`, type: 'success' });
+          setAlertState({ message: `Config Re - Imported! Found ${res.features_count} features.`, type: 'success' });
         } else {
           setAlertState({ message: 'Import Failed: ' + (res.error || 'Unknown'), type: 'warning' });
         }
@@ -2916,7 +2924,7 @@ window.vaptScriptLoaded = true;
         const y = baseDate.getFullYear();
         const m = String(baseDate.getMonth() + 1).padStart(2, '0');
         const d = String(baseDate.getDate()).padStart(2, '0');
-        payload.manual_expiry_date = `${y}-${m}-${d}`;
+        payload.manual_expiry_date = `${y} -${m} -${d} `;
         payload.renew_source = 'manual'; // Explicitly tag as manual
       }
 
@@ -2999,7 +3007,7 @@ window.vaptScriptLoaded = true;
         el('div', { className: 'vapt-license-card' }, [
           el('div', { className: 'vapt-card-header-row', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' } }, [
             el('h3', { style: { margin: 0 } }, __('License Status', 'vaptsecure')),
-            el('span', { className: `vapt-license-badge ${currentDomain.license_type || 'standard'}` },
+            el('span', { className: `vapt - license - badge ${currentDomain.license_type || 'standard'} ` },
               (currentDomain.license_type || 'Standard').toUpperCase()
             )
           ]),
@@ -3213,7 +3221,7 @@ window.vaptScriptLoaded = true;
         el('table', { className: 'wp-list-table widefat fixed striped' }, [
           el('thead', null, el('tr', null, [
             el('th', {
-              className: `manage-column sortable ${sortBy === 'license_id' ? 'sorted ' + sortOrder : ''}`,
+              className: `manage - column sortable ${sortBy === 'license_id' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('license_id'),
               style: { cursor: 'pointer' }
             }, [
@@ -3221,7 +3229,7 @@ window.vaptScriptLoaded = true;
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage-column sortable ${sortBy === 'installation_limit' ? 'sorted ' + sortOrder : ''}`,
+              className: `manage - column sortable ${sortBy === 'installation_limit' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('installation_limit'),
               style: { cursor: 'pointer', width: '80px' }
             }, [
@@ -3229,7 +3237,7 @@ window.vaptScriptLoaded = true;
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage-column column-primary sortable ${sortBy === 'domain' ? 'sorted ' + sortOrder : ''}`,
+              className: `manage - column column - primary sortable ${sortBy === 'domain' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('domain'),
               style: { cursor: 'pointer' }
             }, [
@@ -3237,7 +3245,7 @@ window.vaptScriptLoaded = true;
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage-column sortable ${sortBy === 'license_type' ? 'sorted ' + sortOrder : ''}`,
+              className: `manage - column sortable ${sortBy === 'license_type' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('license_type'),
               style: { cursor: 'pointer' }
             }, [
@@ -3245,7 +3253,7 @@ window.vaptScriptLoaded = true;
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage-column sortable ${sortBy === 'first_activated_at' ? 'sorted ' + sortOrder : ''}`,
+              className: `manage - column sortable ${sortBy === 'first_activated_at' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('first_activated_at'),
               style: { cursor: 'pointer' }
             }, [
@@ -3253,7 +3261,7 @@ window.vaptScriptLoaded = true;
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage-column sortable ${sortBy === 'manual_expiry_date' ? 'sorted ' + sortOrder : ''}`,
+              className: `manage - column sortable ${sortBy === 'manual_expiry_date' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('manual_expiry_date'),
               style: { cursor: 'pointer' }
             }, [
@@ -3277,10 +3285,10 @@ window.vaptScriptLoaded = true;
                 (dom.is_wildcard == 1) && el('span', { style: { marginLeft: '8px', fontSize: '10px', background: '#f0f0f1', padding: '2px 6px', borderRadius: '10px' } }, __('Wildcard', 'vaptsecure')),
                 el('button', { type: 'button', className: 'toggle-row' }, el('span', { className: 'screen-reader-text' }, __('Show more details', 'vaptsecure')))
               ]),
-              el('td', null, el('span', { className: `vapt-license-badge ${dom.license_type || 'standard'}` }, (dom.license_type || 'Standard').toUpperCase())),
+              el('td', null, el('span', { className: `vapt - license - badge ${dom.license_type || 'standard'} ` }, (dom.license_type || 'Standard').toUpperCase())),
               el('td', null, dom.first_activated_at ? formatDate(dom.first_activated_at) : '-'),
               el('td', null, dom.license_type === 'developer' ? __('Never', 'vaptsecure') : (dom.manual_expiry_date ? formatDate(dom.manual_expiry_date) : '-')),
-              el('td', null, `${dom.renewals_count || 0}`),
+              el('td', null, `${dom.renewals_count || 0} `),
               el('td', { style: { textAlign: 'right' } }, [
                 el(Button, { isSecondary: true, isSmall: true, onClick: () => handleEdit(dom) }, __('Edit', 'vaptsecure'))
               ])
@@ -3343,13 +3351,13 @@ window.vaptScriptLoaded = true;
 
     const lines = [
       `# VAPT Implementation Brief`,
-      `**Risk**: ${id} (${title})`,
-      `**Severity**: ${severity} | **Priority**: ${priority}`,
+      `** Risk **: ${id} (${title})`,
+      `** Severity **: ${severity} | ** Priority **: ${priority} `,
       ``,
       `## 🛡️ Strategic Mandate`,
-      `- **Goal**: ${summary}`,
-      `- **Primary Driver**: ${detectedDriver}`,
-      `- **Ref**: Consult \`enforcer_pattern_library.json\` for exact patterns.`,
+      `- ** Goal **: ${summary} `,
+      `- ** Primary Driver **: ${detectedDriver} `,
+      `- ** Ref **: Consult \`enforcer_pattern_library.json\` for exact patterns.`,
       ``,
       `> [!TIP]`,
       `> This brief is designed to trigger the **VAPTSchema-Builder** skill patterns with ≥90% accuracy.`
