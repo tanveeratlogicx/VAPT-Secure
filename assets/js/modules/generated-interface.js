@@ -20,7 +20,7 @@
 
     // If path is root default but feature implies a specific target, nudge it (v3.13.8)
     if ((!path || path === '/') && !configUrl && featureKey) {
-      if (featureKey.includes('cron')) sub = 'wp-cron.php';
+      if (featureKey.includes('cron') || featureKey === 'RISK-001') sub = 'wp-cron.php';
       else if (featureKey.includes('xmlrpc')) sub = 'xmlrpc.php';
       else if (featureKey.includes('login')) sub = 'wp-login.php';
     }

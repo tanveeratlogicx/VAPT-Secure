@@ -175,8 +175,19 @@ class VAPTSECURE_Hook_Driver
       return true;
     }
 
-    // 2. Deep Check: Does the implementation require a specific hook?
+    // 2. Deep Check: Does the implementation require a specific hook or constant?
     $mappings = $schema['enforcement']['mappings'] ?? [];
+
+    // [v2.0.5] Check for wp-config constants
+    $driver = $schema['enforcement']['driver'] ?? '';
+    if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
+      foreach ($mappings as $key => $constant) {
+        if (defined((string)$constant) && constant((string)$constant)) {
+          return true;
+        }
+      }
+    }
+
     if (isset($mappings['headers']) || isset($mappings['X-Frame-Options'])) {
       // Check if headers filter is added
       return has_filter('wp_headers');

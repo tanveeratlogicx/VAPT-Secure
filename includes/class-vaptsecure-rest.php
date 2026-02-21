@@ -309,6 +309,32 @@ class VAPTSECURE_REST
           $current_features[] = $item;
         }
         $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
+      } elseif (isset($raw_data['risk_interfaces']) && is_array($raw_data['risk_interfaces'])) {
+        // 🛡️ INTERFACE SCHEMA FORMAT (risk_interfaces node — e.g. interface_schema_full125.json)
+        // Converts the keyed RISK-NNN dictionary into the standard flat feature array.
+        foreach ($raw_data['risk_interfaces'] as $risk_key => $item) {
+          $item['id']          = isset($item['risk_id'])  ? $item['risk_id']  : $risk_key;
+          $item['key']         = $item['id'];
+          $item['name']        = isset($item['title'])    ? $item['title']    : $risk_key;
+          $item['label']       = $item['name'];
+          // Map summary → description so the Feature List "Description" column is populated
+          if (!isset($item['description']) && isset($item['summary'])) {
+            $item['description'] = $item['summary'];
+          }
+          // Flatten severity if it is an object (guard for mixed catalogues)
+          if (isset($item['severity']) && is_array($item['severity'])) {
+            $item['severity'] = isset($item['severity']['level']) ? $item['severity']['level'] : 'medium';
+          }
+          // Attach root-level metadata for Hyper-Personalization compatibility
+          $item['root_design_prompt']          = null;
+          $item['root_ai_agent_instructions']  = null;
+          $item['root_global_settings']        = isset($raw_data['global_ui_config']) ? $raw_data['global_ui_config'] : null;
+          $item['source_file']                 = $file;
+          $current_features[] = $item;
+        }
+        $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : array(
+          'item_fields' => array('id', 'category', 'title', 'severity', 'description')
+        );
       } else {
         $current_features = $raw_data;
       }

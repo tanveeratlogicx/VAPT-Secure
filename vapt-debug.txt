@@ -661,3 +661,1650 @@ Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":fal
 VAPT Enforcement Run at 2026-02-20 10:12:39
 Feature: RISK-008
 Applying rules with Data: {"feat_enabled":false,"block_username_enumeration":false,"block_enum_enabled":false,"block_username_enum":true}
+VAPT Enforcement Run at 2026-02-20 21:43:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:44:02
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:44:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:45:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:03
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:41
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:48
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:46:58
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:47:06
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:47:23
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:47:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:47:41
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:47:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:48:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:48:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:49:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:49:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:50:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:50:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:51:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:51:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:52:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:52:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:53:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:53:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:54:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:54:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:55:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:55:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:56:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:56:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:57:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:57:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:58:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:58:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:59:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 21:59:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:00:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:00:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:01:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:01:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:02:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:02:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:03:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:03:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:04:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:04:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:05:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:05:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:06:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:06:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:07:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:07:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:08:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:08:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:09:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:09:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:10:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:10:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:11:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:11:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:12:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:12:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:13:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:13:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:14:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:14:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:15:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:15:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:16:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:16:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:17:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:17:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:18:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:18:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:19:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:19:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:20:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:20:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:21:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:21:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:22:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:22:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:23:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:23:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:24:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:24:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:25:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:25:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:26:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:26:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:27:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:27:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:28:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:28:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:29:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:29:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:30:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:30:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:31:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:31:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:32:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:32:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:33:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:33:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:34:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:34:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:35:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:35:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:36:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:36:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:37:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:37:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:38:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:38:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:39:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:39:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:40:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:40:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:41:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:41:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:42:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:42:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:43:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:43:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:44:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:44:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:45:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:45:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:46:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:46:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:47:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:47:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:48:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:48:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:49:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:49:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:50:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:50:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:51:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:51:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:52:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:52:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:53:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:53:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:54:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:54:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:55:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:55:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:56:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:56:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:57:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:57:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:58:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:58:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:59:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 22:59:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:00:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:00:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:01:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:01:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:02:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:02:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:03:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:03:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:04:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:04:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:05:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:05:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:06:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:06:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:07:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:07:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:08:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:08:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:09:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:09:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:10:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:10:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:11:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:11:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:12:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:12:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:13:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:13:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:14:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:14:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:15:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:15:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:16:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:16:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:17:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:17:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:18:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:18:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:19:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:19:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:20:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:20:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:21:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:21:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:22:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:22:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:23:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:23:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:24:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:24:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:25:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:25:50
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:26:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:26:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:27:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:27:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:28:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:28:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:29:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:29:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:30:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:30:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:31:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:31:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:32:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:32:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:33:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:33:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:34:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:34:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:35:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:35:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:36:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:36:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:37:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:37:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:38:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:38:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:39:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:39:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:40:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:40:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:41:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:41:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:42:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:42:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:43:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:43:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:44:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:44:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:45:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:45:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:46:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:46:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:47:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:47:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:48:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:48:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:49:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:49:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:50:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:50:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:51:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:51:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:52:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:52:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:53:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:53:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:54:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:54:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:55:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:55:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:56:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:56:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:57:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:57:50
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:58:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:58:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:59:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-20 23:59:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:00:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:00:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:01:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:01:50
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:02:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:02:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:03:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:03:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:04:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:04:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:05:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:05:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:06:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:06:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:07:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:07:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:08:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:08:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:09:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:09:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:09:51
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:02
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:19
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:25
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:25
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:31
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:31
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:31
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:37
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:10:49
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:11:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:11:31
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:11:51
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:10
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:16
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:26
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:26
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":false,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:12:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:32
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":false,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:12:35
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:35
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":false,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:12:39
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":false,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:12:45
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:12:45
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":false,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:13:02
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:13:02
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":false,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:13:18
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:13:18
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:13:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:13:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:13:39
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:13:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:14:10
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:14:10
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:14:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:14:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:14:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:14:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:14:39
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:14:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:14:42
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:14:42
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:15:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:15:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:15:28
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:15:28
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:16:11
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:16:11
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:16:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:16:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:16:46
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:16:46
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:17:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:17:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:17:29
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:17:29
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:17:53
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:17:53
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:17:53
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:17:53
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:17:53
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:17:58
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:17:58
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:17:58
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:06
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:06
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:06
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:06
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:06
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:06
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:12
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:12
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:12
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:30
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:30
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:30
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:37
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:37
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:37
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:47
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:47
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:47
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:18:56
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:18:56
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:18:56
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:10
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:10
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:10
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:10
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:10
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:10
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:19
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:19
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:19
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:25
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:25
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:25
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:35
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:35
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:35
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:19:43
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:19:43
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:19:43
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:20:06
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:20:06
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:20:06
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:20:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:20:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:20:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:20:31
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:20:31
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:20:31
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:20:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:20:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:20:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:21:01
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:21:01
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:21:01
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:21:06
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:21:06
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:21:06
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:21:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:21:07
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:21:07
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:21:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:21:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:21:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:22:12
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:22:12
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:22:12
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:22:14
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:22:14
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:22:14
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:22:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:22:32
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:22:32
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:22:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:22:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:22:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:23:06
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:23:06
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:23:06
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:23:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:23:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:23:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:23:38
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:23:38
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:23:38
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:24:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:24:32
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:24:32
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:24:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:24:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:24:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:25:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:25:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:25:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:25:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:25:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:25:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:25:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:25:32
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:25:32
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:26:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:26:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:26:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:26:38
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:26:38
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:26:38
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:27:08
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:27:08
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:27:08
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:27:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:27:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:27:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:28:34
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:28:34
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:28:34
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:28:38
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:28:38
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:28:38
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:29:09
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:29:09
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:29:09
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:29:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:29:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:29:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:29:34
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:29:34
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:29:34
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:30:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:30:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:30:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:31:16
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:31:16
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:31:16
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:31:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:31:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:31:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:31:34
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:31:34
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:31:34
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:03
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:03
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:03
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:11
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:11
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:11
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:12
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:12
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:12
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:20
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:20
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:20
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:25
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:25
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:25
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:35
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:35
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:35
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:32:39
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:32:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:32:39
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":false,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:33:20
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:33:20
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:33:20
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:33:27
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:33:27
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:33:27
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:33:42
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:33:42
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:33:42
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:34:20
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:34:20
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:34:20
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-21 00:34:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-21 00:34:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-21 00:34:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}

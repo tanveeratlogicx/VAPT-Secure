@@ -60,7 +60,8 @@ class VAPTSECURE_Enforcer
       $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
 
       // Hook driver is universally shared for PHP-based fallback rules
-      if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess') {
+      // [v2.0.5] Include config/wp-config to ensure enforcement markers (headers) are registered
+      if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess' || $driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
         if (class_exists('VAPTSECURE_Hook_Driver')) {
           VAPTSECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
         }
