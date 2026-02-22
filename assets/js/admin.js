@@ -1033,7 +1033,7 @@ window.vaptScriptLoaded = true;
         el('div', { id: 'vapt-design-modal-left-col' }, [
 
           el('div', { id: 'vapt-design-modal-actions', className: 'vapt-flex-row' }, [
-            el(Button, { id: 'vapt-btn-copy-prompt', className: 'vapt-btn-flex-center', isSecondary: true, onClick: copyContext, icon: 'clipboard' }, __('Copy Design Prompt', 'vaptsecure')),
+            el(Button, { id: 'vapt-btn-copy-prompt', className: 'vapt-btn-flex-center', isSecondary: true, onClick: copyContext, icon: 'clipboard' }, __('Copy AI Design Prompt', 'vaptsecure')),
             el(Button, {
               isDestructive: true,
               icon: 'trash',
@@ -3318,49 +3318,69 @@ window.vaptScriptLoaded = true;
     const severity = (typeof f.severity === 'object') ? (f.severity.level || 'Medium') : (f.severity || 'Medium');
     const priority = f.priority || 'Medium';
 
-    // Mapped Description
+    // Mapped Fields Extraction for instructions
     const mappedDesc = getMappedContent(f, 'description', 'description', fieldMapping);
     const summary = (typeof mappedDesc === 'object' ? mappedDesc.summary : mappedDesc) || 'No core description available.';
+    const mappedUiLayout = getMappedContent(f, 'ui_layout', 'ui_layout', fieldMapping);
+    const mappedComponents = getMappedContent(f, 'components', 'components', fieldMapping);
+    const mappedActions = getMappedContent(f, 'actions', 'actions', fieldMapping);
+    const mappedAvailablePlatforms = getMappedContent(f, 'available_platforms', 'available_platforms', fieldMapping);
 
     // Driver Detection (Skill Alignment)
     const targets = f.protection?.automated_protection?.implementation_targets || f.available_platforms || [];
     let detectedDriver = 'Manual / Hook (default)';
     let safetyRules = [];
+    let targetFiles = [];
     let driverKey = '';
 
     if (targets.includes('.htaccess')) {
-      detectedDriver = '.htaccess (Pattern 1)';
+      detectedDriver = '.htaccess (Apache Core)';
       driverKey = 'htaccess';
+      targetFiles = ['{ABSPATH}.htaccess', 'Cloudflare (Dashboard)', 'IIS (web.config)', 'Caddyfile'];
       safetyRules = [
         'Always use `# BEGIN VAPT {ID}` and `# END VAPT {ID}` markers.',
-        'Place rules BEFORE the `# BEGIN WordPress` block to ensure they execute.',
-        'Use `[L,F]` for blocking rules to stop processing immediately.',
-        'Ensure `mod_rewrite` is checked if using Rewrite rules.'
+        'Place RewriteRules BEFORE the `# BEGIN WordPress` block to ensure they execute.',
+        'Use `[L,F]` for blocking rules.',
+        'No forbidden directives (`TraceEnable`, `ServerSignature`, `<Directory>`).',
+        'Wrap rewrites in `<IfModule mod_rewrite.c>` with `RewriteEngine On`.'
       ];
     }
     else if (targets.includes('wp-config.php')) {
-      detectedDriver = 'wp-config.php (Pattern 2)';
+      detectedDriver = 'wp-config.php Constants';
       driverKey = 'wp_config';
+      targetFiles = ['{ABSPATH}wp-config.php'];
       safetyRules = [
         'Always use `/* BEGIN VAPT {ID} */` and `/* END VAPT {ID} */` markers.',
-        'Place constants BEFORE the `/* That\'s all, stop editing! */` line.',
+        'Place constants BEFORE the `/* That\'s all, stop editing! */` line (before_wp_settings).',
         'Check if constant is already defined before defining it.',
         'Use correct boolean or string values as required by WP core.'
       ];
     }
-    else if (targets.includes('PHP Hook') || targets.includes('WordPress') || targets.includes('PHP Functions')) {
-      detectedDriver = 'PHP Hook (Pattern 3)';
-      driverKey = 'php_functions';
+    else if (targets.includes('PHP Hook') || targets.includes('WordPress') || targets.includes('PHP Functions') || targets.includes('WordPress Core')) {
+      detectedDriver = 'WordPress / PHP Hook';
+      driverKey = 'php_functions'; // Canonical key
+      targetFiles = ['{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php'];
       safetyRules = [
-        'Use specific WordPress action or filter hooks (e.g. `login_init`, `wp_authenticate`).',
-        'Prefix all functions with `vapt_` to avoid collisions.',
-        'Include a check for `ABSPATH` at the top of the logic if applicable.',
-        'Verify existing global variables or functions before usage.'
+        'Always use `// BEGIN VAPT {ID}` and `// END VAPT {ID}` markers.',
+        'Use specific WordPress action or filter hooks.',
+        'Prefix all functions with `vapt_` (e.g. `vapt_disable_xmlrpc`).',
+        'Insert at the end of the file (`functions_php`).'
       ];
     }
-    else if (targets.includes('Cloudflare')) detectedDriver = 'Cloudflare (Pattern 4)';
-    else if (targets.includes('IIS')) detectedDriver = 'IIS / web.config (Pattern 5)';
-    else if (targets.includes('Caddy')) detectedDriver = 'Caddy (Pattern 6)';
+    else if (targets.includes('fail2ban')) {
+      detectedDriver = 'Fail2Ban Jail';
+      driverKey = 'fail2ban';
+      targetFiles = ['/etc/fail2ban/jail.local', '/etc/fail2ban/filter.d/...'];
+      safetyRules = ['Use `# BEGIN VAPT {ID}` markers.', 'Always include `fail2ban-client reload` in verification.'];
+    }
+    else if (targets.includes('Nginx')) {
+      detectedDriver = 'Nginx Conf';
+      driverKey = 'nginx';
+      targetFiles = ['/etc/nginx/conf.d/vapt-security.conf'];
+      safetyRules = ['Use `# BEGIN VAPT {ID}` markers.', 'Ensure insertion is after `http {` loop.', 'Include `nginx -t` validation.'];
+    }
+
+    const hasMappingRules = mappedUiLayout || mappedComponents || mappedActions;
 
     const lines = [
       `# VAPT Implementation Brief v2.0`,
@@ -3372,23 +3392,54 @@ window.vaptScriptLoaded = true;
       `- **Primary Driver**: ${detectedDriver}`,
       `- **Compliance Reference**: Consult \`enforcer_pattern_library_v2.0.json\` for the \`${driverKey || 'general'}\` pattern.`,
       ``,
+      `## 🧩 User Interface Requirements`,
+      ...(hasMappingRules ? [
+        `You MUST strictly adhere to the mapped UI Schema references provided in the Context data:`,
+        ...(mappedUiLayout ? [`- **Layout**: Apply the exact section, order, and collapsible rules from the \`ui_layout\` object.`] : []),
+        ...(mappedComponents ? [`- **Components**: Emit EXACTLY the arrays of components specified, replicating component IDs (\`UI-RISK-...-...\`) and handler names.`] : []),
+        ...(mappedActions ? [`- **Actions**: Emit EXACTLY the listed actions, matching the REST endpoints and action IDs.`] : []),
+        ...(mappedAvailablePlatforms ? [`- **Platforms**: Only render implementation components for platforms listed in \`available_platforms\`.`] : [])
+      ] : [
+        `- Adhere to standard UI component naming conventions (\`UI-RISK-{NNN}-{SEQ}\`).`,
+        `- Construct standard form layouts per v2.0 guidelines.`
+      ]),
+      ``,
+      `## 📁 Target Configuration Files`,
+      `Ensure that the suggested protection configurations are specifically targeted to be written/appended within exactly these files (via the Driver manifest outputs):`,
+      ...targetFiles.map(file => `- \`${file}\``),
+      ``,
       `## ⚠️ Targeted Safety Guidelines`,
       ...(safetyRules.length > 0 ? safetyRules.map(rule => `- ${rule}`) : [`- Follow standard WordPress security best practices.`]),
       ``,
       `## 🔍 Verification Protocol`,
-      `- **Success Criteria**: Protection must return a 403 Forbidden or 401 Unauthorized for probes.`,
+      `- **Success Criteria**: Protection must block probes or enforce the security policy correctly.`,
       `- **Mandatory Markers**: Code MUST be wrapped in BEGIN/END blocks.`,
-      `- **Rollback**: Deleting the wrapped block must restore system to previous state.`,
+      `- **Rollback**: Deleting the wrapped block must gracefully restore system to previous state.`,
       ``,
-      `## 📋 Self-Check Rubric (Target Score: 16/19)`,
-      `1. [ ] Correct Lib Key used?`,
-      `2. [ ] Block markers present?`,
-      `3. [ ] Correct insertion point?`,
-      `4. [ ] Variable/Path placeholders qualified?`,
-      `5. [ ] Syntax Guard validated?`,
+      `## 📋 Full Self-Check Rubric (Target Score: ≥16/19)`,
+      `Ensure you validate your ENTIRE output against these strict conditions before delivering:`,
+      `1. [ ] Component IDs match schema exactly?`,
+      `2. [ ] Enforcement code read from library (not memory)?`,
+      `3. [ ] Severity colors match global config?`,
+      `4. [ ] Handler names follow \`handleRISK...\` conventions?`,
+      `5. [ ] Target platforms map to \`available_platforms\`?`,
+      `6. [ ] VAPT block markers present in output?`,
+      `7. [ ] Command verification present?`,
+      `8. [ ] No forbidden naming patterns?`,
+      `9. [ ] No forbidden Apache directives?`,
+      `10. [ ] RewriteRules placed BEFORE \`# BEGIN WordPress\`?`,
+      `11. [ ] RewriteRules wrapped in \`<IfModule>\` properly?`,
+      `12. [ ] \`mod_headers\` requirement noted (if applicable)?`,
+      `13. [ ] \`AllowOverride\` requirement noted (if applicable)?`,
+      `14. [ ] Uploads-specific risks use correct target directory?`,
+      `15. [ ] IIS rewrites note URL Rewrite Module requirement?`,
+      `16. [ ] Caddy output uses v2 syntax only?`,
+      `17. [ ] \`code_ref\` uses correct \`lib_key\` format?`,
+      `18. [ ] \`driver_ref\` points to \`vapt_driver_manifest_v2.0\`?`,
+      `19. [ ] driver diagnosis outputs include all sub-fields?`,
       ``,
       `> [!IMPORTANT]`,
-      `> This brief is designed to trigger the **VAPTSchema-Builder** skill patterns with ≥90% accuracy.`
+      `> This brief is designed to trigger the **VAPTSchema-Builder** skill patterns. You MUST output highly strict interactive schemas and configurations hitting ≥90% accuracy.`
     ];
 
     // Overlay custom user instructions if any existed previously
