@@ -383,6 +383,7 @@ class VAPTSECURE_REST
           $feature['include_verification_engine'] = isset($meta['include_verification_engine']) ? (bool) $meta['include_verification_engine'] : false;
           $feature['include_verification_guidance'] = isset($meta['include_verification_guidance']) ? (bool) $meta['include_verification_guidance'] : true;
           $feature['is_enforced'] = (bool) $meta['is_enforced'];
+          $feature['is_adaptive_deployment'] = isset($meta['is_adaptive_deployment']) ? (bool) $meta['is_adaptive_deployment'] : false;
           $feature['wireframe_url'] = $meta['wireframe_url'];
           $feature['dev_instruct'] = isset($meta['dev_instruct']) ? $meta['dev_instruct'] : '';
 
@@ -583,6 +584,10 @@ class VAPTSECURE_REST
     if ($include_operational_notes !== null) $meta_updates['include_operational_notes'] = $include_operational_notes ? 1 : 0;
 
     if ($is_enforced !== null) $meta_updates['is_enforced'] = $is_enforced ? 1 : 0;
+
+    $is_adaptive = $request->get_param('is_adaptive_deployment');
+    if ($is_adaptive !== null) $meta_updates['is_adaptive_deployment'] = $is_adaptive ? 1 : 0;
+
     if ($wireframe_url !== null) $meta_updates['wireframe_url'] = $wireframe_url;
 
     $dev_instruct = $request->get_param('dev_instruct');
@@ -613,6 +618,7 @@ class VAPTSECURE_REST
         $is_legacy_format = isset($schema['type']) && in_array($schema['type'], ['wp_config', 'htaccess', 'manual', 'complex_input']);
 
         if (!$is_legacy_format) {
+          $schema['is_adaptive_deployment'] = $is_adaptive ? 1 : 0;
           $schema = self::sanitize_and_fix_schema($schema);
           $validation = self::validate_schema($schema);
           if (is_wp_error($validation)) {

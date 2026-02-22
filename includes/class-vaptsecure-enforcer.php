@@ -104,6 +104,19 @@ class VAPTSECURE_Enforcer
       return;
     }
 
+    // [v4.0.0] Adaptive Deployment Orchestration
+    if (!empty($meta['is_adaptive_deployment'])) {
+      require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-deployment-orchestrator.php';
+      $orchestrator = new VAPTSECURE_Deployment_Orchestrator();
+
+      // Use profile from settings if available, else default to auto_detect
+      $profile = get_option('vaptsecure_deployment_profile', 'auto_detect');
+      $results = $orchestrator->orchestrate($key, $schema, $profile);
+
+      error_log("VAPT: Adaptive Deployment for {$key} results: " . json_encode($results));
+      return;
+    }
+
     $driver_name = $schema['enforcement']['driver'];
 
     // Dispatch to the correct driver
@@ -287,6 +300,11 @@ class VAPTSECURE_Enforcer
       $impl_data = self::resolve_impl($meta);
       $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
       $target = isset($schema['enforcement']['target']) ? $schema['enforcement']['target'] : 'root';
+
+      // 🛡️ Map common alias ".htaccess" to standard "root" target (v3.13.15)
+      if ($target === '.htaccess') {
+        $target = 'root';
+      }
 
       if ($driver === 'htaccess') {
         $feature_rules = VAPTSECURE_Htaccess_Driver::generate_rules($impl_data, $schema);

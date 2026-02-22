@@ -231,33 +231,50 @@ class VAPTSECURE_Htaccess_Driver
 
     // Replace or Append
     // 1. Remove old block if exists (supporting both old/new markers)
-    $pattern = "/# BEGIN VAPT SECURITY RULES.*?# END VAPT SECURITY RULES/s";
-    $old_pattern = "/# BEGIN VAPTC SECURITY RULES.*?# END VAPTC SECURITY RULES/s";
+    // [FIX v3.13.15] Robust string slicing instead of unreliable regex
+    $start_marker_full = "# BEGIN VAPT SECURITY RULES";
+    $end_marker_full = "# END VAPT SECURITY RULES";
+    $legacy_start = "# BEGIN VAPTC SECURITY RULES";
+    $legacy_end = "# END VAPTC SECURITY RULES";
 
     $new_content = $content;
 
-    if (preg_match($pattern, $content)) {
-      $new_content = preg_replace($pattern, trim($rules_string), $content);
-    } else if (preg_match($old_pattern, $content)) {
-      $new_content = preg_replace($old_pattern, trim($rules_string), $content);
-    } else {
-      // Append if not found
+    // Check for new markers
+    $start_pos = strpos($new_content, $start_marker_full);
+    $end_pos = strpos($new_content, $end_marker_full);
+
+    if ($start_pos !== false && $end_pos !== false && $end_pos > $start_pos) {
+      // Remove the existing block
+      $before = substr($new_content, 0, $start_pos);
+      $after = substr($new_content, $end_pos + strlen($end_marker_full));
+      $new_content = $before . $after;
+    }
+
+    // Check for legacy markers
+    $l_start_pos = strpos($new_content, $legacy_start);
+    $l_end_pos = strpos($new_content, $legacy_end);
+
+    if ($l_start_pos !== false && $l_end_pos !== false && $l_end_pos > $l_start_pos) {
+      // Remove the existing legacy block
+      $before = substr($new_content, 0, $l_start_pos);
+      $after = substr($new_content, $l_end_pos + strlen($legacy_end));
+      $new_content = $before . $after;
+    }
+
+    $new_content = trim($new_content);
+
+    if (!empty($rules_string)) {
+      // Append or Insert
       // [FIX v3.12.23] Place VAPT Rules BEFORE WordPress Core Block
-      // This is CRITICAL because WP's RewriteRule [L] stops processing for virtual paths.
-      // If we are after WP, our rules are never reached for REST API endpoints.
       if ($target_key === 'root') {
-        if (strpos($content, "# BEGIN WordPress") !== false) {
-          // Insert BEFORE the WordPress block
-          $parts = explode("# BEGIN WordPress", $content);
-          // Ensure we don't double up newlines unnecessarily but keep readable
-          $new_content = $parts[0] . $rules_string . "\n# BEGIN WordPress" . (isset($parts[1]) ? $parts[1] : "");
+        if (strpos($new_content, "# BEGIN WordPress") !== false) {
+          $parts = explode("# BEGIN WordPress", $new_content, 2);
+          $new_content = trim($parts[0]) . "\n\n" . trim($rules_string) . "\n\n# BEGIN WordPress" . ($parts[1] ?? "");
         } else {
-          // If no WP block found (rare), prepend to start
-          $new_content = $rules_string . "\n" . $content;
+          $new_content = trim($rules_string) . "\n\n" . $new_content;
         }
       } else {
-        // Uploads directory or other target: Prepend is safest for blocking
-        $new_content = $rules_string . "\n" . $content;
+        $new_content = trim($rules_string) . "\n\n" . $new_content;
       }
     }
 
@@ -271,7 +288,7 @@ class VAPTSECURE_Htaccess_Driver
         @copy($htaccess_path, $htaccess_path . '.bak');
       }
 
-      $result = @file_put_contents($htaccess_path, trim($new_content) . "\n");
+      $result = @file_put_contents($htaccess_path, trim($new_content) . "\n", LOCK_EX);
       if ($result !== false) {
         $log .= "Write SUCCESS: " . strlen($new_content) . " bytes written to $htaccess_path. Backup created.\n";
         delete_transient('vaptsecure_active_enforcements');
@@ -287,7 +304,7 @@ class VAPTSECURE_Htaccess_Driver
 
     // Persistent Log
     $debug_file = WP_CONTENT_DIR . '/vapt-htaccess-debug.txt';
-    @file_put_contents($debug_file, $log, FILE_APPEND);
+    @file_put_contents($debug_file, $log, FILE_APPEND | LOCK_EX);
 
     return true;
   }
@@ -379,7 +396,9 @@ class VAPTSECURE_Htaccess_Driver
         $rule = trim(preg_replace('/^# VAPTID-[a-f0-9]+/i', '', $rule));
       }
 
-      if (preg_match('/^<IfModule\s+([^>]+)>\s*(.*?)\s*<\/IfModule>$/is', $rule, $matches)) {
+      // [FIX v3.13.15] More robust IfModule detection to avoid mangling multi-block rules
+      // Only attempt to consolidate if it's a SINGLE IfModule block
+      if (substr_count(strtolower($rule), '<ifmodule') === 1 && preg_match('/^<IfModule\s+([^>]+)>\s*(.*?)\s*<\/IfModule>$/is', $rule, $matches)) {
         $module = trim($matches[1]);
         $content = trim($matches[2]);
 
@@ -453,9 +472,7 @@ class VAPTSECURE_Htaccess_Driver
       $final_rules[] = trim($ids_and_first);
     }
 
-    return array_merge($final_rules, trim(implode("\n", $others)) ? $others : []);
-
-    return array_merge($final_rules, trim(implode("\n", $others)) ? $others : []);
+    return array_merge($final_rules, $others);
   }
 
   /**
