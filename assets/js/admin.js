@@ -849,7 +849,7 @@ window.vaptScriptLoaded = true;
       5. **No Internal IDs in Code**: Use '/* BEGIN VAPT PROTECTION */' markers. Never include internal Risk IDs inside the generated configuration code.
       6. **Key Enforcement**: EVERY control MUST have a unique "key" field.
       7. **Interactive Verification**: Convert 'verification_steps' into 'test_action' controls using 'universal_probe'.
-      8. **Absolute Links**: Any URL intended for the user in a "description" or "label" field MUST be formatted as a clickable Markdown link using the fully qualified domain.
+      8. **Absolute Links**: Any URL intended for the user in a "description" or "label" field MUST be provided as a clean, fully qualified absolute URL (e.g. ${homeUrl}/wp-login.php). Do NOT use Markdown link syntax [label](url) unless specifically required for documentation.
       9. **Forbidden Patterns**: 
          - Do NOT invent component IDs.
          - Do NOT change default_values from the schema.
@@ -865,7 +865,7 @@ window.vaptScriptLoaded = true;
       6. [x] VAPT block markers present in output?
       7. [x] Command verification present?
       8. [x] Every URL in test_action is FULLY QUALIFIED (absolute)?
-      9. [x] Descriptions contain functional Links for URLs?
+      9. [x] Descriptions contain clean absolute URLs (no relative paths)?
       10. [x] No forbidden .htaccess directives used?
       11. [x] RewriteRules placed BEFORE # BEGIN WordPress?
       12. [x] RewriteRules wrapped in <IfModule>?
@@ -935,7 +935,14 @@ window.vaptScriptLoaded = true;
       ];
 
       relativePaths.forEach(regex => {
-        qualifiedPrompt = qualifiedPrompt.replace(regex, (match) => homeUrl + match);
+        // Only replace if NOT preceded by a protocol colon/slashes (prevents double qualification)
+        qualifiedPrompt = qualifiedPrompt.replace(regex, (match, offset, fullText) => {
+          const prevChar = fullText.substring(offset - 3, offset);
+          if (prevChar === '://' || fullText.substring(offset - 7, offset).includes('http')) {
+            return match; // Already qualified
+          }
+          return homeUrl + match;
+        });
       });
 
       const personalizedPrompt = qualifiedPrompt;

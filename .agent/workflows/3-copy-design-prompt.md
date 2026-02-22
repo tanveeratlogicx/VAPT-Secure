@@ -18,6 +18,8 @@ description:
 
 * We should come up with a clear choice of Implementation Driver to be used.
 
+* The generated Interface Shema JSON, should be Validated before being returned/shared for the consumption of "Save & Deploy" operations.
+
 * The choice for the Enforcer Driver should be clear and should ensure that the suggested Protection is actually being applied to the domain.
 
 * The AI Design Prompt should respect the State of the toggles like "Include Manual Verification Protocol" and "Include Operational Notes Section" and the Generated "Interface Schema JSON" should have them included, if Enabled.
