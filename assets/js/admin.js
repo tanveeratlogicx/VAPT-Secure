@@ -346,6 +346,9 @@ window.vaptScriptLoaded = true;
     const [includeProtocol, setIncludeProtocol] = useState((feature.include_manual_protocol === undefined || feature.include_manual_protocol === null) ? true : feature.include_manual_protocol == 1);
     const [includeNotes, setIncludeNotes] = useState((feature.include_operational_notes === undefined || feature.include_operational_notes === null) ? true : feature.include_operational_notes == 1);
 
+    // Hybrid Mode: Multi-Env v3.1 vs Standard v2.0 (v4.0.0)
+    const [isMultiEnv, setIsMultiEnv] = useState(false);
+
     // New: Hover state for paste logic
     const [isHoveringSchema, setIsHoveringSchema] = useState(false);
 
@@ -594,9 +597,10 @@ window.vaptScriptLoaded = true;
       } else {
         const defaultTemplate = {
           "design_prompt": {
-            "interface_version": "2.0",
+            "interface_version": isMultiEnv ? "3.1.0" : "2.0",
+            "schema_grade": isMultiEnv ? "A+" : "Standard",
             "interface_type": "Interactive VAPT Functional Workbench",
-            "schema_definition": "WordPress VAPT schema with standardized control fields",
+            "schema_definition": isMultiEnv ? "VAPT A+ Multi-Environment Interface Schema v3.1" : "WordPress VAPT schema with standardized control fields",
             "id": "{{id}}",
             "title": "{{title}}",
             "description": "{{description}}",
@@ -643,7 +647,12 @@ window.vaptScriptLoaded = true;
             "verification_engine": "{{verification_engine}}",
             "relationships": "{{relationships}}",
             "reporting": "{{reporting}}",
-            "references": "{{references}}"
+            "references": "{{references}}",
+            "multi_environment": isMultiEnv ? {
+              "mode": "runtime_detection",
+              "supported_platforms": ["apache_htaccess", "nginx_config", "iis_config", "caddy_config", "cloudflare_edge", "php_functions"],
+              "fallback_strategy": "cascade"
+            } : null
           }
         };
         contextJson = JSON.stringify(defaultTemplate, null, 2);
@@ -844,7 +853,7 @@ window.vaptScriptLoaded = true;
       --- INSTRUCTIONS & CRITICAL RULES ---
       1. **Output Format**: Provide ONLY a JSON block. No preamble. No conversational filler.
       2. **Fully Qualified URLs**: Use **site_context.home_url** (${homeUrl}) for ALL URLs and endpoints (e.g. ${homeUrl}/wp-cron.php). Every "url" property MUST be an absolute link. No relative paths.
-      3. **Single Enforcer Strategy**: Target ONLY the **${prioritizedDriver}** driver. Valid: hook, htaccess, wp-config, nginx, fail2ban, cloudflare, iis, caddy.
+      3. ${isMultiEnv ? '**Multi-Platform Parallel Strategy**: You MUST generate a \`platform_matrix\` including implementations for Apache (.htaccess), Nginx, IIS, Caddy, Cloudflare, and PHP Fallback.' : `**Single Enforcer Strategy**: Target ONLY the **${prioritizedDriver}** driver. Valid: hook, htaccess, wp-config, nginx, fail2ban, cloudflare, iis, caddy.`}
       4. **Naming Conventions**: 
          - Component: Risk{NNN}{TitleCamelCase} (e.g. Risk001WpCronProtection)
          - Handlers: handleRISK{NNN}{EventType}Change (e.g. handleRISK001ToggleChange)
@@ -856,17 +865,41 @@ window.vaptScriptLoaded = true;
          - Include **Dependency Checks** (verifying required server modules).
          - Implement **Rate Limiting** logic for probes to protect high-availability environments.
 
-      --- ADVANCED CHECKPOINTS (v2.0) ---
+      ${isMultiEnv ? `--- A+ MULTI-ENVIRONMENT REQUIREMENTS (v3.1) ---
+      1. **Versioning**: Schema MUST include \`"schema_version": "3.1.0"\` and \`"schema_grade": "A+"\`.
+      2. **Platform Matrix**: Implement \`implementations\` for: apache_htaccess, nginx_config, iis_config, caddy_config, cloudflare_edge, php_functions.
+      3. **Environment Selector**: Provide \`environment_selector\` logic for runtime detection (Apache vs Nginx vs IIS).
+      4. **Unified Test Suite**: Create a single suite that validates protection across ALL active platforms.
+      5. **Orchestration**: Define \`deployment.strategies\` for single_server and mixed_load_balanced scenarios.
+      6. **UX visuals**: Enable \`multi_environment_display\` properties in UI mapping.` : `--- ADVANCED CHECKPOINTS (v2.0) ---
       1. **Versioning**: Schema MUST include \`"interface_version": "2.0"\`.
       2. **Test Logic**: \`test_action\` MUST include timeout and retry parameters.
       3. **Conditional Logic**: Controls MUST specify \`prerequisites\` or conflicts where applicable.
       4. **Multi-Environment**: Enforcement MUST define a \`fallback_driver\`.
       5. **Audit Trail**: Include telemetry configuration for implementation events.
-      6. **UX Visuals**: Add visual indicators and help resource links to the schema.
+      6. **UX Visuals**: Add visual indicators and help resource links to the schema.`}
 
       --- FULL SELF-CHECK RUBRIC (Score 1-19) ---
       You MUST score exactly 19/19 to deliver.
-      1. [x] Component IDs match schema exactly?
+      ${isMultiEnv ? `1. [x] Schema Version is 3.1.0?
+      2. [x] Schema Grade is A+?
+      3. [x] platform_matrix.implementations contains >= 5 platforms?
+      4. [x] environment_selector logic defined for runtime detection?
+      5. [x] Unified test suite includes environment-agnostic validation?
+      6. [x] deployment.strategies defined for single/mixed setups?
+      7. [x] Multi-platform UI badges/indicators enabled?
+      8. [x] Enrollment is automatic via cascade strategy?
+      9. [x] php_functions defined as the last universal fallback?
+      10. [x] Rollback verification included for ALL platforms?
+      11. [x] Every URL is FULLY QUALIFIED (absolute link)?
+      12. [x] VAPT block markers present in all implementation code?
+      13. [x] Retry logic included in test_action?
+      14. [x] Rate limiting probes defined?
+      15. [x] Timeout parameters set for all probe actions?
+      16. [x] Prerequisites defined for complex enforcers?
+      17. [x] Component names follow PascalCase?
+      18. [x] Telemetry/Audit trail configured?
+      19. [x] JSON syntax validated?` : `1. [x] Component IDs match schema exactly?
       2. [x] Enforcement code sourced from library?
       3. [x] Severity colors match global config?
       4. [x] Handler names follow PascalCase conventions?
@@ -884,56 +917,48 @@ window.vaptScriptLoaded = true;
       16. [x] Prerequisites defined for complex controls?
       17. [x] Telemetry/Audit trail configured?
       18. [x] Visual indicators (shield/icon) included?
-      19. [x] JSON syntax validated before output?
+      19. [x] JSON syntax validated before output?`}
 
       --- JSON SKELETON ---
       \`\`\`json
       {
-        "interface_version": "2.0",
+        "interface_version": "${isMultiEnv ? '3.1.0' : '2.0'}",
         "metadata": {
           "risk_id": "${feature.id || 'N/A'}",
-          "severity": "${(typeof feature.severity === 'object' ? feature.severity.level : feature.severity) || 'High'}",
-          "category": "${feature.category || 'General'}"
+          "schema_grade": "${isMultiEnv ? 'A+' : 'Standard'}",
+          "severity": "${(typeof feature.severity === 'object' ? feature.severity.level : feature.severity) || 'High'}"
         },
         ${includeProtocol ? '"manual_protocol": { "steps": ["Step 1...", "Step 2..."] },' : ''}
         ${includeNotes ? '"operational_notes": "Summary of risks and benefits...",' : ''}
         "controls": [
           { 
-            "type": "toggle", 
-            "label": "Enable Protection", 
-            "key": "prot_enabled", 
-            "default": false, 
-            "description": "Description...",
-            "prerequisites": [],
-            "visual_indicator": "shield"
+            "type": "toggle", "label": "Enable Protection", "key": "prot_enabled", "default": false, "visual_indicator": "shield"
           },
           { 
-            "type": "test_action", 
-            "label": "Verify Configuration", 
-            "key": "verify_prot", 
-            "test_logic": "universal_probe", 
-            "test_config": { 
-              "url": "${homeUrl}/...", 
-              "method": "GET", 
-              "expected_status": 403,
-              "retry_on_failure": true,
-              "timeout": 5000
-            } 
+            "type": "test_action", "label": "Verify Configuration", "key": "verify_prot", 
+            "test_config": { "url": "${homeUrl}/...", "expected_status": 403, "retry_on_failure": true } 
           }
         ],
-        "enforcement": {
+        ${isMultiEnv ? `"platform_matrix": {
+          "environment_selector": { "detection_order": ["apache", "nginx", "iis", "caddy"] },
+          "implementations": {
+            "apache_htaccess": { "lib_key": "htaccess", "rollback": { "automatic": true } },
+            "nginx_config": { "lib_key": "nginx", "rollback": { "automatic": true } },
+            "php_functions": { "lib_key": "php_functions", "universal_fallback": true }
+          }
+        },
+        "deployment": { "strategies": { "single_server": { "deploy_order": ["apache_htaccess", "php_functions"] } } },` : `"enforcement": {
           "driver": "${prioritizedDriver}",
           "fallback_driver": "hook",
           "target": "${prioritizedDriver === 'htaccess' ? 'root' : 'universal'}",
-          "backup": true,
           "rollback_on_disable": true,
-          "mappings": {
-            "prot_enabled": "/* Literal Code to Inject */"
-          },
+          "mappings": { "prot_enabled": "/* Code */" },
           "telemetry": { "log_events": true }
-        }
+        },`}
+        "ui_layout": { "multi_environment_display": ${isMultiEnv ? 'true' : 'false'} }
       }
       \`\`\`
+
 
       Feature: ${feature.label || 'Unnamed'} (${feature.id || 'N/A'})
       `;
@@ -1108,6 +1133,12 @@ window.vaptScriptLoaded = true;
               label: __('Include Operational Notes Section', 'vaptsecure'),
               checked: includeNotes,
               onChange: setIncludeNotes
+            }),
+            el(ToggleControl, {
+              label: __('Enable A+ Multi-Env Mode (v3.1)', 'vaptsecure'),
+              checked: isMultiEnv,
+              onChange: setIsMultiEnv,
+              help: __('Mandates A+ platform_matrix with parallel enforcer implementations.', 'vaptsecure')
             })
           ]),
 

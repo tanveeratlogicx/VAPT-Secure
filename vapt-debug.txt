@@ -19565,3 +19565,663 @@ Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_a
 VAPT Enforcement Run at 2026-02-22 03:16:50
 Feature: RISK-008
 Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:38:35
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:38:37
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:38:37
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:38:37
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:38:37
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:39:29
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:39:29
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:39:29
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:39:29
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:39:29
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:41:36
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:41:37
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:41:37
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:41:37
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:41:37
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:43:37
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:43:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:43:39
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:43:39
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:43:39
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:45:38
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:45:40
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:45:40
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:45:40
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:45:40
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:47:39
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:47:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:47:39
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:47:39
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:47:39
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:53:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:53:08
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:53:08
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:53:08
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:53:08
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:54:01
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:54:01
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:54:01
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:54:01
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:54:01
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:55:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:55:08
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:55:08
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:55:08
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:55:08
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:56:02
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:56:02
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:56:02
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:56:02
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:56:02
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 03:58:09
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 03:58:09
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 03:58:09
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 03:58:09
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 03:58:09
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:00:10
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:00:10
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:00:10
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:00:10
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:00:10
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:02:11
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:02:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:02:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:02:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:02:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:04:12
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:04:14
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:04:14
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:04:14
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:04:14
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:06:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:06:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:06:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:06:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:06:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:13:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:13:32
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:13:32
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:13:32
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:13:32
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:15:32
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:15:32
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:15:32
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:15:32
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:15:32
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:17:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:17:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:17:33
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:17:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:17:33
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:19:34
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:19:34
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:19:34
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:19:34
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:19:34
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:21:35
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:21:35
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:21:35
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:21:35
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:21:35
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 04:23:36
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 04:23:36
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 04:23:36
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 04:23:36
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 04:23:36
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:12:20
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:12:33
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:12:39
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:12:39
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:12:39
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:12:39
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:12:39
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:12:55
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:12:55
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:12:55
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:12:55
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:12:55
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:00
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:00
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:00
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:00
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:00
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:07
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:13:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:14:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:14:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:14:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:14:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:14:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:16:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:16:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:16:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:16:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:16:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:18:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:18:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:18:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:18:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:18:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:20:07
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:20:07
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:20:07
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:20:07
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:20:07
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:22:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:22:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:22:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:22:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:22:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:24:13
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:24:13
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:24:13
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:24:13
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:24:13
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:26:14
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:26:14
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:26:14
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:26:14
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:26:14
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:28:16
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:28:16
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:28:16
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:28:16
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:28:16
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:30:16
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:30:16
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:30:16
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:30:16
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:30:16
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
+VAPT Enforcement Run at 2026-02-22 05:32:17
+Feature: RISK-001
+Applying rules with Data: {"disable_wp_cron":true,"verify_cron_disabled":null,"verify_constant_exists":null,"load_test_cron_endpoint":null}
+VAPT Enforcement Run at 2026-02-22 05:32:17
+Feature: RISK-002
+Applying rules with Data: {"disable_xmlrpc":true,"verify_xmlrpc_blocked":null,"verify_pingback_blocked":null,"verify_htaccess_directive":null}
+VAPT Enforcement Run at 2026-02-22 05:32:17
+Feature: RISK-005
+Applying rules with Data: {"vapt_risk_005_settings":true,"verify_risk_005_protection":null}
+VAPT Enforcement Run at 2026-02-22 05:32:17
+Feature: RISK-007
+Applying rules with Data: {"enable_login_rate_limiting":true,"verify_unlimited_attempts":null,"verify_fail2ban_active":null,"verify_ip_blocking":null}
+VAPT Enforcement Run at 2026-02-22 05:32:17
+Feature: RISK-008
+Applying rules with Data: {"prot_enabled":true,"impl_notes":"","custom_error_message":"ERROR: Invalid username or password.","verify_invalid_user":null,"verify_wrong_password":null}
