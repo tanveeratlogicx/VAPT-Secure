@@ -597,10 +597,10 @@ window.vaptScriptLoaded = true;
       } else {
         const defaultTemplate = {
           "design_prompt": {
-            "interface_version": isMultiEnv ? "3.1.0" : "2.0",
+            "interface_version": isMultiEnv ? "3.2.0" : "2.0",
             "schema_grade": isMultiEnv ? "A+" : "Standard",
             "interface_type": "Interactive VAPT Functional Workbench",
-            "schema_definition": isMultiEnv ? "VAPT A+ Multi-Environment Interface Schema v3.1" : "WordPress VAPT schema with standardized control fields",
+            "schema_definition": isMultiEnv ? "VAPT A+ Client-Ready Multi-Environment Interface Schema v3.2" : "WordPress VAPT schema with standardized control fields",
             "id": "{{id}}",
             "title": "{{title}}",
             "description": "{{description}}",
@@ -651,7 +651,8 @@ window.vaptScriptLoaded = true;
             "multi_environment": isMultiEnv ? {
               "mode": "runtime_detection",
               "supported_platforms": ["apache_htaccess", "nginx_config", "iis_config", "caddy_config", "cloudflare_edge", "php_functions"],
-              "fallback_strategy": "cascade"
+              "fallback_strategy": "cascade",
+              "runtime_selection": "maximize_protection_capability"
             } : null
           }
         };
@@ -865,13 +866,13 @@ window.vaptScriptLoaded = true;
          - Include **Dependency Checks** (verifying required server modules).
          - Implement **Rate Limiting** logic for probes to protect high-availability environments.
 
-      ${isMultiEnv ? `--- A+ MULTI-ENVIRONMENT REQUIREMENTS (v3.1) ---
-      1. **Versioning**: Schema MUST include \`"schema_version": "3.1.0"\` and \`"schema_grade": "A+"\`.
-      2. **Platform Matrix**: Implement \`implementations\` for: apache_htaccess, nginx_config, iis_config, caddy_config, cloudflare_edge, php_functions.
-      3. **Environment Selector**: Provide \`environment_selector\` logic for runtime detection (Apache vs Nginx vs IIS).
-      4. **Unified Test Suite**: Create a single suite that validates protection across ALL active platforms.
-      5. **Orchestration**: Define \`deployment.strategies\` for single_server and mixed_load_balanced scenarios.
-      6. **UX visuals**: Enable \`multi_environment_display\` properties in UI mapping.` : `--- ADVANCED CHECKPOINTS (v2.0) ---
+      ${isMultiEnv ? `--- A+ CLIENT-READY REQUIREMENTS (v3.2) ---
+      1. **Versioning**: Schema MUST include \`"schema_version": "3.2.0"\` and \`"schema_grade": "A+"\`.
+      2. **Runtime Detection**: Include \`runtime_environment_detection\` cascade (header, php, filesystem, function).
+      3. **Platform Matrix**: Implement \`implementations\` for: apache_htaccess, nginx_config, iis_config, caddy_config, cloudflare_edge, php_functions.
+      4. **Deployment Profiles**: Define \`client_deployment.profiles\` for: Auto-Detect, Maximum, Conservative, Enterprise.
+      5. **Unified Test Suite**: Create a single suite that validates protection across ALL active platforms.
+      6. **Client Verification**: Include \`client_verification\` with http-probes and user-friendly messaging.` : `--- ADVANCED CHECKPOINTS (v2.0) ---
       1. **Versioning**: Schema MUST include \`"interface_version": "2.0"\`.
       2. **Test Logic**: \`test_action\` MUST include timeout and retry parameters.
       3. **Conditional Logic**: Controls MUST specify \`prerequisites\` or conflicts where applicable.
@@ -881,12 +882,12 @@ window.vaptScriptLoaded = true;
 
       --- FULL SELF-CHECK RUBRIC (Score 1-19) ---
       You MUST score exactly 19/19 to deliver.
-      ${isMultiEnv ? `1. [x] Schema Version is 3.1.0?
+      ${isMultiEnv ? `1. [x] Schema Version is 3.2.0?
       2. [x] Schema Grade is A+?
-      3. [x] platform_matrix.implementations contains >= 5 platforms?
-      4. [x] environment_selector logic defined for runtime detection?
+      3. [x] platform_matrix.implementations contains >= 6 platforms?
+      4. [x] Runtime detection cascade defined for client environments?
       5. [x] Unified test suite includes environment-agnostic validation?
-      6. [x] deployment.strategies defined for single/mixed setups?
+      6. [x] Client deployment profiles (Auto-Detect/Enterprise) defined?
       7. [x] Multi-platform UI badges/indicators enabled?
       8. [x] Enrollment is automatic via cascade strategy?
       9. [x] php_functions defined as the last universal fallback?
@@ -922,7 +923,7 @@ window.vaptScriptLoaded = true;
       --- JSON SKELETON ---
       \`\`\`json
       {
-        "interface_version": "${isMultiEnv ? '3.1.0' : '2.0'}",
+        "interface_version": "${isMultiEnv ? '3.2.0' : '2.0'}",
         "metadata": {
           "risk_id": "${feature.id || 'N/A'}",
           "schema_grade": "${isMultiEnv ? 'A+' : 'Standard'}",
@@ -940,14 +941,14 @@ window.vaptScriptLoaded = true;
           }
         ],
         ${isMultiEnv ? `"platform_matrix": {
-          "environment_selector": { "detection_order": ["apache", "nginx", "iis", "caddy"] },
+          "runtime_detection": { "detection_cascade": ["header", "php", "filesystem"] },
           "implementations": {
             "apache_htaccess": { "lib_key": "htaccess", "rollback": { "automatic": true } },
             "nginx_config": { "lib_key": "nginx", "rollback": { "automatic": true } },
             "php_functions": { "lib_key": "php_functions", "universal_fallback": true }
           }
         },
-        "deployment": { "strategies": { "single_server": { "deploy_order": ["apache_htaccess", "php_functions"] } } },` : `"enforcement": {
+        "client_deployment": { "profiles": { "auto_detect": { "deploy_order": ["apache_htaccess", "php_functions"] } } },` : `"enforcement": {
           "driver": "${prioritizedDriver}",
           "fallback_driver": "hook",
           "target": "${prioritizedDriver === 'htaccess' ? 'root' : 'universal'}",
@@ -1135,10 +1136,10 @@ window.vaptScriptLoaded = true;
               onChange: setIncludeNotes
             }),
             el(ToggleControl, {
-              label: __('Enable A+ Multi-Env Mode (v3.1)', 'vaptsecure'),
+              label: __('Enable A+ Client-Ready Multi-Env Mode (v3.2)', 'vaptsecure'),
               checked: isMultiEnv,
               onChange: setIsMultiEnv,
-              help: __('Mandates A+ platform_matrix with parallel enforcer implementations.', 'vaptsecure')
+              help: __('Mandates A+ runtime capability detection and client-ready fallback orchestration.', 'vaptsecure')
             })
           ]),
 
