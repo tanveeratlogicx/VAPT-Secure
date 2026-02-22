@@ -560,29 +560,29 @@ window.vaptScriptLoaded = true;
 `;
 
       // 1. Determine Driver Priority based on VAPT v2.0 Strategy
+      // Preferred Order: .htaccess, PHP Function, wp-config
       let prioritizedDriver = 'hook';
       let driverContextInstruction = '';
       const activeFiles = (selectedFile || '').split(',');
 
       const targets = feature.protection?.automated_protection?.implementation_targets || feature.available_platforms || [];
       if (Array.isArray(targets) && targets.length > 0) {
-        if (targets.includes('wp-config.php')) prioritizedDriver = 'wp-config';
-        else if (targets.includes('.htaccess')) prioritizedDriver = 'htaccess';
+        if (targets.includes('.htaccess')) prioritizedDriver = 'htaccess';
         else if (targets.includes('PHP Hook') || targets.includes('WordPress') || targets.includes('PHP Functions') || targets.includes('WordPress Core')) prioritizedDriver = 'hook';
+        else if (targets.includes('wp-config.php')) prioritizedDriver = 'wp-config';
         else if (targets.includes('fail2ban')) prioritizedDriver = 'fail2ban';
         else if (targets.includes('Nginx')) prioritizedDriver = 'nginx';
         else if (targets.includes('Cloudflare')) prioritizedDriver = 'cloudflare';
         else if (targets.includes('IIS')) prioritizedDriver = 'iis';
         else if (targets.includes('Caddy')) prioritizedDriver = 'caddy';
-        else if (targets.includes('Litespeed')) prioritizedDriver = 'htaccess'; // Litespeed usually uses htaccess
+        else if (targets.includes('Litespeed')) prioritizedDriver = 'htaccess';
 
-        driverContextInstruction = `\n      - **STRATEGY**: The feature specifically supports [${targets.join(', ')}]. You MUST implement target ONLY the **${prioritizedDriver}** enforcer.`;
+        driverContextInstruction = `\n      - **STRATEGY**: The feature supports [${targets.join(', ')}]. Priority Driver: **${prioritizedDriver}**.`;
       } else {
-        // Fallback to active datasource
         const dsLower = (selectedFile || '').toLowerCase();
         if (dsLower.includes('htaccess')) prioritizedDriver = 'htaccess';
-        else if (dsLower.includes('wp-config')) prioritizedDriver = 'wp-config';
         else if (dsLower.includes('hook') || dsLower.includes('php')) prioritizedDriver = 'hook';
+        else if (dsLower.includes('wp-config')) prioritizedDriver = 'wp-config';
         else if (dsLower.includes('nginx')) prioritizedDriver = 'nginx';
         else if (dsLower.includes('fail2ban')) prioritizedDriver = 'fail2ban';
       }
@@ -594,6 +594,7 @@ window.vaptScriptLoaded = true;
       } else {
         const defaultTemplate = {
           "design_prompt": {
+            "interface_version": "2.0",
             "interface_type": "Interactive VAPT Functional Workbench",
             "schema_definition": "WordPress VAPT schema with standardized control fields",
             "id": "{{id}}",
@@ -607,6 +608,7 @@ window.vaptScriptLoaded = true;
             "evidence_requirements": "{{evidence_requirements}}",
             "verification_steps": "{{verification_steps}}",
             "test_method": "{{test_method}}",
+            "visual_indicator": "shield",
             "ui_components": {
               "primary_card": "{{automation_prompts.ai_ui}}",
               "test_checklist": "{{tests}}",
@@ -627,7 +629,8 @@ window.vaptScriptLoaded = true;
               "ai_check_prompt": "{{automation_prompts.ai_check}}",
               "ai_schema_fields": "{{automation_prompts.ai_schema}}",
               "ai_agent_instructions": "{{ai_agent_instructions}}",
-              "global_settings": "{{global_settings}}"
+              "global_settings": "{{global_settings}}",
+              "telemetry": { "log_events": true, "audit_trail": true }
             },
             "risk_properties": {
               "cvss_score": "{{cvss_score}}",
@@ -840,46 +843,53 @@ window.vaptScriptLoaded = true;
 
       --- INSTRUCTIONS & CRITICAL RULES ---
       1. **Output Format**: Provide ONLY a JSON block. No preamble. No conversational filler.
-      2. **Fully Qualified URLs**: Use **site_context.home_url** (${homeUrl}) for ALL URLs, links, and endpoints. Every "url" field in the JSON MUST be an absolute link (e.g. ${homeUrl}/wp-login.php). No relative paths allowed.
+      2. **Fully Qualified URLs**: Use **site_context.home_url** (${homeUrl}) for ALL URLs and endpoints (e.g. ${homeUrl}/wp-cron.php). Every "url" property MUST be an absolute link. No relative paths.
       3. **Single Enforcer Strategy**: Target ONLY the **${prioritizedDriver}** driver. Valid: hook, htaccess, wp-config, nginx, fail2ban, cloudflare, iis, caddy.
       4. **Naming Conventions**: 
          - Component: Risk{NNN}{TitleCamelCase} (e.g. Risk001WpCronProtection)
          - Handlers: handleRISK{NNN}{EventType}Change (e.g. handleRISK001ToggleChange)
-         - Settings: vapt_risk_{nnn}_settings
-      5. **No Internal IDs in Code**: Use '/* BEGIN VAPT PROTECTION */' markers. Never include internal Risk IDs inside the generated configuration code.
+      5. **Absolute Links**: Description fields MUST provide URLs as clean, clickable Markdown links [label](url).
       6. **Key Enforcement**: EVERY control MUST have a unique "key" field.
-      7. **Interactive Verification**: Convert 'verification_steps' into 'test_action' controls using 'universal_probe'.
-      8. **Absolute Links**: Any URL intended for the user in a "description" or "label" field MUST be provided as a clean, fully qualified absolute URL (e.g. ${homeUrl}/wp-login.php). Do NOT use Markdown link syntax [label](url) unless specifically required for documentation.
-      9. **Forbidden Patterns**: 
-         - Do NOT invent component IDs.
-         - Do NOT change default_values from the schema.
-         - Do NOT omit VAPT block markers.
+      7. **Resiliency**: Include \`retry_on_failure: true\` and failure logic in \`test_action\` configurations.
+      8. **Safety & Compliance**:
+         - Mandate **Rollback Verification** steps to ensure site stability.
+         - Include **Dependency Checks** (verifying required server modules).
+         - Implement **Rate Limiting** logic for probes to protect high-availability environments.
+
+      --- ADVANCED CHECKPOINTS (v2.0) ---
+      1. **Versioning**: Schema MUST include \`"interface_version": "2.0"\`.
+      2. **Test Logic**: \`test_action\` MUST include timeout and retry parameters.
+      3. **Conditional Logic**: Controls MUST specify \`prerequisites\` or conflicts where applicable.
+      4. **Multi-Environment**: Enforcement MUST define a \`fallback_driver\`.
+      5. **Audit Trail**: Include telemetry configuration for implementation events.
+      6. **UX Visuals**: Add visual indicators and help resource links to the schema.
 
       --- FULL SELF-CHECK RUBRIC (Score 1-19) ---
       You MUST score exactly 19/19 to deliver.
       1. [x] Component IDs match schema exactly?
-      2. [x] Enforcement code read from enforcer_pattern_library (not memory)?
+      2. [x] Enforcement code sourced from library?
       3. [x] Severity colors match global config?
       4. [x] Handler names follow PascalCase conventions?
       5. [x] Target platform listed in available_platforms?
       6. [x] VAPT block markers present in output?
-      7. [x] Command verification present?
-      8. [x] Every URL in test_action is FULLY QUALIFIED (absolute)?
-      9. [x] Descriptions contain clean absolute URLs (no relative paths)?
+      7. [x] Double-Qualification Guard: No redundant domain prepending?
+      8. [x] Every URL in test_action is FULLY QUALIFIED (absolute link)?
+      9. [x] Descriptions contain functional Markdown Links for URLs?
       10. [x] No forbidden .htaccess directives used?
       11. [x] RewriteRules placed BEFORE # BEGIN WordPress?
       12. [x] RewriteRules wrapped in <IfModule>?
-      13. [x] wp-config constants placed before stop editing line?
-      14. [x] PHP hooks prefixed with vapt_?
-      15. [x] Nginx output uses standard server context syntax?
-      16. [x] fail2ban uses jail.local target path?
-      17. [x] code_ref uses correct lib_key?
-      18. [x] driver_ref points to vapt_driver_manifest_v2.0?
-      19. [x] JSON syntax is valid and minification is avoided?
+      13. [x] Version 2.0 marker present?
+      14. [x] Fallback driver defined in enforcement?
+      15. [x] Retry logic included in test_action?
+      16. [x] Prerequisites defined for complex controls?
+      17. [x] Telemetry/Audit trail configured?
+      18. [x] Visual indicators (shield/icon) included?
+      19. [x] JSON syntax validated before output?
 
       --- JSON SKELETON ---
       \`\`\`json
       {
+        "interface_version": "2.0",
         "metadata": {
           "risk_id": "${feature.id || 'N/A'}",
           "severity": "${(typeof feature.severity === 'object' ? feature.severity.level : feature.severity) || 'High'}",
@@ -888,17 +898,39 @@ window.vaptScriptLoaded = true;
         ${includeProtocol ? '"manual_protocol": { "steps": ["Step 1...", "Step 2..."] },' : ''}
         ${includeNotes ? '"operational_notes": "Summary of risks and benefits...",' : ''}
         "controls": [
-          { "type": "toggle", "label": "Enable Protection", "key": "prot_enabled", "default": false, "description": "Description..." },
-          { "type": "test_action", "label": "Verify Configuration", "key": "verify_prot", "test_logic": "universal_probe", "test_config": { "url": "${homeUrl}/...", "method": "GET", "expected_status": 403 } }
+          { 
+            "type": "toggle", 
+            "label": "Enable Protection", 
+            "key": "prot_enabled", 
+            "default": false, 
+            "description": "Description...",
+            "prerequisites": [],
+            "visual_indicator": "shield"
+          },
+          { 
+            "type": "test_action", 
+            "label": "Verify Configuration", 
+            "key": "verify_prot", 
+            "test_logic": "universal_probe", 
+            "test_config": { 
+              "url": "${homeUrl}/...", 
+              "method": "GET", 
+              "expected_status": 403,
+              "retry_on_failure": true,
+              "timeout": 5000
+            } 
+          }
         ],
         "enforcement": {
           "driver": "${prioritizedDriver}",
+          "fallback_driver": "hook",
           "target": "${prioritizedDriver === 'htaccess' ? 'root' : 'universal'}",
           "backup": true,
           "rollback_on_disable": true,
           "mappings": {
             "prot_enabled": "/* Literal Code to Inject */"
-          }
+          },
+          "telemetry": { "log_events": true }
         }
       }
       \`\`\`
