@@ -14,6 +14,10 @@ description:
 
 * it should be consistent for other `Driver's` as well - the support should be there for the Platforms like Apache, Nginx, fail2ban, PHP Functions [should be added to the Active themes functions.php], IIS, Cloudflare, Caddy, Litespeed.
 
+* if there's a race condition like a particular Feature can be implemented using .htaccess and wp-config.php, or may be by using some filter/hook [by adding some PHP code to functions.php], do plan and implement a clear priority [I wouldn't mind setting it like .htaccess, PHP Function, wp-config, .. BUT would like you to have the final say.
+
+* We should come up with a clear choice of Implementation Driver to be used.
+
 * The choice for the Enforcer Driver should be clear and should ensure that the suggested Protection is actually being applied to the domain.
 
 * The AI Design Prompt should respect the State of the toggles like "Include Manual Verification Protocol" and "Include Operational Notes Section" and the Generated "Interface Schema JSON" should have them included, if Enabled.

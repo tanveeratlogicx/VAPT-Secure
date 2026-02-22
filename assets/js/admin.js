@@ -559,34 +559,32 @@ window.vaptScriptLoaded = true;
 }
 `;
 
-      // 1. Determine Driver Priority based on Single Enforcer Strategy (v3.13.1)
+      // 1. Determine Driver Priority based on VAPT v2.0 Strategy
       let prioritizedDriver = 'hook';
       let driverContextInstruction = '';
       const activeFiles = (selectedFile || '').split(',');
 
-      const targets = feature.protection?.automated_protection?.implementation_targets || [];
+      const targets = feature.protection?.automated_protection?.implementation_targets || feature.available_platforms || [];
       if (Array.isArray(targets) && targets.length > 0) {
         if (targets.includes('wp-config.php')) prioritizedDriver = 'wp-config';
-        else if (targets.includes('PHP Hook')) prioritizedDriver = 'hook';
         else if (targets.includes('.htaccess')) prioritizedDriver = 'htaccess';
-        else if (targets.includes('nginx-config')) prioritizedDriver = 'manual';
+        else if (targets.includes('PHP Hook') || targets.includes('WordPress') || targets.includes('PHP Functions') || targets.includes('WordPress Core')) prioritizedDriver = 'hook';
+        else if (targets.includes('fail2ban')) prioritizedDriver = 'fail2ban';
+        else if (targets.includes('Nginx')) prioritizedDriver = 'nginx';
+        else if (targets.includes('Cloudflare')) prioritizedDriver = 'cloudflare';
+        else if (targets.includes('IIS')) prioritizedDriver = 'iis';
+        else if (targets.includes('Caddy')) prioritizedDriver = 'caddy';
+        else if (targets.includes('Litespeed')) prioritizedDriver = 'htaccess'; // Litespeed usually uses htaccess
 
-        driverContextInstruction = `\n      - **STRATEGY**: The feature specifically supports [${targets.join(', ')}]. You MUST implement target ONLY the **${prioritizedDriver}** enforcer for this feature.`;
+        driverContextInstruction = `\n      - **STRATEGY**: The feature specifically supports [${targets.join(', ')}]. You MUST implement target ONLY the **${prioritizedDriver}** enforcer.`;
       } else {
-        // Fallback to active datasource file name
-        if (activeFiles.some(f => f.includes('htaccess'))) {
-          prioritizedDriver = 'htaccess';
-          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is an **htaccess** catalog. You MUST prioritize the 'htaccess' driver.`;
-        } else if (activeFiles.some(f => f.includes('wp-config'))) {
-          prioritizedDriver = 'wp-config';
-          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is a **wp-config** catalog. Use PHP constants via the 'wp-config' driver.`;
-        } else if (activeFiles.some(f => f.includes('hook'))) {
-          prioritizedDriver = 'hook';
-          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is a **hook** catalog. Use PHP hooks via the 'hook' driver.`;
-        } else if (activeFiles.some(f => f.includes('nginx'))) {
-          prioritizedDriver = 'manual';
-          driverContextInstruction = `\n      - **CRITICAL**: The active datasource is an **nginx** catalog. Use manual instructions for Nginx directives.`;
-        }
+        // Fallback to active datasource
+        const dsLower = (selectedFile || '').toLowerCase();
+        if (dsLower.includes('htaccess')) prioritizedDriver = 'htaccess';
+        else if (dsLower.includes('wp-config')) prioritizedDriver = 'wp-config';
+        else if (dsLower.includes('hook') || dsLower.includes('php')) prioritizedDriver = 'hook';
+        else if (dsLower.includes('nginx')) prioritizedDriver = 'nginx';
+        else if (dsLower.includes('fail2ban')) prioritizedDriver = 'fail2ban';
       }
 
       if (designPromptConfig) {
@@ -842,33 +840,42 @@ window.vaptScriptLoaded = true;
 
       --- INSTRUCTIONS & CRITICAL RULES ---
       1. **Output Format**: Provide ONLY a JSON block. No preamble. No conversational filler.
-      2. **Fully Qualified URLs**: Use **site_context.home_url** (${settings.homeUrl || ''}) for ALL URLs and endpoints (e.g. ${homeUrl}/wp-cron.php). No relative paths.
-      3. **Single Enforcer Strategy**: Target ONLY the **${prioritizedDriver}** driver. Valid: hook, htaccess, wp-config, manual. Do NOT suggest multi-driver implementations.
+      2. **Fully Qualified URLs**: Use **site_context.home_url** (${homeUrl}) for ALL URLs, links, and endpoints. Every "url" field in the JSON MUST be an absolute link (e.g. ${homeUrl}/wp-login.php). No relative paths allowed.
+      3. **Single Enforcer Strategy**: Target ONLY the **${prioritizedDriver}** driver. Valid: hook, htaccess, wp-config, nginx, fail2ban, cloudflare, iis, caddy.
       4. **Naming Conventions**: 
          - Component: Risk{NNN}{TitleCamelCase} (e.g. Risk001WpCronProtection)
          - Handlers: handleRISK{NNN}{EventType}Change (e.g. handleRISK001ToggleChange)
          - Settings: vapt_risk_{nnn}_settings
-      5. **No Internal IDs in Code**: Use '/* BEGIN VAPT PROTECTION */' markers. Never include 'RISK-001' or internal IDs inside the generated configuration code.
+      5. **No Internal IDs in Code**: Use '/* BEGIN VAPT PROTECTION */' markers. Never include internal Risk IDs inside the generated configuration code.
       6. **Key Enforcement**: EVERY control MUST have a unique "key" field.
       7. **Interactive Verification**: Convert 'verification_steps' into 'test_action' controls using 'universal_probe'.
-      8. **Forbidden Patterns**: 
+      8. **Absolute Links**: Any URL intended for the user in a "description" or "label" field MUST be formatted as a clickable Markdown link using the fully qualified domain.
+      9. **Forbidden Patterns**: 
          - Do NOT invent component IDs.
          - Do NOT change default_values from the schema.
          - Do NOT omit VAPT block markers.
 
-      --- SELF-CHECK RUBRIC (Score 1-15) ---
-      - [2pts] All component IDs and keys match interface_schema exactly.
-      - [2pts] Enforcement code is from pattern library, not invented.
-      - [1pt] Severity badge colors match global_ui_config.severity_badge_colors.
-      - [1pt] Handler names follow strict naming conventions (PascalCase components).
-      - [1pt] Platform is listed in available_platforms for this risk.
-      - [1pt] VAPT block markers are present in enforcement code.
-      - [1pt] Verification command is present and matches expected platform CLI.
-      - [1pt] No forbidden_patterns violated.
-      - [2pts] No forbidden .htaccess directives (TraceEnable, ServerSignature, ServerTokens, <Directory>) present in .htaccess output.
-      - [1pt] RewriteEngine On is present before every RewriteRule/RewriteCond block.
-      - [1pt] mod_headers requirement noted when Header directive used in .htaccess.
-      - [1pt] Score >= 13/15 required for output.
+      --- FULL SELF-CHECK RUBRIC (Score 1-19) ---
+      You MUST score exactly 19/19 to deliver.
+      1. [x] Component IDs match schema exactly?
+      2. [x] Enforcement code read from enforcer_pattern_library (not memory)?
+      3. [x] Severity colors match global config?
+      4. [x] Handler names follow PascalCase conventions?
+      5. [x] Target platform listed in available_platforms?
+      6. [x] VAPT block markers present in output?
+      7. [x] Command verification present?
+      8. [x] Every URL in test_action is FULLY QUALIFIED (absolute)?
+      9. [x] Descriptions contain functional Links for URLs?
+      10. [x] No forbidden .htaccess directives used?
+      11. [x] RewriteRules placed BEFORE # BEGIN WordPress?
+      12. [x] RewriteRules wrapped in <IfModule>?
+      13. [x] wp-config constants placed before stop editing line?
+      14. [x] PHP hooks prefixed with vapt_?
+      15. [x] Nginx output uses standard server context syntax?
+      16. [x] fail2ban uses jail.local target path?
+      17. [x] code_ref uses correct lib_key?
+      18. [x] driver_ref points to vapt_driver_manifest_v2.0?
+      19. [x] JSON syntax is valid and minification is avoided?
 
       --- JSON SKELETON ---
       \`\`\`json
