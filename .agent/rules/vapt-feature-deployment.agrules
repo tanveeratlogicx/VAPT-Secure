@@ -1,0 +1,431 @@
+# =============================================================================
+# GOOGLE ANTIGRAVITY IDE RULE SET
+# VAPT Feature Deployment Rule v4.0.1 - A+ Adaptive Deployment Compatible
+# File: vapt-feature-deployment.agrules
+#
+# PURPOSE: Transform VAPT Interface Schemas into working, deployed security 
+# protections using A+ Adaptive Deployment native mechanisms.
+#
+# TRIGGER CONDITIONS:
+# - File pattern: "interface_schema_v*.json"
+# - User intent: deploy, implement, activate protections
+# - Status: DRAFT → DEVELOP, DRAFT → PRODUCTION
+#
+# OUTPUT: Working WordPress plugin with A+ native htaccess deployment
+# =============================================================================
+
+metadata:
+  rule_name: "VAPT Feature Deployment Rule"
+  rule_id: "vapt-feature-deployment"
+  version: "4.0.2"
+  purpose: "Transform schema to working deployment via A+ Adaptive Deployment"
+  target_grade: "A+"
+
+  trigger:
+    file_pattern: "interface_schema_v*.json"
+    user_intent: ["deploy", "implement", "activate", "make it work", "get it running"]
+    status_transition: ["DRAFT → DEVELOP", "DRAFT → PRODUCTION"]
+
+  output:
+    filename_template: "vapt-security-plugin-{{timestamp}}.zip"
+    format: "wordpress_plugin"
+
+# =============================================================================
+# PHASE 1: SCHEMA VALIDATION & ANALYSIS
+# =============================================================================
+
+rules:
+
+  - id: validate_schema_structure
+    name: "Validate Interface Schema Structure"
+    action: validate
+    condition: "{{trigger.file}} exists"
+
+    validate:
+      schema: "{{trigger.file}}"
+      required_paths:
+        - "$.metadata.schema_version"
+        - "$.global_config.runtime_environment_detection"
+        - "$.global_config.runtime_platform_selection"
+        - "$.risk_interfaces"
+        - "$.risk_interfaces[0].protection_definition"
+        - "$.risk_interfaces[0].protection_definition.implementations.php_functions"
+
+    on_pass:
+      - set: ["$.validation.status", "VALID"]
+      - proceed_to: "analyze_deployment_requirements"
+
+    on_fail:
+      - abort: "Invalid schema structure. Missing required protection definitions."
+      - suggest: "Run VAPT Client-Ready Multi-Environment Schema Generator first."
+
+  - id: analyze_deployment_requirements
+    name: "Analyze Deployment Requirements"
+    action: analyze
+    analyze:
+      source: "{{trigger.file}}"
+      extract:
+        risk_count: "count($.risk_interfaces)"
+        risk_ids: "$.risk_interfaces[*].risk_id"
+        platforms_available: "unique($.risk_interfaces[*].protection_definition.implementations.keys())"
+        has_cloudflare: "exists($.risk_interfaces[*].protection_definition.implementations.cloudflare_edge)"
+        has_apache: "exists($.risk_interfaces[*].protection_definition.implementations.apache_htaccess)"
+        has_nginx: "exists($.risk_interfaces[*].protection_definition.implementations.nginx_config)"
+        has_php_fallback: "exists($.risk_interfaces[*].protection_definition.implementations.php_functions)"
+
+    output:
+      deployment_profile:
+        total_protections: "{{risk_count}}"
+        platform_support: "{{platforms_available}}"
+        universal_fallback_ready: "{{has_php_fallback}}"
+
+# =============================================================================
+# PHASE 2: A+ NATIVE HTACCESS DEPLOYMENT
+# =============================================================================
+
+  - id: deploy_htaccess_user_enumeration
+    name: "Deploy User Enumeration Protection to .htaccess"
+    action: inject
+    condition: "{{source.has_apache}} AND exists($.risk_interfaces[?(@.risk_id=='user-enumeration-via-author')])"
+    driver:
+      type: htaccess
+      target: root
+      marker: "VAPT_USER_ENUMERATION"
+
+    payload: |
+      # BEGIN VAPT_USER_ENUMERATION
+      # Block user enumeration via author parameter
+      <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteCond %{QUERY_STRING} author=\d [NC]
+          RewriteRule .* - [F,L]
+      </IfModule>
+      # END VAPT_USER_ENUMERATION
+
+  - id: deploy_htaccess_xmlrpc
+    name: "Deploy XMLRPC Protection to .htaccess"
+    action: inject
+    condition: "{{source.has_apache}} AND exists($.risk_interfaces[?(@.risk_id=='xmlrpc-brute-force')])"
+    driver:
+      type: htaccess
+      target: root
+      marker: "VAPT_XMLRPC_BLOCK"
+
+    payload: |
+      # BEGIN VAPT_XMLRPC_BLOCK
+      # Block XML-RPC to prevent brute force attacks
+      <Files xmlrpc.php>
+          Order Deny,Allow
+          Deny from all
+      </Files>
+      # END VAPT_XMLRPC_BLOCK
+
+  - id: deploy_htaccess_wp_json_users
+    name: "Deploy WP JSON Users Endpoint Protection"
+    action: inject
+    condition: "{{source.has_apache}} AND exists($.risk_interfaces[?(@.risk_id=='wp-json-user-enumeration')])"
+    driver:
+      type: htaccess
+      target: root
+      marker: "VAPT_WPJSON_USERS"
+
+    payload: |
+      # BEGIN VAPT_WPJSON_USERS
+      # Block REST API user enumeration
+      <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^wp-json/wp/v2/users$ - [F,L]
+          RewriteRule ^wp-json/wp/v2/users/ - [F,L]
+      </IfModule>
+      # END VAPT_WPJSON_USERS
+
+  - id: deploy_htaccess_path_traversal
+    name: "Deploy Path Traversal Protection"
+    action: inject
+    condition: "{{source.has_apache}} AND exists($.risk_interfaces[?(@.risk_id=='file-path-traversal')])"
+    driver:
+      type: htaccess
+      target: root
+      marker: "VAPT_PATH_TRAVERSAL"
+
+    payload: |
+      # BEGIN VAPT_PATH_TRAVERSAL
+      # Block directory traversal attempts
+      <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteCond %{QUERY_STRING} \.\.\/ [NC,OR]
+          RewriteCond %{QUERY_STRING} %2e%2e%2f [NC,OR]
+          RewriteCond %{QUERY_STRING} %252e%252e%252f [NC]
+          RewriteRule .* - [F,L]
+      </IfModule>
+      # END VAPT_PATH_TRAVERSAL
+
+  - id: deploy_htaccess_sensitive_files
+    name: "Deploy Sensitive Files Protection"
+    action: inject
+    condition: "{{source.has_apache}}"
+    driver:
+      type: htaccess
+      target: root
+      marker: "VAPT_SENSITIVE_FILES"
+
+    payload: |
+      # BEGIN VAPT_SENSITIVE_FILES
+      # Protect sensitive files
+      <FilesMatch "^\.(env|gitignore|htaccess|htpasswd)$">
+          Order allow,deny
+          Deny from all
+      </FilesMatch>
+
+      # Block access to backup files
+      <FilesMatch "\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)$">
+          Order allow,deny
+          Deny from all
+      </FilesMatch>
+      # END VAPT_SENSITIVE_FILES
+
+# =============================================================================
+# PHASE 3: GENERATE PHP FALLBACK DEPLOYER
+# =============================================================================
+
+  - id: generate_environment_detector
+    name: "Generate Runtime Environment Detector"
+    action: generate_file
+    target: "vapt-environment-detector.php"
+
+    template: |
+      <?php
+      /**
+       * VAPT Runtime Environment Detector v4.0.1
+       * Auto-generated from {{trigger.file}}
+       */
+
+      if (!defined('ABSPATH')) exit;
+
+      class VAPT_Environment_Detector {
+          private $cache_key = 'vapt_environment_profile';
+          private $cache_duration = 3600;
+
+          public function detect() {
+              $cached = get_transient($this->cache_key);
+              if ($cached !== false) return $cached;
+
+              $profile = [
+                  'server_software' => $this->detect_server_software(),
+                  'php_sapi' => php_sapi_name(),
+                  'platform_tier' => 'php_functions',
+                  'optimal_platform' => 'php_functions',
+                  'capabilities' => []
+              ];
+
+              // Check for server-level capabilities
+              if (file_exists(ABSPATH . '.htaccess')) {
+                  $profile['capabilities']['apache_htaccess'] = [
+                      'available' => true,
+                      'writable' => is_writable(ABSPATH . '.htaccess')
+                  ];
+              }
+
+              set_transient($this->cache_key, $profile, $this->cache_duration);
+              return $profile;
+          }
+
+          private function detect_server_software() {
+              $software = $_SERVER['SERVER_SOFTWARE'] ?? 'unknown';
+              if (stripos($software, 'nginx') !== false) return 'nginx';
+              if (stripos($software, 'apache') !== false) return 'apache';
+              return 'unknown';
+          }
+
+          public function clear_cache() {
+              delete_transient($this->cache_key);
+          }
+      }
+
+      function vapt_get_environment() {
+          static $detector = null;
+          if ($detector === null) $detector = new VAPT_Environment_Detector();
+          return $detector->detect();
+      }
+
+  - id: generate_php_deployer
+    name: "Generate PHP Functions Deployer (Universal Fallback)"
+    action: generate_file
+    target: "vapt-php-deployer.php"
+
+    template: |
+      <?php
+      /**
+       * VAPT PHP Functions Deployer
+       * Universal fallback using WordPress hooks
+       */
+
+      if (!defined('ABSPATH')) exit;
+
+      class VAPT_PHP_Deployer {
+
+          public function deploy_all($risk_interfaces) {
+              foreach ($risk_interfaces as $risk) {
+                  $this->deploy_risk($risk);
+              }
+          }
+
+          private function deploy_risk($risk) {
+              $risk_id = $risk['risk_id'];
+
+              switch ($risk_id) {
+                  case 'user-enumeration-via-author':
+                      add_action('init', [$this, 'block_author_enumeration'], 1);
+                      break;
+
+                  case 'xmlrpc-brute-force':
+                      add_filter('xmlrpc_enabled', '__return_false');
+                      break;
+
+                  case 'wp-json-user-enumeration':
+                      add_filter('rest_endpoints', [$this, 'disable_users_endpoint']);
+                      break;
+
+                  case 'file-path-traversal':
+                      add_action('init', [$this, 'block_path_traversal'], 1);
+                      break;
+              }
+          }
+
+          public function block_author_enumeration() {
+              if (isset($_GET['author']) && is_numeric($_GET['author'])) {
+                  wp_die('Access Denied - VAPT Protection Active', 'Access Denied', ['response' => 403]);
+              }
+          }
+
+          public function disable_users_endpoint($endpoints) {
+              if (!is_user_logged_in()) {
+                  unset($endpoints['/wp/v2/users']);
+                  unset($endpoints['/wp/v2/users/(?P<id>[\d]+)']);
+              }
+              return $endpoints;
+          }
+
+          public function block_path_traversal() {
+              $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+              if (preg_match('/\.\.\/|%2e%2e%2f|%252e%252e%252f/i', $request_uri)) {
+                  wp_die('Access Denied - VAPT Protection Active', 'Access Denied', ['response' => 403]);
+              }
+          }
+      }
+
+# =============================================================================
+# PHASE 4: GENERATE WORDPRESS PLUGIN BOOTSTRAP
+# =============================================================================
+
+  - id: generate_plugin_bootstrap
+    name: "Generate WordPress Plugin Bootstrap"
+    action: generate_file
+    target: "vapt-security.php"
+
+    template: |
+      <?php
+      /**
+       * Plugin Name: VAPT Auto-Deploy Security
+       * Description: Auto-generated security protection from VAPT Interface Schema. 
+       * Version: 4.0.1
+       * Author: VAPT System
+       * Requires PHP: 7.4
+       */
+
+      if (!defined('ABSPATH')) exit;
+
+      define('VAPT_VERSION', '4.0.1');
+
+      require_once __DIR__ . '/vapt-environment-detector.php';
+      require_once __DIR__ . '/vapt-php-deployer.php';
+
+      class VAPT_Security {
+          private static $instance = null;
+
+          public static function init() {
+              if (self::$instance === null) {
+                  self::$instance = new self();
+              }
+              return self::$instance;
+          }
+
+          private function __construct() {
+              add_action('plugins_loaded', [$this, 'deploy_protections']);
+              register_activation_hook(__FILE__, [$this, 'activate']);
+          }
+
+          public function deploy_protections() {
+              $env = vapt_get_environment();
+
+              // If htaccess deployment failed or not available, use PHP fallback
+              if ($env['platform_tier'] === 'php_functions' || !$this->is_htaccess_active()) {
+                  $deployer = new VAPT_PHP_Deployer();
+                  $deployer->deploy_all($this->get_risk_interfaces());
+              }
+          }
+
+          private function is_htaccess_active() {
+              // Check if A+ htaccess rules are present
+              $htaccess = @file_get_contents(ABSPATH . '.htaccess');
+              return strpos($htaccess, 'VAPT_') !== false;
+          }
+
+          private function get_risk_interfaces() {
+              // Load from schema or return defaults
+              return [
+                  ['risk_id' => 'user-enumeration-via-author'],
+                  ['risk_id' => 'xmlrpc-brute-force'],
+                  ['risk_id' => 'wp-json-user-enumeration'],
+                  ['risk_id' => 'file-path-traversal']
+              ];
+          }
+
+          public function activate() {
+              // Clear detection cache on activation
+              $detector = new VAPT_Environment_Detector();
+              $detector->clear_cache();
+          }
+      }
+
+      VAPT_Security::init();
+
+# =============================================================================
+# PHASE 5: FINAL OUTPUT
+# =============================================================================
+
+  - id: generate_output_package
+    name: "Generate WordPress Plugin Package"
+    action: output
+
+    output:
+      format: "zip"
+      filename: "vapt-security-plugin-{{timestamp}}.zip"
+      structure:
+        root: "vapt-security/"
+        files:
+          - "vapt-security.php"
+          - "vapt-environment-detector.php"
+          - "vapt-php-deployer.php"
+          - "readme.txt"
+
+    post_generate:
+      - action: "log_completion"
+        message: |
+          VAPT Feature Deployment Rule completed.
+          A+ htaccess rules deployed for: user-enumeration, xmlrpc, wp-json-users, path-traversal
+          PHP fallback generated for unsupported environments.
+
+  - id: validate_deployment
+    name: "Validate Deployment Readiness"
+    action: validate
+
+    validate:
+      checks:
+        - "{{files.vapt-security.php}} exists"
+        - "{{files.vapt-php-deployer.php}} exists"
+
+    on_pass:
+      - set: ["$.deployment_status", "READY"]
+      - log: "Deployment components generated successfully"

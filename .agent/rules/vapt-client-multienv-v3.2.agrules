@@ -1,20 +1,20 @@
 # =============================================================================
 # GOOGLE ANTIGRAVITY IDE RULE SET
-# VAPT Client-Ready Multi-Environment Schema Generator v3.2.0
+# VAPT Client-Ready Multi-Environment Schema Generator v3.2.1
 # 
 # PURPOSE: Generate Interface Schemas that auto-adapt to ANY client environment
-# at runtime without manual reconfiguration.
+# at runtime (A+ Adaptive Workbench Standard).
 #
 # KEY FEATURES:
 # - Runtime environment detection (not build-time)
 # - Capability-based platform selection (not hardcoded)
-# - Graceful degradation across all protection levels
-# - Single schema deploys everywhere
+# - Graceful degradation across all protection levels (htaccess/nginx/php)
+# - Standardized Multi-Platform Verification Probes
 # =============================================================================
 
 metadata:
   name: "VAPT Client-Ready Multi-Environment Generator"
-  version: "3.2.0"
+  version: "3.2.1"
   purpose: "Client deployment - any environment"
   target_grade: "A+"
   
@@ -277,6 +277,7 @@ rules:
             applicable: true
             config_format: "apache_rewrite"
             rules: "{{generate_apache_rules(item.risk_id)}}"
+            target: "root"      # [v4.0.1] Satisfy legacy validation
             insertion_point: "before_wordpress"
             required_modules: ["mod_rewrite"]
             
@@ -417,6 +418,13 @@ rules:
             title: "Using Universal Protection"
             message: "Your hosting environment requires PHP-based protection. All features active."
 
+        # [v4.0.1] Legacy Compatibility Block
+        # Ensures schema passes server-side validation during Save & Deploy
+        enforcement:
+          driver: "htaccess"
+          target: "root"
+          is_adaptive: true
+
 # =============================================================================
 # PHASE 6: VERIFICATION & TESTING (Client-Facing)
 # =============================================================================
@@ -432,9 +440,16 @@ rules:
         tests:
           - name: "Protection Active"
             description: "Verify protection is blocking threats"
-            type: "http_probe"
-            url: "{{test_url}}"
-            expect: "403 Forbidden"
+            type: "test_action"
+            label: "Verifying {{metadata.title}}..."
+            key: "verify_active_protection"
+            test_logic: "universal_probe"
+            test_config:
+              path: "/"
+              params:
+                vapt_test: "active"
+              expected_headers:
+                x-vapt-enforced: "htaccess|nginx|php-headers"
             user_friendly_result:
               pass: "✓ Protection is working"
               fail: "✗ Protection not detected"

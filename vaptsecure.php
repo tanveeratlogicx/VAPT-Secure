@@ -3,11 +3,11 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           1.5.2
- * Author:            VAPT Security
- * Author URI:        https://hermasnet.com
- * License:           GPL2+
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Version:           1.6.6
+ * Author:            VAPT Team
+ * Author URI:        https://vaptsecure.com/
+ * License:           GPL-2.0+
+ * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       vaptsecure
  * Domain Path:       /languages
  */
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '1.5.2');
+  define('VAPTSECURE_VERSION', '1.6.6');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.0');
@@ -619,6 +619,14 @@ function vaptsecure_enqueue_admin_assets($hook)
       VAPTSECURE_VERSION,
       true
     );
+    // Enqueue A+ Adaptive Generator (Module)
+    wp_enqueue_script(
+      'vapt-aplus-generator',
+      plugin_dir_url(__FILE__) . 'assets/js/modules/aplus-generator.js',
+      array(),
+      VAPTSECURE_VERSION,
+      true
+    );
     // Enqueue Generated Interface UI Component
     wp_enqueue_script(
       'vapt-generated-interface-ui',
@@ -631,7 +639,7 @@ function vaptsecure_enqueue_admin_assets($hook)
     wp_enqueue_script(
       'vapt-admin-js',
       plugin_dir_url(__FILE__) . 'assets/js/admin.js',
-      array('wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n', 'vapt-interface-generator', 'vapt-generated-interface-ui'),
+      array('wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n', 'vapt-interface-generator', 'vapt-aplus-generator', 'vapt-generated-interface-ui'),
       VAPTSECURE_VERSION,
       true
     );

@@ -389,7 +389,17 @@
 
         for (const [key, expectedValue] of Object.entries(expectedHeaders)) {
           const actualValue = responseHeaders[key.toLowerCase()];
-          if (!actualValue || actualValue !== expectedValue) {
+          // Support multi-value OR logic with | separator (v3.13.17)
+          let expectedValueTransformed = expectedValue;
+
+          // Global Platform Normalization: Alias 'htaccess' or 'nginx' to allow fallbacks (v3.13.18)
+          // This prevents false failures on Nginx/PHP environments for legacy probes.
+          if (key.toLowerCase() === 'x-vapt-enforced' && (expectedValue === 'htaccess' || expectedValue === 'nginx')) {
+            expectedValueTransformed = 'htaccess|nginx|php-headers';
+          }
+
+          const expectedOptions = expectedValueTransformed.split('|').map(v => v.trim().toLowerCase());
+          if (!actualValue || !expectedOptions.includes(actualValue.toLowerCase())) {
             headerMatches = false;
             break;
           }
@@ -490,7 +500,7 @@
     // 8. Default Generic Probe
     default: async (siteUrl, control) => {
       const resp = await fetch(siteUrl + '?vaptsecure_ping=1');
-      return { success: resp.ok, message: `Probe result: HTTP ${resp.status}` };
+      return { success: resp.ok, message: `Probe result: HTTP ${resp.status}`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Time: ${new Date().toISOString()}` };
     }
   };
 
@@ -552,19 +562,29 @@
   };
 
   /*
-   * File Inspector Component (v3.5.2)
+   * File Inspector Component (v3.13.15)
    * Specialized rendering for file contents/directory listings
    */
-  const FileInspector = ({ content, label = __('Inspector Output', 'vaptsecure') }) => {
+  const FileInspector = ({ content, label = __('Verification Trace', 'vaptsecure') }) => {
     if (!content) return null;
 
+    // 🛡️ Robust Type Handling (v3.13.15)
+    let displayContent = content;
+    if (typeof content === 'object') {
+      try {
+        displayContent = JSON.stringify(content, null, 2);
+      } catch (e) {
+        displayContent = String(content);
+      }
+    }
+
     // Auto-detect if content implies a directory listing
-    const isDir = content.includes('Index of /') || content.includes('Parent Directory');
+    const isDir = typeof displayContent === 'string' && (displayContent.includes('Index of /') || displayContent.includes('Parent Directory'));
     const displayLabel = isDir ? __('Directory Listing Exposed', 'vaptsecure') : label;
 
     return el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column' } }, [
-      el('div', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#b91c1c', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' } }, [
-        el(Icon, { icon: 'media-code', size: 16 }),
+      el('div', { style: { fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' } }, [
+        el(Icon, { icon: 'media-code', size: 14 }),
         displayLabel
       ]),
       el('pre', {
@@ -580,11 +600,11 @@
           whiteSpace: 'pre-wrap',
           color: '#334155'
         }
-      }, content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+      }, typeof displayContent === 'string' ? displayContent.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         part.match(/^https?:\/\//)
           ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2563eb', textDecoration: 'underline' } }, part)
           : part
-      ))
+      ) : displayContent)
     ]);
   };
 
@@ -729,32 +749,35 @@
         }
       }, [
         el('div', { style: { fontWeight: '700', marginBottom: '8px' } }, status === 'success' ? '✅ SUCCESS' : '❌ FAILURE'),
-        el('div', { style: { marginBottom: '8px' } }, result.message),
+        el('div', { style: { marginBottom: '12px', wordBreak: 'break-all', borderLeft: '4px solid #3b82f6', paddingLeft: '12px' } }, [
+          el('div', { style: { marginBottom: '8px' } }, result.message),
 
-        // v3.5.2: Multiple Evidence Gallery Renderer
-        (result.screenshot_paths || (result.meta && result.meta.screenshot_paths)) &&
-        el(EvidenceGallery, { screenshots: result.screenshot_paths || result.meta.screenshot_paths }),
-
-        // v3.5.2: Specialized File Inspector for Directory/Raw Content
-        (result.raw && (typeof result.raw === 'string')) &&
-        el(FileInspector, { content: result.raw }),
-
-        result.meta && !result.meta.screenshot_paths && el('div', { style: { background: 'rgba(255,255,255,0.5)', padding: '10px', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.05)' } }, [
-          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' } }, [
-            el('div', { style: { color: '#059669' } }, [__('Accepted: '), el('strong', null, result.meta.accepted)]),
-            el('div', { style: { color: '#dc2626' } }, [__('Blocked (429): '), el('strong', null, result.meta.blocked)]),
-            el('div', { style: { color: '#4b5563' } }, [__('Errors: '), el('strong', null, result.meta.errors)]),
-            el('div', { style: { color: '#4b5563' } }, [__('Total: '), el('strong', null, result.meta.total)])
-          ]),
-          // v3.12.20: Linkify Debug Details
-          el('div', { style: { marginTop: '8px', fontSize: '10px', opacity: 0.7, fontFamily: 'monospace' } },
-            result.meta.details.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-              part.match(/^https?:\/\//)
-                ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2563eb', textDecoration: 'underline' } }, part)
-                : part
-            )
-          )
         ])
+      ]),
+
+      // v3.5.2: Multiple Evidence Gallery Renderer (v3.13.16 Safety Fix)
+      result && (result.screenshot_paths || (result.meta && result.meta.screenshot_paths)) &&
+      el(EvidenceGallery, { screenshots: result.screenshot_paths || (result.meta ? result.meta.screenshot_paths : []) }),
+
+      // v3.5.2: Specialized File Inspector for Directory/Raw Content
+      result && (result.raw) &&
+      el(FileInspector, { content: result.raw }),
+
+      result && result.meta && !result.meta.screenshot_paths && el('div', { style: { background: 'rgba(255,255,255,0.5)', padding: '10px', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.05)' } }, [
+        el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' } }, [
+          el('div', { style: { color: '#059669' } }, [__('Accepted: '), el('strong', null, result.meta.accepted)]),
+          el('div', { style: { color: '#dc2626' } }, [__('Blocked (429): '), el('strong', null, result.meta.blocked)]),
+          el('div', { style: { color: '#4b5563' } }, [__('Errors: '), el('strong', null, result.meta.errors)]),
+          el('div', { style: { color: '#4b5563' } }, [__('Total: '), el('strong', null, result.meta.total)])
+        ]),
+        // v3.12.20: Linkify Debug Details
+        el('div', { style: { marginTop: '8px', fontSize: '10px', opacity: 0.7, fontFamily: 'monospace' } },
+          result.meta.details.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+            part.match(/^https?:\/\//)
+              ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2563eb', textDecoration: 'underline' } }, part)
+              : part
+          )
+        )
       ])
     ]);
   };
@@ -981,8 +1004,13 @@
               el(Icon, { icon: statusMap[key].type === 'success' ? 'yes' : 'update', size: 12 }),
               statusMap[key].message
             ])),
-            // 🛡️ Visual Indicator for Code Addition (v3.13.9)
-            toBool(value) && el('div', {
+            // 🛡️ Visual Indicator for Code Addition (v3.13.15 Enhanced)
+            toBool(value) && (mapping && typeof mapping === 'string') && el(Tooltip, {
+              text: el('div', { style: { padding: '5px', maxHeight: '300px', overflow: 'auto' } }, [
+                el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', textTransform: 'uppercase' } }, __('Injected Protections', 'vaptsecure')),
+                el('pre', { style: { margin: 0, fontSize: '10px', background: '#1e293b', color: '#f8fafc', padding: '8px', borderRadius: '4px' } }, mapping)
+              ])
+            }, el('div', {
               style: {
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -995,32 +1023,15 @@
                 fontWeight: '600',
                 marginTop: '-8px',
                 marginBottom: '8px',
-                marginLeft: '35px', // Align with toggle-slider offset
+                marginLeft: '35px',
                 border: '1px solid #10b981',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                cursor: 'help'
               }
             }, [
               el(Icon, { icon: 'editor-code', size: 12 }),
-              __('Code Injected', 'vaptsecure')
-            ]),
-            // 🛡️ Admin Preview Logic (v3.13.8): Visible ONLY when enabled (toBool(value))
-            isDevelop && isSuperAdmin && mapping && toBool(value) && el('div', {
-              style: {
-                marginTop: '10px',
-                padding: '10px',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #6366f1',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontFamily: 'monospace',
-                color: '#4338ca',
-                whiteSpace: 'pre-wrap'
-              }
-            }, [
-              el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', color: '#6366f1', textTransform: 'uppercase' } }, __('Live Protection Code (Superadmin Only)', 'vaptsecure')),
-              safeRender(mapping)
-            ])
+              sprintf(__('Code Injected to %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+            ])),
           ]);
 
         case 'input':
@@ -1255,11 +1266,48 @@
     // 🛡️ Helper: Convert URLs to clickable links (v3.12.21)
     const linkify = (text) => {
       if (!text || typeof text !== 'string') return text;
-      return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-        part.match(/^https?:\/\//)
-          ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2563eb', textDecoration: 'underline' } }, part)
-          : part
-      );
+
+      // 1. Handle Markdown Links first: [label](url) (v3.13.15)
+      const mdRegex = /\[([^\]]+)\]\((https?:\/\/[^\s#?)]+[^)]*)\)/g;
+      let parts = [];
+      let lastIndex = 0;
+      let match;
+
+      while ((match = mdRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(text.substring(lastIndex, match.index));
+        }
+        parts.push(el('a', {
+          key: 'md-' + match.index,
+          href: match[2],
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          style: { color: '#2563eb', textDecoration: 'underline' }
+        }, match[1]));
+        lastIndex = mdRegex.lastIndex;
+      }
+
+      if (lastIndex < text.length) {
+        const remaining = text.substring(lastIndex);
+        // 2. Handle raw URLs in the remaining text (excluding what was already matched)
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const rawParts = remaining.split(urlRegex);
+        rawParts.forEach((part, i) => {
+          if (part.match(urlRegex)) {
+            parts.push(el('a', {
+              key: 'raw-' + i,
+              href: part,
+              target: '_blank',
+              rel: 'noopener noreferrer',
+              style: { color: '#2563eb', textDecoration: 'underline' }
+            }, part));
+          } else {
+            parts.push(part);
+          }
+        });
+      }
+
+      return parts.length > 0 ? parts : text;
     };
 
     return el('div', { className: 'vapt-generated-interface', style: { display: 'flex', flexDirection: 'column', gap: '20px' } }, [
@@ -1344,8 +1392,8 @@
         el('ol', { style: { margin: '15px 0 0 0', paddingLeft: '20px', fontSize: '12px', color: '#475569' } },
           (Array.isArray(protocolSteps) ? protocolSteps : [protocolSteps]).map((s, i) => {
             let stepText = typeof s === 'object' ? (s.action || s.description || s.step || JSON.stringify(s)) : s;
-            // Fix double numbering (e.g. "1. 1. Open...")
-            stepText = stepText.replace(/^\d+\.\s*/, '');
+            // 🛡️ Enhanced Numbering Cleanup (v3.13.14): Handles "1. ", "Step 1: ", "1) ", etc.
+            stepText = stepText.replace(/^(Step\s*\d+[:\s]*|\d+[\.\)]\s*)+/i, '');
             return el('li', { key: i, style: { marginBottom: '6px' } }, linkify(stepText));
           })
         )

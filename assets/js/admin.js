@@ -339,6 +339,7 @@ window.vaptScriptLoaded = true;
     const [localImplData, setLocalImplData] = useState(
       feature.implementation_data ? (typeof feature.implementation_data === 'string' ? JSON.parse(feature.implementation_data) : feature.implementation_data) : {}
     );
+    const [customizationText, setCustomizationText] = useState(feature.dev_instruct || '');
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState(null);
 
@@ -348,6 +349,7 @@ window.vaptScriptLoaded = true;
 
     // Hybrid Mode: Multi-Env v3.1 vs Standard v2.0 (v4.0.0)
     const [isMultiEnv, setIsMultiEnv] = useState(false);
+    const [isAdaptiveDeployment, setIsAdaptiveDeployment] = useState(feature.is_adaptive_deployment == 1);
 
     // New: Hover state for paste logic
     const [isHoveringSchema, setIsHoveringSchema] = useState(false);
@@ -420,6 +422,7 @@ window.vaptScriptLoaded = true;
           generated_schema: JSON.stringify(parsed),
           implementation_data: JSON.stringify(localImplData),
           is_enforced: 1, // Force activation on Save & Deploy (v3.12.3)
+          is_adaptive_deployment: isAdaptiveDeployment ? 1 : 0,
           include_verification_engine: hasTestActions ? 1 : 0,
           include_verification_guidance: 1,
           include_manual_protocol: includeProtocol ? 1 : 0,
@@ -431,7 +434,10 @@ window.vaptScriptLoaded = true;
           payload.status = 'Develop';
         }
 
-        updateFeature(feature.key || feature.id, payload)
+        updateFeature(feature.key || feature.id, {
+          ...payload,
+          dev_instruct: customizationText
+        })
           .then(() => {
             setIsSaving(false);
             onClose();
@@ -1103,45 +1109,60 @@ window.vaptScriptLoaded = true;
         className: 'vapt-design-modal-inner-layout'
       }, [
         el('div', { id: 'vapt-design-modal-left-col' }, [
+          (() => {
+            const isAPlus = (parsedSchema?.metadata?.schema_grade === 'A+' || parsedSchema?.schema_grade === 'A+');
+            return el('div', { id: 'vapt-design-modal-actions', className: 'vapt-flex-row' }, [
+              !isAPlus && el(Button, { id: 'vapt-btn-copy-prompt', className: 'vapt-btn-flex-center', isSecondary: true, onClick: copyContext, icon: 'clipboard' }, __('Copy AI Design Prompt', 'vaptsecure')),
+              el(Button, {
+                isDestructive: true,
+                icon: 'trash',
+                onClick: () => {
+                  setConfirmState({
+                    message: __('Are you sure you want to reset the schema? This will wash away any changes.', 'vaptsecure'),
+                    isDestructive: true,
+                    onConfirm: () => {
+                      setConfirmState(null);
+                      onJsonChange(JSON.stringify(MEANINGFUL_DEFAULT, null, 2));
+                      setSaveStatus({ message: __('Schema Reset!', 'vaptsecure'), type: 'success' });
+                      setTimeout(() => setSaveStatus(null), 2000);
+                    }
+                  });
+                }
+              }, __('Reset', 'vaptsecure'))
+            ]);
+          })(),
 
-          el('div', { id: 'vapt-design-modal-actions', className: 'vapt-flex-row' }, [
-            el(Button, { id: 'vapt-btn-copy-prompt', className: 'vapt-btn-flex-center', isSecondary: true, onClick: copyContext, icon: 'clipboard' }, __('Copy AI Design Prompt', 'vaptsecure')),
-            el(Button, {
-              isDestructive: true,
-              icon: 'trash',
-              onClick: () => {
-                setConfirmState({
-                  message: __('Are you sure you want to reset the schema? This will wash away any changes.', 'vaptsecure'),
-                  isDestructive: true,
-                  onConfirm: () => {
-                    setConfirmState(null);
-                    onJsonChange(JSON.stringify(MEANINGFUL_DEFAULT, null, 2));
-                    setSaveStatus({ message: __('Schema Reset!', 'vaptsecure'), type: 'success' });
-                    setTimeout(() => setSaveStatus(null), 2000);
-                  }
-                });
-              }
-            }, __('Reset', 'vaptsecure'))
-          ]),
-
-          el('div', { id: 'vapt-design-modal-toggles', className: 'vapt-flex-col' }, [
-            el(ToggleControl, {
-              label: __('Include Manual Verification Protocol', 'vaptsecure'),
-              checked: includeProtocol,
-              onChange: setIncludeProtocol
-            }),
-            el(ToggleControl, {
-              label: __('Include Operational Notes Section', 'vaptsecure'),
-              checked: includeNotes,
-              onChange: setIncludeNotes
-            }),
-            el(ToggleControl, {
-              label: __('Enable A+ Client-Ready Multi-Env Mode (v3.2)', 'vaptsecure'),
-              checked: isMultiEnv,
-              onChange: setIsMultiEnv,
-              help: __('Mandates A+ runtime capability detection and client-ready fallback orchestration.', 'vaptsecure')
-            })
-          ]),
+          (() => {
+            const isAPlus = (parsedSchema?.metadata?.schema_grade === 'A+' || parsedSchema?.schema_grade === 'A+');
+            return el('div', { id: 'vapt-design-modal-toggles', className: 'vapt-flex-col' }, [
+              el('div', { className: 'vapt-flex-row', style: { gap: '20px' } }, [
+                el(ToggleControl, {
+                  label: __('Include Manual Verification Protocol', 'vaptsecure'),
+                  checked: includeProtocol,
+                  onChange: setIncludeProtocol
+                }),
+                el(ToggleControl, {
+                  label: __('Include Operational Notes Section', 'vaptsecure'),
+                  checked: includeNotes,
+                  onChange: setIncludeNotes
+                })
+              ]),
+              !isAPlus && el('div', { className: 'vapt-flex-row', style: { gap: '20px' } }, [
+                el(ToggleControl, {
+                  label: __('Enable A+ Client-Ready Multi-Env Mode (v3.2)', 'vaptsecure'),
+                  checked: isMultiEnv,
+                  onChange: setIsMultiEnv,
+                  help: __('Mandates A+ runtime capability detection and client-ready fallback orchestration.', 'vaptsecure')
+                }),
+                el(ToggleControl, {
+                  label: __('Enable A+ Adaptive Deployment (v4.0)', 'vaptsecure'),
+                  checked: isAdaptiveDeployment,
+                  onChange: setIsAdaptiveDeployment,
+                  help: __('Automatically adapts enforcement to server environment (Apache, Nginx, PHP) with universal fallback.', 'vaptsecure')
+                })
+              ])
+            ]);
+          })(),
 
           el('div', {
             id: 'vapt-design-modal-schema-editor',
@@ -1149,7 +1170,7 @@ window.vaptScriptLoaded = true;
             onMouseEnter: () => setIsHoveringSchema(true),
             onMouseLeave: () => setIsHoveringSchema(false)
           }, [
-            el('label', { id: 'vapt-schema-editor-label', className: 'vapt-label-uppercase' }, __('Interface JSON Schema', 'vaptsecure')),
+            el('label', { id: 'vapt-schema-editor-label', className: 'vapt-label-uppercase' }, __('A+ Adaptive Script (Source JSON)', 'vaptsecure')),
             el('div', { id: 'vapt-schema-editor-hint', className: 'vapt-text-hint' }, __('Hover and Ctrl+V to replace content.', 'vaptsecure')),
             el('textarea', {
               id: 'vapt-schema-textarea',
@@ -1157,12 +1178,31 @@ window.vaptScriptLoaded = true;
               value: schemaText,
               onChange: (e) => onJsonChange(e.target.value),
               style: {
-                background: isHoveringSchema ? '#f0fdf4' : '#fcfcfc'
+                background: isHoveringSchema ? '#f0fdf4' : '#fcfcfc',
+                minHeight: '300px'
               }
-            })
+            }),
+            el('div', { id: 'vapt-customization-textarea-wrap', className: 'vapt-flex-col', style: { marginTop: '15px' } }, [
+              el('label', { className: 'vapt-label-uppercase' }, __('Workbench Customization Guidance', 'vaptsecure')),
+              el('textarea', {
+                id: 'vapt-customization-textarea',
+                className: 'vapt-textarea-custom',
+                placeholder: __('Enter custom instructions for A+ Adaptive Logic generation...', 'vaptsecure'),
+                value: customizationText,
+                onChange: (e) => setCustomizationText(e.target.value),
+                style: {
+                  minHeight: '120px',
+                  background: '#fffbf0',
+                  border: '1px solid #f97316'
+                }
+              })
+            ])
           ]),
 
           (() => {
+            const isAPlus = (parsedSchema?.metadata?.schema_grade === 'A+' || parsedSchema?.schema_grade === 'A+');
+            if (isAPlus) return null;
+
             let displayInstruct = feature.dev_instruct || feature.devInstruct || feature.ai_agent_instructions || '';
 
             // FALLBACK: If dev_instruct is missing, try to extract from the generated schema string
@@ -1215,11 +1255,19 @@ window.vaptScriptLoaded = true;
           el('div', { className: 'vapt-design-modal-preview-header' }, [
             el('div', { className: 'vapt-flex-row', style: { gap: '8px' } }, [
               el(Icon, { icon: 'visibility', size: 16 }),
-              el('strong', { className: 'vapt-preview-title' }, __('Live Implementation Preview'))
+              el('strong', { className: 'vapt-preview-title' }, __('Preview Panel: Effective Protections', 'vaptsecure'))
             ]),
-            el('div', { className: 'vapt-flex-row' }, [
+            el('div', { className: 'vapt-flex-row', style: { gap: '10px' } }, [
+              el(Button, {
+                isPrimary: true,
+                className: 'vapt-btn-deploy-aplus',
+                onClick: handleSave,
+                isBusy: isSaving,
+                icon: 'cloud-upload',
+                style: { background: '#10b981', borderColor: '#059669', fontWeight: 'bold' }
+              }, __('Deploy', 'vaptsecure')),
               el(Button, { isSecondary: true, isSmall: true, onClick: onClose }, __('Cancel', 'vaptsecure')),
-              el(Button, { isPrimary: true, isSmall: true, onClick: handleSave, isBusy: isSaving }, __('Save & Deploy', 'vaptsecure'))
+              el(Button, { isSecondary: true, isSmall: true, onClick: handleSave, isBusy: isSaving }, __('Save Status', 'vaptsecure'))
             ])
           ]),
           el('div', { className: 'vapt-design-modal-preview-body' }, [
@@ -4470,15 +4518,40 @@ window.vaptScriptLoaded = true;
                     stageClass = 'stage-release';
                   }
 
-                  return el(Button, {
-                    className: `vapt-premium-btn ${isCustom ? 'is-custom' : ''} ${stageClass}`,
-                    onClick: (e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setDesignFeature(f);
-                    },
-                    title: isCustom ? __('Open Workbench Design Bench (Custom)', 'vaptsecure') : __('Open Workbench Design Bench (Default)', 'vaptsecure')
-                  }, __('Workbench Design', 'vaptsecure'));
+                  return el('div', { className: 'vapt-flex-row', style: { gap: '8px' } }, [
+                    el(Button, {
+                      className: `vapt-premium-btn ${isCustom ? 'is-custom' : ''} ${stageClass}`,
+                      onClick: (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setDesignFeature(f);
+                      },
+                      title: isCustom ? __('Open Workbench Design Bench (Custom)', 'vaptsecure') : __('Open Workbench Design Bench (Default)', 'vaptsecure')
+                    }, __('Workbench Design', 'vaptsecure')),
+                    // A+ Adaptive Workbench Primary Action
+                    el(Button, {
+                      className: 'vapt-aplus-workbench-btn',
+                      style: {
+                        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        fontWeight: '600',
+                        fontSize: '11px',
+                        padding: '0px 10px',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      },
+                      onClick: (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (window.VAPTSECURE_APlusGenerator) {
+                          const aplusSchema = window.VAPTSECURE_APlusGenerator.generate(f);
+                          setDesignFeature({ ...f, generated_schema: aplusSchema, is_adaptive_deployment: 1 });
+                        }
+                      },
+                      title: __('Initiate A+ Adaptive Schema Workflow (v3.2)', 'vaptsecure')
+                    }, __('A+ Workbench', 'vaptsecure'))
+                  ]);
                 })()
               ])
             ])

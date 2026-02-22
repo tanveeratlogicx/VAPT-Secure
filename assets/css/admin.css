@@ -888,7 +888,21 @@
     gap: 3px;
     align-items: center;
     padding-right: 5px;
+    width: max-content;
+    /* By Tanveer */
 }
+
+/* Tnveer - Hide Legacy Workbench Design Button */
+.vapt-flex-row>button:nth-of-type(1) {
+    display: none !important;
+    /* or any other styles you want */
+}
+
+.components-tooltip {
+    text-align: left;
+}
+
+/* Ends */
 
 .vapt-flex-col {
     display: flex;
