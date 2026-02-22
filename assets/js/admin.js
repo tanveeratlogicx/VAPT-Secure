@@ -3336,7 +3336,7 @@ window.vaptScriptLoaded = true;
     if (targets.includes('.htaccess')) {
       detectedDriver = '.htaccess (Apache Core)';
       driverKey = 'htaccess';
-      targetFiles = ['{ABSPATH}.htaccess', 'Cloudflare (Dashboard)', 'IIS (web.config)', 'Caddyfile'];
+      targetFiles = ['{ABSPATH}.htaccess'];
       safetyRules = [
         'Always use `# BEGIN VAPT {ID}` and `# END VAPT {ID}` markers.',
         'Place RewriteRules BEFORE the `# BEGIN WordPress` block to ensure they execute.',
@@ -3378,6 +3378,20 @@ window.vaptScriptLoaded = true;
       driverKey = 'nginx';
       targetFiles = ['/etc/nginx/conf.d/vapt-security.conf'];
       safetyRules = ['Use `# BEGIN VAPT {ID}` markers.', 'Ensure insertion is after `http {` loop.', 'Include `nginx -t` validation.'];
+    }
+    else if (targets.includes('Cloudflare')) {
+      detectedDriver = 'Cloudflare (Pattern 4)';
+      targetFiles = ['Cloudflare Dashboard / API via WAF Rules'];
+    }
+    else if (targets.includes('IIS')) {
+      detectedDriver = 'IIS / web.config (Pattern 5)';
+      targetFiles = ['{ABSPATH}web.config'];
+      safetyRules = ['Use `<rule>` formatting inside `<rewrite>`.', 'Ensure URL Rewrite module exists.'];
+    }
+    else if (targets.includes('Caddy')) {
+      detectedDriver = 'Caddy (Pattern 6)';
+      targetFiles = ['/etc/caddy/Caddyfile'];
+      safetyRules = ['Use Caddy v2 syntax.', 'Ensure `caddy reload` is included in verification.'];
     }
 
     const hasMappingRules = mappedUiLayout || mappedComponents || mappedActions;
