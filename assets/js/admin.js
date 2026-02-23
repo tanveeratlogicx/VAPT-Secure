@@ -4584,6 +4584,8 @@ window.vaptScriptLoaded = true;
     const [alertState, setAlertState] = useState(null);
     const [rootAiInstructions, setRootAiInstructions] = useState({});
     const [rootGlobalSettings, setRootGlobalSettings] = useState({});
+    // v1.8.0 – Backfill Hints state
+    const [backfillStatus, setBackfillStatus] = useState(null); // null | 'running' | { updated_features, updated_controls, error }
 
     const [catalogInfo, setCatalogInfo] = useState({ file: '', count: 0 }); // v3.6.29
     const [sortBySource, setSortBySource] = useState(false); // Primary Sort
@@ -4967,7 +4969,28 @@ window.vaptScriptLoaded = true;
 
 
 
-
+    // v1.8.0 – Backfill Hints: enrich existing feature schemas with `help` text
+    const backfillHints = (dryRun = false) => {
+      setBackfillStatus('running');
+      // Always force overwrite to fix previously duplicated hints
+      const query = (dryRun ? '?dry_run=1&force=1' : '?force=1');
+      apiFetch({
+        path: 'vaptsecure/v1/features/backfill-hints' + query,
+        method: 'POST',
+      }).then(res => {
+        setBackfillStatus({ updated_features: res.updated_features, updated_controls: res.updated_controls, dry_run: res.dry_run, force: res.force });
+        if (!dryRun && res.updated_features > 0) {
+          // Refresh features so the UI shows the new hints immediately
+          fetchData(selectedFile);
+        }
+        setSaveStatus({ message: `Hints backfilled (force): ${res.updated_features} feature(s), ${res.updated_controls} control(s) updated.`, type: 'success' });
+        setTimeout(() => setSaveStatus(null), 5000);
+        setTimeout(() => setBackfillStatus(null), 8000);
+      }).catch(err => {
+        setBackfillStatus({ error: err.message || 'Backfill failed.' });
+        setTimeout(() => setBackfillStatus(null), 5000);
+      });
+    };
 
     const tabs = [
       {
@@ -5046,7 +5069,7 @@ window.vaptScriptLoaded = true;
           }, tab.title)
         )),
 
-        // Right Column: Badges
+        // Right Column: Badges + Backfill Hints
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
           isSuper && el('span', {
             style: {
@@ -5061,7 +5084,25 @@ window.vaptScriptLoaded = true;
               verticalAlign: 'middle',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
             }
-          }, 'SUPERADMIN')
+          }, 'SUPERADMIN'),
+          // v1.8.0 – Backfill Hints button
+          isSuper && el(Tooltip, { text: __('Add contextual help text to all Implementation Controls that are missing hints, sourced from the risk catalogue.', 'vaptsecure') },
+            el(Button, {
+              id: 'vapt-backfill-hints-btn',
+              variant: 'secondary',
+              isBusy: backfillStatus === 'running',
+              disabled: backfillStatus === 'running',
+              onClick: () => backfillHints(false),
+              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s' }
+            }, backfillStatus === 'running'
+              ? __('Backfilling…', 'vaptsecure')
+              : (backfillStatus && !backfillStatus.error)
+                ? `✅ ${backfillStatus.updated_features}F / ${backfillStatus.updated_controls}C`
+                : (backfillStatus && backfillStatus.error)
+                  ? __('❌ Backfill Failed', 'vaptsecure')
+                  : __('💡 Backfill Hints', 'vaptsecure')
+            )
+          )
         ])
       ]),
       saveStatus && el('div', {

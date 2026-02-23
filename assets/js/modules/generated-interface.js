@@ -96,17 +96,26 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
       const enforcedFeature = resp.headers.get('x-vapt-feature'); // Can be comma-separated
 
+      let headerStr = '';
+      const keepHeaders = ['strict-transport-security', 'x-vapt-enforced', 'x-frame-options', 'x-content-type-options', 'x-xss-protection', 'referrer-policy', 'permissions-policy', 'content-security-policy'];
+      for (const [k, v] of Object.entries(headers)) {
+        if (k.toLowerCase() === 'x-vapt-feature') continue; // Explicitly hide the feature list (v3.13.19)
+        if (keepHeaders.includes(k.toLowerCase()) || k.toLowerCase().startsWith('x-')) {
+          headerStr += `\n${k}: ${v}`;
+        }
+      }
+
       if (vaptEnforced === 'php-headers' || vaptEnforced === 'htaccess') {
         if (featureKey && enforcedFeature) {
           const features = enforcedFeature.split(',').map(f => f.trim());
           if (!features.includes(featureKey)) {
-            return { success: false, message: `Inconclusive: Headers are present, but this specific feature ('${featureKey}') is not listed in enforcement. Found: ${enforcedFeature}.`, raw: headers };
+            return { success: false, message: `Inconclusive: Headers are present, but this specific feature ('${featureKey}') is not listed in enforcement. Found: ${enforcedFeature}.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: A+ Headers\n${headerStr.trim()}` };
           }
         }
-        return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: headers };
+        return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${resp.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
       }
 
-      return { success: false, message: `Security headers present, but NOT by this plugin. VAPT enforcement header missing.`, raw: headers };
+      return { success: false, message: `Security headers present, but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
     },
 
     // 2. Batch Probe: Verifies Rate Limiting (Sends 125% of RPM) (v3.6.25 Sequential)
@@ -215,7 +224,8 @@
           return {
             success: true,
             message: `Rate limiter is ACTIVE. Security measures are working correctly.`,
-            meta: resultMeta
+            meta: resultMeta,
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Expected: 429`
           };
         }
 
@@ -227,14 +237,16 @@
           return {
             success: false,
             message: `Server Error (500). Internal configuration or logic error detected.`,
-            meta: resultMeta
+            meta: resultMeta,
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 500 | Expected: 429`
           };
         }
 
         return {
           success: false,
           message: `Rate Limiter is NOT active. Traffic was not restricted.`,
-          meta: resultMeta
+          meta: resultMeta,
+          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 429`
         };
       } catch (err) {
         return {
@@ -254,9 +266,9 @@
 
       if (vaptEnforced === 'php-xmlrpc') {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
-          return { success: false, message: `Inconclusive: XML-RPC is blocked by another VAPT feature ('${enforcedFeature}'). You must disable it there to verify this control independently.` };
+          return { success: false, message: `Inconclusive: XML-RPC is blocked by another VAPT feature ('${enforcedFeature}'). You must disable it there to verify this control independently.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: 403` };
         }
-        return { success: true, message: `Plugin is actively blocking XML-RPC (${vaptEnforced}).` };
+        return { success: true, message: `Plugin is actively blocking XML-RPC (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${resp.status} | Expected: 403` };
       }
 
       const isVulnerable = resp.status === 200;
@@ -264,7 +276,8 @@
         success: false,
         message: isVulnerable
           ? `SECURITY FAILURE: XML-RPC is OPEN and VULNERABLE (HTTP 200). Plugin enforcement is not working.`
-          : `XML-RPC is blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`
+          : `XML-RPC is blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`,
+        raw: `URL: ${url} | Status: ${resp.status} | Expected: 403`
       };
     },
 
@@ -279,12 +292,12 @@
 
       if (vaptEnforced === 'php-dir') {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
-          return { success: false, message: `Inconclusive: Directory browsing blocked by '${enforcedFeature}'.`, raw: snippet };
+          return { success: false, message: `Inconclusive: Directory browsing blocked by '${enforcedFeature}'.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
         }
-        return { success: true, message: `PASS: Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: snippet };
+        return { success: true, message: `PASS: Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
       }
 
-      return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: snippet };
+      return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
     },
 
     // 5. Null Byte Probe (and aliases)
@@ -297,10 +310,10 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
       if (vaptEnforced === 'php-null-byte' || resp.status === 400) {
-        return { success: true, message: `PASS: Null Byte Injection Blocked (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}` };
+        return { success: true, message: `PASS: Null Byte Injection Blocked (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
       }
 
-      return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).` };
+      return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
     },
 
     // 6. Version Hide Probe
@@ -313,10 +326,10 @@
       const hasGenerator = text.toLowerCase().includes('name="generator" content="wordpress');
 
       if (!hasGenerator) {
-        return { success: true, message: `Secure: WordPress generator tag is hidden.` };
+        return { success: true, message: `Secure: WordPress generator tag is hidden.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: No generator tag` };
       }
 
-      return { success: false, message: `Vulnerable: WordPress generator tag is present in the page source.` };
+      return { success: false, message: `Vulnerable: WordPress generator tag is present in the page source.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: No generator tag` };
     },
 
     // 7. Universal Payload Probe (Dynamic Real-World Testing)
@@ -565,7 +578,7 @@
    * File Inspector Component (v3.13.15)
    * Specialized rendering for file contents/directory listings
    */
-  const FileInspector = ({ content, label = __('Verification Trace', 'vaptsecure') }) => {
+  const FileInspector = ({ content, label = __('Verification Trace', 'vaptsecure'), testContext = '' }) => {
     if (!content) return null;
 
     // 🛡️ Robust Type Handling (v3.13.15)
@@ -580,14 +593,43 @@
 
     // Auto-detect if content implies a directory listing
     const isDir = typeof displayContent === 'string' && (displayContent.includes('Index of /') || displayContent.includes('Parent Directory'));
+    const isTrace = label === __('Verification Trace', 'vaptsecure');
     const displayLabel = isDir ? __('Directory Listing Exposed', 'vaptsecure') : label;
+    const resolvedIcon = isTrace ? 'info' : 'media-code';
 
-    return el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column' } }, [
+    return (isTrace && typeof displayContent === 'string' && displayContent.startsWith('URL: ')) ? el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px' } }, [
+      el(Tooltip, {
+        text: el('div', { style: { textAlign: 'left', maxWidth: '300px' } }, [
+          testContext ? el('div', { style: { marginBottom: '8px', lineHeight: '1.4' } }, testContext) : null,
+          el('div', { style: { color: '#94a3b8', whiteSpace: 'pre-wrap' } }, displayContent.split(' | ').slice(1).join(' | '))
+        ]), placement: 'top'
+      },
+        el('span', { style: { fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' } }, [
+          el('span', { style: { color: '#3b82f6', display: 'flex', alignItems: 'center' } }, el(Icon, { icon: 'info', size: 14 })),
+          el('span', { style: { color: '#94a3b8' } }, displayLabel)
+        ])
+      )
+    ]) : el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column' } }, [
       el('div', { style: { fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' } }, [
-        el(Icon, { icon: 'media-code', size: 14 }),
+        el(Icon, { icon: resolvedIcon, size: 14 }),
         displayLabel
       ]),
-      el('pre', {
+      typeof displayContent === 'string' && displayContent.startsWith('URL: ') ? el('div', {
+        style: {
+          fontSize: '11px',
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '4px',
+          padding: '10px',
+          color: '#334155',
+          fontFamily: 'monospace',
+          textAlign: 'left'
+        }
+      }, displayContent.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+        part.match(/^https?:\/\//)
+          ? el('a', { key: i, href: part, target: '_blank', rel: 'noopener noreferrer', style: { color: '#2563eb', textDecoration: 'underline', fontWeight: 'bold' } }, part)
+          : el('span', { key: i }, part)
+      )) : el('pre', {
         style: {
           fontSize: '10px',
           fontFamily: 'monospace',
@@ -751,7 +793,10 @@
         el('div', { style: { fontWeight: '700', marginBottom: '8px' } }, status === 'success' ? '✅ SUCCESS' : '❌ FAILURE'),
         el('div', { style: { marginBottom: '12px', wordBreak: 'break-all', borderLeft: '4px solid #3b82f6', paddingLeft: '12px' } }, [
           el('div', { style: { marginBottom: '8px' } }, result.message),
-
+          (typeof result.raw === 'string' && result.raw.startsWith('URL: ')) ? el('div', { style: { fontSize: '11px', marginTop: '8px', opacity: 0.9 } }, [
+            el('strong', null, 'URL: '),
+            el('a', { href: result.raw.split(' | ')[0].replace('URL:', '').trim(), target: '_blank', rel: 'noopener noreferrer', style: { color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' } }, result.raw.split(' | ')[0].replace('URL:', '').trim())
+          ]) : null
         ])
       ]),
 
@@ -761,7 +806,7 @@
 
       // v3.5.2: Specialized File Inspector for Directory/Raw Content
       result && (result.raw) &&
-      el(FileInspector, { content: result.raw }),
+      el(FileInspector, { content: result.raw, testContext: control.description || control.help }),
 
       result && result.meta && !result.meta.screenshot_paths && el('div', { style: { background: 'rgba(255,255,255,0.5)', padding: '10px', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.05)' } }, [
         el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' } }, [

@@ -1,9 +1,9 @@
 # =============================================================================
 # GOOGLE ANTIGRAVITY IDE RULE SET
-# VAPT Feature Deployment Rule v4.0.1 - A+ Adaptive Deployment Compatible
+# VAPT Feature Deployment Rule v4.2.0 - Hint-Enriched Implementation Controls
 # File: vapt-feature-deployment.agrules
 #
-# PURPOSE: Transform VAPT Interface Schemas into working, deployed security 
+# PURPOSE: Transform VAPT Interface Schemas into working, deployed security
 # protections using A+ Adaptive Deployment native mechanisms.
 #
 # TRIGGER CONDITIONS:
@@ -12,14 +12,53 @@
 # - Status: DRAFT → DEVELOP, DRAFT → PRODUCTION
 #
 # OUTPUT: Working WordPress plugin with A+ native htaccess deployment
+#
+# CHANGELOG:
+#   v4.2.0 - MANDATORY: All Implementation Controls must include `help`/`hint`
 # =============================================================================
 
 metadata:
   rule_name: "VAPT Feature Deployment Rule"
   rule_id: "vapt-feature-deployment"
-  version: "4.1.0"
+  version: "4.2.0"
   purpose: "Transform schema to working deployment via A+ Adaptive Deployment"
   target_grade: "A+"
+
+# =============================================================================
+# PHASE 0: AI AGENT DIRECTIVES (READ BEFORE GENERATING ANY SCHEMA)
+# =============================================================================
+#
+# ⚠️  MANDATORY HINT RULE (v4.2.0)
+#
+# When generating or modifying the `controls` array in any Interface Schema,
+# you MUST include a `help` property on EVERY control that is NOT of type
+# `test_action`, `risk_indicators`, `assurance_badges`, `test_checklist`,
+# or `evidence_list`.
+#
+# The `help` text must:
+#   1. Be SPECIFIC to the exact control (what it physically does).
+#   2. NEVER just copy-paste the overall Risk Summary over and over.
+#   3. Use the following dynamic templates based on the control action:
+#      - Toggle (Enable/Activate): "Turns on [Feature]. This helps secure the site against [Risk]."
+#      - Toggle (Disable/Block): "Enforces blocking for [Feature]. Designed to address: [Risk]."
+#      - Input (Number/Text): "Defines the specific [Label] required by this rule."
+#      - Select/Dropdown: "Selects the operational mode for [Label]."
+#
+# EXAMPLE (Toggle):
+#   { "type": "toggle", "label": "Block XML-RPC", "key": "block_xmlrpc",
+#     "default": true,
+#     "help": "Disables the XML-RPC endpoint. Prevents brute-force and DDoS
+#              attacks that exploit this legacy API. Recommended: ON." }
+#
+# EXAMPLE (Input):
+#   { "type": "input", "label": "Max Login Attempts", "key": "max_attempts",
+#     "default": "5",
+#     "help": "Number of failed logins before the IP is temporarily locked
+#              out. Lower values increase security; higher values improve UX." }
+#
+# FAILURE TO INCLUDE `help` ON AN IMPLEMENTATION CONTROL WILL CAUSE
+# PHASE 1 VALIDATION TO ABORT DEPLOYMENT.
+#
 
   trigger:
     file_pattern: "interface_schema_v*.json"
@@ -53,11 +92,48 @@ rules:
 
     on_pass:
       - set: ["$.validation.status", "VALID"]
-      - proceed_to: "analyze_deployment_requirements"
+      - proceed_to: "validate_implementation_control_hints"
 
     on_fail:
       - abort: "Invalid schema structure. Missing required protection definitions."
       - suggest: "Run VAPT Client-Ready Multi-Environment Schema Generator first."
+
+  - id: validate_implementation_control_hints
+    name: "Validate Implementation Controls Have Hints (v4.2.0)"
+    action: validate
+    # Implementation controls are all controls that are NOT automated/read-only types.
+    # They MUST carry a `help` or `hint` property to guide the operator.
+    IMPLEMENTATION_CONTROL_TYPES:
+      - toggle
+      - input
+      - textarea
+      - select
+      - radio
+      - checkbox
+    EXCLUDED_TYPES:
+      - test_action
+      - risk_indicators
+      - assurance_badges
+      - test_checklist
+      - evidence_list
+
+    validate:
+      for_each: "$.risk_interfaces[*].controls[*]"
+      where: "item.type NOT IN EXCLUDED_TYPES"
+      assert: "(item.help IS NOT EMPTY) OR (item.hint IS NOT EMPTY)"
+      error_template: |
+        ❌ HINT MISSING on control '{{item.key}}' (type: {{item.type}}) in {{item._parent_risk_id}}.
+           All Implementation Controls MUST have a `help` property.
+           Add: "help": "<plain-language explanation of what this does and its security impact>"
+
+    on_pass:
+      - set: ["$.validation.hints_status", "ALL_CONTROLS_HAVE_HINTS"]
+      - log: "✅ All implementation controls have hints."
+      - proceed_to: "analyze_deployment_requirements"
+
+    on_fail:
+      - abort: "Schema failed hint validation. Add `help` text to all Implementation Controls before deploying."
+      - suggest: "See PHASE 0 AI AGENT DIRECTIVES in this rule file for examples."
 
   - id: analyze_deployment_requirements
     name: "Analyze Deployment Requirements"
