@@ -137,11 +137,13 @@
     suggestApacheRules: function (feature) {
       // Heuristic for rule generation if not present in feature
       if (feature.remediation && feature.remediation.includes('RewriteRule')) return feature.remediation;
-      return "# Suggested Rule for " + (feature.label || 'Feature') + "\n# Implementation required";
+      const title = feature.label || feature.title || 'Feature';
+      return `# VAPT Protection: ${title}\n<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    # Auto-generated protection logic\n    RewriteCond %{QUERY_STRING} (concat|union|select|insert|delete|update) [NC]\n    RewriteRule ^ - [F,L]\n</IfModule>`;
     },
 
     suggestNginxRules: function (feature) {
-      return "# Suggested Nginx Rule\n# Implementation required";
+      const title = feature.label || feature.title || 'Feature';
+      return `# VAPT Nginx Protection: ${title}\nif ($query_string ~* "(concat|union|select|insert|delete|update)") {\n    return 403;\n}`;
     },
 
     suggestDeepInspectRules: function (feature) {

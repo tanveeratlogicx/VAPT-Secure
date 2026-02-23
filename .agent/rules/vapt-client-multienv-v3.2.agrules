@@ -96,6 +96,13 @@ rules:
               nginx: []  # No PHP functions for Nginx
             confidence: "medium"
             
+          - name: "apache_module_check"
+            priority: 4
+            method: "php_function"
+            function: "apache_get_modules"
+            contains: "mod_rewrite"
+            confidence: "high"
+            
           - name: "hosting_provider_detection"
             priority: 5
             method: "pattern_matching"
@@ -116,8 +123,9 @@ rules:
               file_blocking: true
               performance: "excellent"
             requirements:
-              mod_rewrite: "optional_but_preferred"
+              mod_rewrite: "required"
               allowoverride: "FileInfo"
+              check_method: "apache_get_modules"
               
           nginx_with_config:
             detected_by: ["server_software_header:nginx", "filesystem_probe:nginx"]
