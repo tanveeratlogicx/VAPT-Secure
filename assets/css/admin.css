@@ -692,7 +692,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 5px;
-    gap: 16px;
+    /* gap: 16px; */
 }
 
 #vapt-design-modal-right-col {
@@ -758,6 +758,7 @@
 #vapt-schema-editor-hint {
     margin-bottom: 8px;
     color: #64748b;
+    margin-top: -12px;
 }
 
 #vapt-schema-textarea {
@@ -988,11 +989,13 @@
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 0;
+    max-height: 68vh;
 }
 
 .vapt-label-uppercase {
     font-size: 11px;
     font-weight: 500;
+    margin-top: 16px;
     margin-bottom: 4px;
     text-transform: uppercase;
     color: #101517;

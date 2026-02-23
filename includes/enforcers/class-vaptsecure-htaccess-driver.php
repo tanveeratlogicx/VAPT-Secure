@@ -239,6 +239,9 @@ class VAPTSECURE_Htaccess_Driver
 
     $new_content = $content;
 
+    // [v3.13.16] Safeguard: Detect if WordPress block is present before stripping
+    $had_wp_block = (strpos($content, "# BEGIN WordPress") !== false);
+
     // Check for new markers
     $start_pos = strpos($new_content, $start_marker_full);
     $end_pos = strpos($new_content, $end_marker_full);
@@ -262,6 +265,13 @@ class VAPTSECURE_Htaccess_Driver
     }
 
     $new_content = trim($new_content);
+
+    // [v3.13.16] Restore WP block if it was lost during stripping (likely due to nested markers)
+    if ($had_wp_block && strpos($new_content, "# BEGIN WordPress") === false && $target_key === 'root') {
+      error_log("VAPT: detected accidental removal of WordPress block during .htaccess strip. Restoring default directives.");
+      $wp_default = "\n# BEGIN WordPress\n# The directives (lines) between \"BEGIN WordPress\" and \"END WordPress\" are\n# dynamically generated, and should only be modified via WordPress filters.\n# Any changes to the directives between these markers will be overwritten.\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]\nRewriteBase /\nRewriteRule ^index\.php$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /index.php [L]\n</IfModule>\n# END WordPress\n";
+      $new_content .= $wp_default;
+    }
 
     if (!empty($rules_string)) {
       // Append or Insert
