@@ -181,12 +181,21 @@
         const s = f.normalized_status || (f.status ? f.status.toLowerCase() : '');
         const active = activeStatus.toLowerCase();
 
+        // All Lifecycle: Show all features EXCEPT Draft
         if (active === 'all') {
-          return ['develop', 'release', 'in_progress', 'implemented'].includes(s);
+          return s !== 'draft';
         }
 
+        // Develop: Show features in Develop or In Progress state
         if (active === 'develop') return ['develop', 'in_progress'].includes(s);
-        if (active === 'release') return ['release', 'implemented'].includes(s);
+
+        // Release: Show ONLY features at Release state (not implemented)
+        // Use original status field, not normalized_status (backend maps implemented -> release)
+        if (active === 'release') {
+          const originalStatus = (f.status || '').toLowerCase();
+          return originalStatus === 'release';
+        }
+
         return s === active;
       });
     }, [features, activeStatus]);

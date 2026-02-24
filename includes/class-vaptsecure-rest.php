@@ -445,7 +445,7 @@ class VAPTSECURE_REST
       }
       $features = array_filter($features, function ($f) use ($enabled_features, $is_superadmin) {
         $s = $f['normalized_status'];
-        if ($s === 'release') return in_array($f['key'], $enabled_features);
+        if ($s === 'release') return $is_superadmin || in_array($f['key'], $enabled_features);
         return $is_superadmin && in_array($s, ['draft', 'develop', 'test']);
       });
       $features = array_values($features);
