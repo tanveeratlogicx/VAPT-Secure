@@ -81,10 +81,8 @@
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
-    const [activeStatus, setActiveStatus] = useState(() => {
-      const saved = localStorage.getItem('vaptsecure_workbench_active_status');
-      return saved ? saved : 'Develop';
-    });
+    // For client dashboard, only show Release features (no tabs)
+    const [activeStatus, setActiveStatus] = useState('Release');
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeFeatureKey, setActiveFeatureKey] = useState(() => {
       const saved = localStorage.getItem('vaptsecure_workbench_active_feature');
@@ -105,10 +103,6 @@
         });
       }, 2200);
     };
-
-    useEffect(() => {
-      localStorage.setItem('vaptsecure_workbench_active_status', activeStatus);
-    }, [activeStatus]);
 
     useEffect(() => {
       if (activeFeatureKey) {
@@ -519,18 +513,7 @@
             label: __('Refresh Data', 'vaptsecure')
           })
         ]),
-        el('div', { style: { display: 'flex', gap: '5px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' } },
-          availableStatuses.map(s => el(Button, {
-            key: s,
-            onClick: () => setActiveStatus(s),
-            style: {
-              background: activeStatus === s ? '#fff' : 'transparent',
-              color: activeStatus === s ? '#111827' : '#6b7280',
-              border: 'none', borderRadius: '6px', padding: '8px 16px', fontWeight: 600, fontSize: '13px',
-              boxShadow: activeStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-            }
-          }, STATUS_LABELS[s]))
-        )
+        // Status tabs removed for client dashboard - only Release features shown
       ]),
 
       // Main Content Area

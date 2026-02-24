@@ -476,23 +476,35 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
   function vaptsecure_add_admin_menu()
   {
     $is_superadmin = is_vaptsecure_superadmin();
-    // 1. Parent Menu
+    // 1. Parent Menu - Allow all logged-in users to access the client dashboard
     add_menu_page(
       __('VAPT Secure', 'vaptsecure'),
       __('VAPT Secure', 'vaptsecure'),
-      'manage_options',
+      'read',
       'vaptsecure',
       'vaptsecure_render_client_status_page',
       'dashicons-shield',
       80
     );
-    // 2. Sub-menus (Superadmin Only)
+
+    // 2. Add the first submenu item with same slug as parent to avoid "You do not have sufficient permissions" error
+    // This ensures the parent menu has a valid first submenu
+    add_submenu_page(
+      'vaptsecure',
+      __('VAPT Secure Dashboard', 'vaptsecure'),
+      __('Dashboard', 'vaptsecure'),
+      'read',
+      'vaptsecure',
+      'vaptsecure_render_client_status_page'
+    );
+
+    // 3. Sub-menus (Superadmin Only)
     if ($is_superadmin) {
       // Sub-menu 1: Workbench
       add_submenu_page(
         'vaptsecure',
         __('VAPTSecure Workbench', 'vaptsecure'),
-        __('VAPTSecure Workbench', 'vaptsecure'),
+        __('Workbench', 'vaptsecure'),
         'manage_options',
         'vaptsecure-workbench',
         'vaptsecure_render_client_status_page'
@@ -501,13 +513,11 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
       add_submenu_page(
         'vaptsecure',
         __('VAPTSecure Domain Admin', 'vaptsecure'),
-        __('VAPTSecure Domain Admin', 'vaptsecure'),
+        __('Domain Admin', 'vaptsecure'),
         'manage_options',
         'vaptsecure-domain-admin',
         'vaptsecure_render_admin_page'
       );
-      // Remove the default submenu item created by WordPress
-      remove_submenu_page('vaptsecure', 'vaptsecure');
     }
   }
 }

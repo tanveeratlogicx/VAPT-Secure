@@ -200,6 +200,12 @@ class VAPTSECURE_REST
 
   public function check_permission()
   {
+    // Allow all logged-in users to access GET endpoints (for client dashboard)
+    // Superadmin-only for POST/DELETE/PUT operations
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+      return is_user_logged_in();
+    }
+    // Write operations still require superadmin
     return is_vaptsecure_superadmin();
   }
 
