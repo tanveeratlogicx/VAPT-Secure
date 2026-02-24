@@ -3,7 +3,7 @@
 // Expects props: { feature, onUpdate }
 
 (function () {
-  const { createElement: el, useState, useEffect } = wp.element;
+  const { createElement: el, useState, useEffect, useRef } = wp.element;
   const { Button, TextControl, ToggleControl, SelectControl, TextareaControl, Modal, Icon, Tooltip } = wp.components;
   const { __, sprintf } = wp.i18n;
 
@@ -98,9 +98,11 @@
 
       let headerStr = '';
       const keepHeaders = ['strict-transport-security', 'x-vapt-enforced', 'x-frame-options', 'x-content-type-options', 'x-xss-protection', 'referrer-policy', 'permissions-policy', 'content-security-policy'];
+      const isSuperAdmin = window.vaptSecureSettings && window.vaptSecureSettings.isSuper;
+
       for (const [k, v] of Object.entries(headers)) {
-        if (k.toLowerCase() === 'x-vapt-feature') continue; // Explicitly hide the feature list (v3.13.19)
-        if (keepHeaders.includes(k.toLowerCase()) || k.toLowerCase().startsWith('x-')) {
+        if (k.toLowerCase() === 'x-vapt-feature' && !isSuperAdmin) continue; // Explicitly hide the feature list for non-superadmins (v3.13.19)
+        if (keepHeaders.includes(k.toLowerCase()) || k.toLowerCase().startsWith('x-') || (isSuperAdmin && k.toLowerCase() === 'x-vapt-feature')) {
           headerStr += `\n${k}: ${v}`;
         }
       }
@@ -940,6 +942,7 @@
     const currentData = feature.implementation_data ? (typeof feature.implementation_data === 'string' ? JSON.parse(feature.implementation_data) : feature.implementation_data) : {};
     const [localAlert, setLocalAlert] = useState(null);
     const [statusMap, setStatusMap] = useState({});
+    const timeoutsRef = useRef({});
 
     if (!schema || !schema.controls || !Array.isArray(schema.controls)) {
       return el('div', { style: { padding: '20px', textAlign: 'center', color: '#999', fontStyle: 'italic' } },
@@ -999,28 +1002,46 @@
 
           return el('div', { key: uniqueKey, style: { marginBottom: '15px' } }, [
             el(ToggleControl, {
-              label: el('strong', { style: { fontSize: '12px', color: '#334155' } }, safeRender(label)),
-              help: safeRender(control.description || help), // Prioritize description (v3.12.3)
+              label: el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px' } }, [
+                el('strong', { style: { fontSize: '12px', color: '#334155' } }, safeRender(label)),
+                el(Tooltip, {
+                  text: el('div', { style: { padding: '8px', maxWidth: '300px' } }, [
+                    el('div', { style: { fontWeight: '700', marginBottom: '4px', fontSize: '11px' } }, __('Technical Preview', 'vaptsecure')),
+                    el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
+                      sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+                    ),
+                    mapping ? el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping) : el('em', null, __('No code mapping defined.', 'vaptsecure'))
+                  ])
+                }, el(Icon, { icon: 'info-outline', size: 14, style: { color: '#94a3b8', cursor: 'help' } }))
+              ]),
+              help: safeRender(control.description || help),
               checked: toBool(value),
               onChange: (val) => {
                 const isRemoval = toBool(value) && !val;
                 const progressMsg = isRemoval ? __("Removing...", "vaptsecure") : __("Applying...", "vaptsecure");
                 const successMsg = isRemoval ? __("Removed Successfully", "vaptsecure") : __("Code Injected Successfully", "vaptsecure");
 
+                if (timeoutsRef.current[key]) {
+                  timeoutsRef.current[key].forEach(clearTimeout);
+                }
+                timeoutsRef.current[key] = [];
+
                 setStatusMap(prev => ({ ...prev, [key]: { message: progressMsg, type: "info" } }));
                 handleChange(key, val);
 
-                // Auto-success after update (since local state updates are synchronous here)
-                setTimeout(() => {
+                const t1 = setTimeout(() => {
                   setStatusMap(prev => ({ ...prev, [key]: { message: successMsg, type: "success" } }));
-                  setTimeout(() => {
+                  const t2 = setTimeout(() => {
                     setStatusMap(prev => {
                       const nu = { ...prev };
                       delete nu[key];
                       return nu;
                     });
+                    delete timeoutsRef.current[key];
                   }, 2000);
+                  if (timeoutsRef.current[key]) timeoutsRef.current[key].push(t2);
                 }, 600);
+                timeoutsRef.current[key].push(t1);
               }
             }),
             // 🛡️ Localized Status Pill (v3.13.12)

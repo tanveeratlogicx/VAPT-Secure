@@ -1,9 +1,9 @@
-// VAPT Secure - A+ Adaptive Schema Generator v3.2.0
+// VAPT Secure - A+ Adaptive Schema Generator v3.3.0
 // Implementation of rules/vapt-client-multienv-v3.2.agrules
 
 (function () {
   const APlusGenerator = {
-    version: "3.2.0",
+    version: "3.3.0",
 
     /**
      * Generates a v3.2 A+ Adaptive Schema from feature context.
@@ -107,8 +107,6 @@
         controls: [
           { type: 'header', label: 'Implementation Control' },
           { type: 'toggle', label: 'Enable Protection', key: 'feat_enabled', default: true },
-          { type: 'header', label: 'Advanced Configuration' },
-          { type: 'toggle', label: 'Enable Deep Inspection', key: 'deep_inspect', default: false },
           { type: 'header', label: 'Automated Verification' },
           ...this.suggestVerificationTests(feature, riskId)
         ],
@@ -124,7 +122,6 @@
             is_adaptive: true,
             mappings: {
               feat_enabled: this.suggestApacheRules(feature),
-              deep_inspect: this.suggestDeepInspectRules(feature)
             }
           }
         },
@@ -144,11 +141,6 @@
     suggestNginxRules: function (feature) {
       const title = feature.label || feature.title || 'Feature';
       return `# VAPT Nginx Protection: ${title}\nif ($query_string ~* "(concat|union|select|insert|delete|update)") {\n    return 403;\n}`;
-    },
-
-    suggestDeepInspectRules: function (feature) {
-      const title = feature.label || feature.title || 'Feature';
-      return `# Advanced Protection: Deep Inspection for ${title}\n# v3.13.15 Implementation\n<IfModule mod_rewrite.c>\n    RewriteCond %{HTTP_USER_AGENT} ^$ [OR]\n    RewriteCond %{HTTP_USER_AGENT} (libwww|wget|python|nikto|curl|scan|java|fedora|sqlmap) [NC]\n    RewriteRule ^ - [F,L]\n</IfModule>`;
     },
 
     suggestVerificationTests: function (feature, riskId) {

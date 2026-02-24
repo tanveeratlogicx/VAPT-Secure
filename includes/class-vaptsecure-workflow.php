@@ -24,7 +24,7 @@ class VAPTSECURE_Workflow
     // Transition Rules
     $rules = array(
       'draft'   => array('develop'),
-      'develop' => array('draft', 'test'),
+      'develop' => array('draft', 'test', 'release'),
       'test'    => array('develop', 'release'),
       'release' => array('test', 'develop') // Allow downgrading if bug found
     );

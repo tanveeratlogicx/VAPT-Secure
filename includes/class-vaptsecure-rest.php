@@ -566,6 +566,10 @@ class VAPTSECURE_REST
     $implementation_data = $request->get_param('implementation_data');
     $reset_history = $request->get_param('reset_history');
 
+    // FIX: Lifecycle race condition. Capture initial status before transition runs.
+    $current_feat_db = VAPTSECURE_DB::get_feature($key);
+    $initial_status = $current_feat_db ? strtolower($current_feat_db['status']) : 'draft';
+
     if ($status) {
       $note = $request->get_param('history_note') ?: ($request->get_param('transition_note') ?: '');
       $result = VAPTSECURE_Workflow::transition_feature($key, $status, $note);
@@ -611,8 +615,7 @@ class VAPTSECURE_REST
 
         // 🛡️ LIFECYCLE ENFORCEMENT: Schema updates allowed only in Draft/Develop stages
         // Update: 'Test' stage allows updates but saves to OVERRIDE meta (Local customization)
-        $current_feat = VAPTSECURE_DB::get_feature($key);
-        $current_status = $current_feat ? strtolower($current_feat['status']) : 'draft';
+        $current_status = $initial_status; // Use captured status to prevent locking during transition
 
         if (!in_array($current_status, ['draft', 'develop', 'test'])) {
           return new WP_REST_Response(array(
@@ -683,8 +686,7 @@ class VAPTSECURE_REST
     }
 
     if ($request->has_param('implementation_data')) {
-      $current_feat = $current_feat ?? VAPTSECURE_DB::get_feature($key);
-      $current_status = $current_feat ? strtolower($current_feat['status']) : 'draft';
+      $current_status = $initial_status; // Use captured status
 
       // 🛡️ VALIDATION: Check implementation data against schema (v3.6.19)
       // Get the effective schema for validation
@@ -901,7 +903,6 @@ class VAPTSECURE_REST
         // 3. Common standard AI labels dictionary
         $common_labels = [
           'enable protection'      => 'Activates the primary security rules for this module.',
-          'enable deep inspection' => 'Turns on advanced payload inspection. Recommended for higher security, though it may slightly increase processing time.',
           'log violations'         => 'Records triggered events to the security audit log without blocking them immediately.',
           'alert superadmin'       => 'Sends an immediate notification to the superadmin when this rule is triggered.',
           'restrict access'        => 'Limits access to the specified resources based on the defined security policy.',
@@ -914,7 +915,7 @@ class VAPTSECURE_REST
         ];
 
         if (isset($common_labels[$label_lc])) {
-          return $common_labels[$label_lc] . ($summary ? " Context: {$summary}." : "");
+          return $common_labels[$label_lc] . ($summary ? " — Designed to address: {$summary}." : "");
         }
 
         // 4. Derive hint from the control's OWN label + type dynamically
@@ -948,7 +949,7 @@ class VAPTSECURE_REST
         }
         if ($summary && stripos($action, substr($summary, 0, 20)) === false) {
           // Provide a cleaner transition
-          return "{$action} Designed to address: {$summary}.";
+          return "{$action} This setting addresses: {$summary}.";
         }
 
         return $action;
