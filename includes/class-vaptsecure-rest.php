@@ -184,10 +184,16 @@ class VAPTSECURE_REST
       'permission_callback' => '__return_true',
     ));
 
-    // v1.8.0 – Backfill `help` hints on all existing implemented feature schemas
-    register_rest_route('vaptsecure/v1', '/features/backfill-hints', array(
+    // v1.9.2 – Batch Revert Develop → Draft (Preview & Execute)
+    register_rest_route('vaptsecure/v1', '/features/preview-revert', array(
+      'methods'             => 'GET',
+      'callback'            => array($this, 'preview_revert_to_draft'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+
+    register_rest_route('vaptsecure/v1', '/features/batch-revert', array(
       'methods'             => 'POST',
-      'callback'            => array($this, 'backfill_hints'),
+      'callback'            => array($this, 'batch_revert_to_draft'),
       'permission_callback' => array($this, 'check_permission'),
     ));
   }
@@ -748,254 +754,32 @@ class VAPTSECURE_REST
   // v1.8.0 – HINT BACKFILL: enrich existing generated_schemas with `help`
   // =========================================================================
   /**
-   * POST /vaptsecure/v1/features/backfill-hints
-   *
-   * Iterates every feature that has a `generated_schema` stored in the DB,
-   * resolves a contextual `help` string per-control (unique per control,
-   * based on label + type + risk context), and appends it to any
-   * Implementation Control missing it.
-   * Non-destructive by default; use force=1 to overwrite existing hints.
-   *
-   * Query params:
-   *   dry_run=1   – report what would change without writing to DB.
-   *   force=1     – overwrite existing help text (fixes duplicate hints).
-   *   file=<name> – restrict catalogue source to one JSON file.
-   *
-   * Returns: { updated_features, updated_controls, skipped, dry_run, force, log[] }
+   * Preview what would be affected by a batch revert to Draft.
+   * GET /vaptsecure/v1/features/preview-revert
    */
-  public function backfill_hints($request)
+  public function preview_revert_to_draft($request)
   {
-    $EXCLUDED_TYPES = ['test_action', 'risk_indicators', 'assurance_badges', 'test_checklist', 'evidence_list'];
+    $include_broken = (bool) $request->get_param('include_broken');
+    $result = VAPTSECURE_Workflow::preview_revert_to_draft($include_broken);
+    return new WP_REST_Response($result, 200);
+  }
 
-    $dry_run   = (bool) $request->get_param('dry_run');
-    $only_file = $request->get_param('file') ?: null;
-    // force=1 → overwrite existing help (fixes a prior run that wrote duplicate hints)
-    $force     = (bool) $request->get_param('force');
+  /**
+   * Execute batch revert all Develop features to Draft.
+   * POST /vaptsecure/v1/features/batch-revert
+   */
+  public function batch_revert_to_draft($request)
+  {
+    $note = $request->get_param('note') ?: 'Batch revert to Draft via Workbench';
+    $include_broken = (bool) $request->get_param('include_broken');
 
-    // ------------------------------------------------------------------
-    // 1.  Load catalogue(s) to build a risk_id → hint/summary index
-    // ------------------------------------------------------------------
-    $data_dir     = VAPTSECURE_PATH . 'data';
-    $hint_index   = [];  // [ risk_id => ['summary'=>…, 'title'=>…, 'components'=>[…]] ]
+    $result = VAPTSECURE_Workflow::batch_revert_to_draft($note, $include_broken);
 
-    $json_files = [];
-    if ($only_file) {
-      $json_files = [sanitize_file_name($only_file)];
-    } else {
-      $all = is_dir($data_dir) ? array_diff(scandir($data_dir), ['.', '..']) : [];
-      foreach ($all as $f) {
-        if (strtolower(pathinfo($f, PATHINFO_EXTENSION)) === 'json') {
-          $json_files[] = $f;
-        }
-      }
+    if (!$result['success']) {
+      return new WP_REST_Response($result, 207); // Multi-status (partial success)
     }
 
-    foreach ($json_files as $jf) {
-      $path = $data_dir . '/' . $jf;
-      if (!file_exists($path)) continue;
-      $raw  = json_decode(file_get_contents($path), true);
-      if (!is_array($raw)) continue;
-
-      // risk_interfaces format (interface_schema_v2.0.json style)
-      if (isset($raw['risk_interfaces']) && is_array($raw['risk_interfaces'])) {
-        foreach ($raw['risk_interfaces'] as $risk_id => $risk) {
-          $hint_index[$risk_id] = [
-            'title'      => $risk['title']      ?? '',
-            'summary'    => $risk['summary']     ?? '',
-            'components' => $risk['components']  ?? [],
-          ];
-        }
-      }
-
-      // risk_catalog format (125-item catalogue style)
-      if (isset($raw['risk_catalog']) && is_array($raw['risk_catalog'])) {
-        foreach ($raw['risk_catalog'] as $risk) {
-          $rid = $risk['risk_id'] ?? null;
-          if (!$rid) continue;
-          $summary = '';
-          if (isset($risk['description'])) {
-            $summary = is_array($risk['description'])
-              ? ($risk['description']['summary'] ?? '')
-              : $risk['description'];
-          }
-          if (!$summary && isset($risk['summary'])) $summary = $risk['summary'];
-          $hint_index[$rid] = [
-            'title'      => $risk['title']    ?? $risk['name'] ?? '',
-            'summary'    => $summary,
-            'components' => [],
-          ];
-        }
-      }
-    }
-
-    // ------------------------------------------------------------------
-    // 2.  Iterate DB rows that have a generated_schema
-    // ------------------------------------------------------------------
-    global $wpdb;
-    $meta_table = $wpdb->prefix . 'vaptsecure_feature_meta';
-    $rows = $wpdb->get_results(
-      "SELECT feature_key, generated_schema FROM {$meta_table}
-        WHERE generated_schema IS NOT NULL AND generated_schema != ''",
-      ARRAY_A
-    );
-
-    $updated_features  = 0;
-    $updated_controls  = 0;
-    $skipped_features  = 0;
-    $log               = [];
-
-    foreach ($rows as $row) {
-      $key    = $row['feature_key'];
-      $schema = json_decode($row['generated_schema'], true);
-      if (!is_array($schema) || empty($schema['controls'])) {
-        $skipped_features++;
-        continue;
-      }
-
-      // Resolve hint source for this feature
-      // Feature key may be a RISK-NNN id, or a normalised slug.
-      // Try direct match first, then prefix scan.
-      $risk_entry = null;
-      if (isset($hint_index[$key])) {
-        $risk_entry = $hint_index[$key];
-      } else {
-        // Slug match: e.g. "xmlrpc-enabled-leads-to-ping-back-attack" → RISK-002
-        $lc_key = strtolower($key);
-        foreach ($hint_index as $rid => $entry) {
-          $lc_title = strtolower(str_replace([' ', '/', '(', ')'], ['-', '-', '', ''], $entry['title']));
-          if (strpos($lc_title, substr($lc_key, 0, 20)) !== false || strpos($lc_key, strtolower($rid)) !== false) {
-            $risk_entry = $entry;
-            break;
-          }
-        }
-      }
-
-      // Build per-component label → help lookup from catalogue
-      $component_hint_map = [];
-      if ($risk_entry && !empty($risk_entry['components'])) {
-        foreach ($risk_entry['components'] as $comp) {
-          $label = strtolower(trim($comp['label'] ?? ''));
-          $help  = $comp['help'] ?? $comp['description'] ?? '';
-          if ($label && $help) $component_hint_map[$label] = $help;
-        }
-      }
-
-      // Per-control hint generator – produces a UNIQUE string for each control
-      $make_hint = function ($ctrl) use ($risk_entry, $component_hint_map) {
-        $type     = $ctrl['type']  ?? 'toggle';
-        $label    = trim($ctrl['label'] ?? 'this setting');
-        $label_lc = strtolower($label);
-        $summary  = rtrim($risk_entry['summary'] ?? '', '.');
-        $title    = $risk_entry['title']   ?? '';
-
-        // 1. Exact per-component match from catalogue
-        if (!empty($component_hint_map[$label_lc])) {
-          return $component_hint_map[$label_lc];
-        }
-
-        // 2. Partial label overlap match
-        foreach ($component_hint_map as $cat_label => $cat_help) {
-          if (!empty($cat_help) && (strpos($label_lc, $cat_label) !== false || strpos($cat_label, $label_lc) !== false)) {
-            return $cat_help;
-          }
-        }
-
-        // 3. Common standard AI labels dictionary
-        $common_labels = [
-          'enable protection'      => 'Activates the primary security rules for this module.',
-          'log violations'         => 'Records triggered events to the security audit log without blocking them immediately.',
-          'alert superadmin'       => 'Sends an immediate notification to the superadmin when this rule is triggered.',
-          'restrict access'        => 'Limits access to the specified resources based on the defined security policy.',
-          'active protection'      => 'Enables active blocking mode for this vulnerability.',
-          'audit mode'             => 'Monitors and logs activity without intervening in normal site operations.',
-          'enforcement mode'       => 'Determines whether violations are actively blocked or passively logged.',
-          'block specific paths'   => 'Applies strict access controls to paths known to be vulnerable or exposed.',
-          'disable xml-rpc'        => 'Completely disables the XML-RPC endpoint to prevent amplification and brute-force attacks.',
-          'block enumeration'      => 'Prevents attackers from discovering valid author usernames on this site.'
-        ];
-
-        if (isset($common_labels[$label_lc])) {
-          return $common_labels[$label_lc] . ($summary ? " — Designed to address: {$summary}." : "");
-        }
-
-        // 4. Derive hint from the control's OWN label + type dynamically
-        $clean = preg_replace('/^(enable|disable|toggle|activate|configure|set|specify|enter|allow|block|prevent)\s+/i', '', $label);
-        $clean = trim($clean, '. ');
-
-        // Capitalize first letter of clean label for sentence use
-        $clean_uc = ucfirst($clean);
-
-        if ($type === 'toggle' || $type === 'checkbox') {
-          if (preg_match('/^(enable|activate|allow)/i', $label)) {
-            $action = "Turns on {$clean_uc}.";
-          } elseif (preg_match('/^(disable|block|prevent|restrict)/i', $label)) {
-            $action = "Enforces blocking for {$clean_uc}.";
-          } else {
-            $action = "Toggles the {$clean_uc} setting.";
-          }
-        } elseif (in_array($type, ['input', 'number'], true)) {
-          $action = "Defines the specific {$clean_uc} value required by this rule.";
-        } elseif ($type === 'select') {
-          $action = "Selects the operational mode for {$clean_uc}.";
-        } elseif ($type === 'textarea') {
-          $action = "Provides custom {$clean_uc} parameters (e.g., allowlists or blocklists).";
-        } else {
-          $action = "Configures the {$clean_uc} feature.";
-        }
-
-        // Add risk-specific context without sounding totally robotic
-        if ($title && stripos($action, $title) === false) {
-          return "{$action} This helps secure the site against {$title}.";
-        }
-        if ($summary && stripos($action, substr($summary, 0, 20)) === false) {
-          // Provide a cleaner transition
-          return "{$action} This setting addresses: {$summary}.";
-        }
-
-        return $action;
-      };
-
-      $controls_changed = 0;
-      foreach ($schema['controls'] as &$ctrl) {
-        $type = $ctrl['type'] ?? '';
-        if (in_array($type, $EXCLUDED_TYPES, true)) continue;
-        // Skip already-hinted controls unless force=1
-        if (!$force && (!empty($ctrl['help']) || !empty($ctrl['hint']))) continue;
-
-        $ctrl['help'] = $make_hint($ctrl);
-        $controls_changed++;
-      }
-      unset($ctrl);
-
-      if ($controls_changed > 0) {
-        $log[] = "[feature: {$key}] {$controls_changed} control(s) enriched with hints.";
-        if (!$dry_run) {
-          $wpdb->update(
-            $meta_table,
-            ['generated_schema' => json_encode($schema)],
-            ['feature_key'      => $key],
-            ['%s'],
-            ['%s']
-          );
-        }
-        $updated_features++;
-        $updated_controls += $controls_changed;
-      } else {
-        $log[] = "[feature: {$key}] already fully hinted – skipped.";
-        $skipped_features++;
-      }
-    }
-
-    return new WP_REST_Response([
-      'success'          => true,
-      'dry_run'          => $dry_run,
-      'force'            => $force,
-      'updated_features' => $updated_features,
-      'updated_controls' => $updated_controls,
-      'skipped_features' => $skipped_features,
-      'catalogue_risks'  => count($hint_index),
-      'log'              => $log,
-    ], 200);
+    return new WP_REST_Response($result, 200);
   }
 
   public function update_file_meta($request)

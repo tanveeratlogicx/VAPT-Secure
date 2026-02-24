@@ -117,6 +117,192 @@ class VAPTSECURE_Workflow
   }
 
   /**
+   * Preview what would be affected by a batch revert to Draft.
+   * Does NOT make any changes - read-only operation.
+   * 
+   * Broken features = Features in Draft status that have history records.
+   * These indicate a feature was transitioned but history wasn't properly cleaned.
+   * 
+   * @param bool $include_broken Whether to include broken features in the preview
+   * @return array Preview of affected features and data
+   */
+  public static function preview_revert_to_draft($include_broken = false)
+  {
+    global $wpdb;
+
+    $table_status = $wpdb->prefix . 'vaptsecure_feature_status';
+    $table_history = $wpdb->prefix . 'vaptsecure_feature_history';
+    $table_meta = $wpdb->prefix . 'vaptsecure_feature_meta';
+
+    // 1. Get all features in 'Develop' status
+    $develop_features = $wpdb->get_results($wpdb->prepare(
+      "SELECT feature_key, implemented_at, assigned_to, 'develop' as source FROM $table_status WHERE status = %s",
+      'Develop'
+    ), ARRAY_A);
+
+    // 2. Get BROKEN features (Draft status + has history records)
+    // These are features that have history but are in Draft state (inconsistent)
+    $broken_features = $wpdb->get_results(
+      "SELECT DISTINCT s.feature_key, s.implemented_at, s.assigned_to, 'broken' as source
+       FROM $table_status s
+       INNER JOIN $table_history h ON s.feature_key = h.feature_key
+       WHERE s.status = 'Draft'",
+      ARRAY_A
+    );
+
+    // 3. Merge based on include_broken flag
+    $all_features = $develop_features ?: array();
+    if ($include_broken && $broken_features) {
+      $all_features = array_merge($all_features, $broken_features);
+    }
+
+    if (empty($all_features)) {
+      return array(
+        'success' => true,
+        'count' => 0,
+        'features' => array(),
+        'total_history_records' => 0,
+        'total_with_schema' => 0,
+        'total_with_impl' => 0,
+        'total_enforced' => 0,
+        'broken_count' => count($broken_features ?: array()),
+        'develop_count' => count($develop_features ?: array()),
+        'message' => 'No features in Develop status to revert.'
+      );
+    }
+
+    $feature_keys = wp_list_pluck($all_features, 'feature_key');
+
+    // Build IN clause safely
+    $placeholders = implode(',', array_fill(0, count($feature_keys), '%s'));
+    $prepared_in = $wpdb->prepare($placeholders, $feature_keys);
+
+    // 4. Count history records per feature
+    $history_counts = $wpdb->get_results(
+      "SELECT feature_key, COUNT(*) as count FROM $table_history WHERE feature_key IN ($prepared_in) GROUP BY feature_key",
+      OBJECT_K
+    );
+
+    // 5. Check which features have implementation data
+    $impl_data = $wpdb->get_results(
+      "SELECT feature_key, generated_schema IS NOT NULL as has_schema, implementation_data IS NOT NULL as has_impl, is_enforced 
+       FROM $table_meta WHERE feature_key IN ($prepared_in)",
+      OBJECT_K
+    );
+
+    // 6. Build preview response
+    $preview = array();
+    $broken_count = 0;
+    foreach ($all_features as $feature) {
+      $key = $feature['feature_key'];
+      $is_broken = isset($feature['source']) && $feature['source'] === 'broken';
+      if ($is_broken) $broken_count++;
+
+      $preview[] = array(
+        'feature_key' => $key,
+        'implemented_at' => $feature['implemented_at'],
+        'assigned_to' => $feature['assigned_to'],
+        'source' => isset($feature['source']) ? $feature['source'] : 'develop',
+        'is_broken' => $is_broken,
+        'history_records' => isset($history_counts[$key]) ? (int) $history_counts[$key]->count : 0,
+        'has_generated_schema' => isset($impl_data[$key]) && (bool) $impl_data[$key]->has_schema,
+        'has_implementation_data' => isset($impl_data[$key]) && (bool) $impl_data[$key]->has_impl,
+        'is_enforced' => isset($impl_data[$key]) && (bool) $impl_data[$key]->is_enforced,
+      );
+    }
+
+    return array(
+      'success' => true,
+      'count' => count($preview),
+      'broken_count' => count($broken_features ?: array()),
+      'develop_count' => count($develop_features ?: array()),
+      'included_broken_count' => $broken_count,
+      'features' => $preview,
+      'total_history_records' => array_sum(wp_list_pluck($preview, 'history_records')),
+      'total_with_schema' => count(array_filter($preview, function ($f) {
+        return $f['has_generated_schema'];
+      })),
+      'total_with_impl' => count(array_filter($preview, function ($f) {
+        return $f['has_implementation_data'];
+      })),
+      'total_enforced' => count(array_filter($preview, function ($f) {
+        return $f['is_enforced'];
+      })),
+    );
+  }
+
+  /**
+   * Batch revert all features in 'Develop' status to 'Draft'.
+   * Optionally includes broken features (Draft status + has history records).
+   * 
+   * @param string $note Optional note for the operation
+   * @param bool $include_broken Whether to include broken features
+   * @return array Result with counts of affected features
+   */
+  public static function batch_revert_to_draft($note = 'Batch revert to Draft', $include_broken = false)
+  {
+    global $wpdb;
+
+    $table_status = $wpdb->prefix . 'vaptsecure_feature_status';
+    $table_history = $wpdb->prefix . 'vaptsecure_feature_history';
+
+    // 1. Get all features in 'Develop' status
+    $develop_features = $wpdb->get_col($wpdb->prepare(
+      "SELECT feature_key FROM $table_status WHERE status = %s",
+      'Develop'
+    ));
+
+    // 2. Get BROKEN features (Draft status + has history records)
+    $broken_features = $wpdb->get_col(
+      "SELECT DISTINCT s.feature_key
+       FROM $table_status s
+       INNER JOIN $table_history h ON s.feature_key = h.feature_key
+       WHERE s.status = 'Draft'"
+    );
+
+    // 3. Merge based on include_broken flag
+    $all_features = $develop_features ?: array();
+    if ($include_broken && $broken_features) {
+      $all_features = array_unique(array_merge($all_features, $broken_features));
+    }
+
+    if (empty($all_features)) {
+      return array(
+        'success' => true,
+        'reverted_count' => 0,
+        'broken_count' => count($broken_features ?: array()),
+        'develop_count' => count($develop_features ?: array()),
+        'message' => 'No features in Develop status to revert.'
+      );
+    }
+
+    $reverted = array();
+    $errors = array();
+
+    foreach ($all_features as $feature_key) {
+      $result = self::transition_feature($feature_key, 'Draft', $note);
+      if (is_wp_error($result)) {
+        $errors[] = array(
+          'feature_key' => $feature_key,
+          'error' => $result->get_error_message()
+        );
+      } else {
+        $reverted[] = $feature_key;
+      }
+    }
+
+    return array(
+      'success' => empty($errors),
+      'reverted_count' => count($reverted),
+      'broken_count' => count($broken_features ?: array()),
+      'develop_count' => count($develop_features ?: array()),
+      'error_count' => count($errors),
+      'reverted' => $reverted,
+      'errors' => $errors
+    );
+  }
+
+  /**
    * Helper to normalize status.
    */
   private static function map_status($status)

@@ -1633,6 +1633,158 @@ window.vaptScriptLoaded = true;
     ]);
   };
 
+  // Batch Revert Modal Component (v1.9.2)
+  const BatchRevertModal = ({ isOpen, previewData, isLoading, isExecuting, includeBroken, onToggleIncludeBroken, onRefresh, onConfirm, onCancel }) => {
+    if (!isOpen) return null;
+
+    const count = previewData?.count || 0;
+    const brokenCount = previewData?.broken_count || 0;
+    const developCount = previewData?.develop_count || 0;
+    const includedBrokenCount = previewData?.included_broken_count || 0;
+    const features = previewData?.features || [];
+    const totalHistory = previewData?.total_history_records || 0;
+    const totalSchema = previewData?.total_with_schema || 0;
+    const totalImpl = previewData?.total_with_impl || 0;
+    const totalEnforced = previewData?.total_enforced || 0;
+
+    return el(Modal, {
+      title: __('Batch Revert to Draft - Preview', 'vaptsecure'),
+      onRequestClose: onCancel,
+      className: 'vapt-batch-revert-modal',
+      style: { width: '650px', maxWidth: '95vw' }
+    }, [
+      isLoading ?
+        el('div', { style: { padding: '40px', textAlign: 'center' } }, [
+          el(Spinner, null),
+          el('p', { style: { marginTop: '10px' } }, __('Analyzing features...', 'vaptsecure'))
+        ]) :
+        [
+          // Toggle for including broken features
+          brokenCount > 0 && el('div', {
+            key: 'toggle-broken',
+            style: { background: '#f0f6fc', padding: '12px', borderRadius: '4px', marginBottom: '15px', border: '1px solid #2271b1' }
+          }, [
+            el(ToggleControl, {
+              label: sprintf(__('Include %d broken feature(s) (Draft status with history records)', 'vaptsecure'), brokenCount),
+              checked: includeBroken,
+              onChange: (val) => { onToggleIncludeBroken(val); onRefresh(); },
+              disabled: isExecuting
+            }),
+            el('p', {
+              style: { margin: '5px 0 0 0', fontSize: '11px', color: '#646970', fontStyle: 'italic' }
+            }, __('Broken features are in Draft status but have leftover history records from incomplete transitions.', 'vaptsecure'))
+          ]),
+
+          count === 0 ?
+            el('div', { key: 'no-features', style: { padding: '20px', textAlign: 'center' } }, [
+              el('p', { style: { fontSize: '16px', color: '#646970' } },
+                __('✓ No features in Develop status to revert.', 'vaptsecure'))
+            ]) :
+            [
+              // Summary Section
+              el('div', {
+                key: 'summary',
+                style: { background: '#f6f7f7', padding: '15px', borderRadius: '4px', marginBottom: '15px' }
+              }, [
+                el('h3', {
+                  style: { margin: '0 0 10px 0', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e1e1e' }
+                }, __('Summary of Changes', 'vaptsecure')),
+                el('div', {
+                  style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }
+                }, [
+                  el('div', null, [
+                    el('strong', null, developCount),
+                    __(' Develop features', 'vaptsecure'),
+                    includeBroken && includedBrokenCount > 0 && el('span', { style: { color: '#856404' } }, sprintf(__(' + %d broken', 'vaptsecure'), includedBrokenCount))
+                  ]),
+                  el('div', null, [el('strong', { style: { color: '#d63638' } }, totalHistory), __(' history records will be deleted', 'vaptsecure')]),
+                  el('div', null, [el('strong', { style: { color: '#d63638' } }, totalSchema), __(' generated schemas will be cleared', 'vaptsecure')]),
+                  el('div', null, [el('strong', { style: { color: '#d63638' } }, totalEnforced), __(' enforced features will be disabled', 'vaptsecure')]),
+                ])
+              ]),
+
+              // Warning
+              el('div', {
+                key: 'warning',
+                style: { background: '#fcf0f1', border: '1px solid #d63638', padding: '12px', borderRadius: '4px', marginBottom: '15px' }
+              }, [
+                el('p', {
+                  style: { margin: 0, color: '#d63638', fontWeight: '600', fontSize: '13px' }
+                }, __('⚠️ Warning: This action is IRREVERSIBLE. All history and implementation data will be permanently deleted.', 'vaptsecure'))
+              ]),
+
+              // Feature List Table
+              el('div', {
+                key: 'table-container',
+                style: { maxHeight: '250px', overflow: 'auto', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '15px' }
+              }, [
+                el('table', {
+                  style: { width: '100%', borderCollapse: 'collapse', fontSize: '12px' }
+                }, [
+                  el('thead', {
+                    style: { background: '#f6f7f7', position: 'sticky', top: 0, zIndex: 1 }
+                  }, [
+                    el('tr', null, [
+                      el('th', { style: { padding: '8px', textAlign: 'left', borderBottom: '1px solid #ddd' } }, __('Feature', 'vaptsecure')),
+                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '60px' } }, __('Status', 'vaptsecure')),
+                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '60px' } }, __('History', 'vaptsecure')),
+                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '50px' } }, __('Schema', 'vaptsecure')),
+                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '50px' } }, __('Impl', 'vaptsecure')),
+                    ])
+                  ]),
+                  el('tbody', null,
+                    features.slice(0, 20).map((f, idx) =>
+                      el('tr', {
+                        key: f.feature_key || idx,
+                        style: { borderBottom: '1px solid #eee', background: f.is_broken ? '#fff3cd' : 'transparent' }
+                      }, [
+                        el('td', { style: { padding: '8px' } }, f.feature_key),
+                        el('td', {
+                          style: { padding: '8px', textAlign: 'center', fontSize: '10px', fontWeight: '600' }
+                        }, f.is_broken ? el('span', { style: { color: '#856404' } }, 'BROKEN') : el('span', { style: { color: '#2271b1' } }, 'Develop')),
+                        el('td', { style: { padding: '8px', textAlign: 'center' } }, f.history_records),
+                        el('td', {
+                          style: { padding: '8px', textAlign: 'center', color: f.has_generated_schema ? '#d63638' : '#999' }
+                        }, f.has_generated_schema ? '✓' : '-'),
+                        el('td', {
+                          style: { padding: '8px', textAlign: 'center', color: f.has_implementation_data ? '#d63638' : '#999' }
+                        }, f.has_implementation_data ? '✓' : '-'),
+                      ])
+                    )
+                  )
+                ]),
+                features.length > 20 && el('p', {
+                  style: { fontStyle: 'italic', color: '#646970', margin: '8px', fontSize: '12px' }
+                }, sprintf(__('...and %d more features', 'vaptsecure'), features.length - 20))
+              ]),
+
+              // Action Buttons
+              el('div', {
+                key: 'actions',
+                style: { display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '15px', marginTop: '15px', borderTop: '2px solid #ddd' }
+              }, [
+                el(Button, {
+                  variant: 'secondary',
+                  onClick: onCancel,
+                  disabled: isExecuting,
+                  style: { minWidth: '80px' }
+                }, __('Cancel', 'vaptsecure')),
+                el(Button, {
+                  variant: 'primary',
+                  isDestructive: true,
+                  isBusy: isExecuting,
+                  disabled: isExecuting,
+                  onClick: onConfirm,
+                  style: { minWidth: '180px', background: '#d63638', borderColor: '#d63638' }
+                }, isExecuting
+                  ? __('Reverting...', 'vaptsecure')
+                  : sprintf(__('⚠️ Execute Revert (%d features)', 'vaptsecure'), count))
+              ])
+            ]
+        ]
+    ]);
+  };
+
   // Backward Transition Warning Modal
   const BackwardTransitionModal = ({ isOpen, onConfirm, onCancel, type }) => {
     if (!isOpen) return null;
@@ -4584,8 +4736,9 @@ window.vaptScriptLoaded = true;
     const [alertState, setAlertState] = useState(null);
     const [rootAiInstructions, setRootAiInstructions] = useState({});
     const [rootGlobalSettings, setRootGlobalSettings] = useState({});
-    // v1.8.0 – Backfill Hints state
-    const [backfillStatus, setBackfillStatus] = useState(null); // null | 'running' | { updated_features, updated_controls, error }
+    // v1.9.2 – Batch Revert state
+    const [batchRevertModal, setBatchRevertModal] = useState(null); // null | { previewData, isLoading, isExecuting }
+    const [includeBroken, setIncludeBroken] = useState(true); // Toggle for including broken features (default: true)
 
     const [catalogInfo, setCatalogInfo] = useState({ file: '', count: 0 }); // v3.6.29
     const [sortBySource, setSortBySource] = useState(false); // Primary Sort
@@ -4967,28 +5120,41 @@ window.vaptScriptLoaded = true;
       });
     };
 
-
-
-    // v1.8.0 – Backfill Hints: enrich existing feature schemas with `help` text
-    const backfillHints = (dryRun = false) => {
-      setBackfillStatus('running');
-      // Always force overwrite to fix previously duplicated hints
-      const query = (dryRun ? '?dry_run=1&force=1' : '?force=1');
+    // v1.9.2 – Batch Revert: Preview affected features
+    const previewBatchRevert = () => {
+      setBatchRevertModal({ previewData: null, isLoading: true, isExecuting: false });
       apiFetch({
-        path: 'vaptsecure/v1/features/backfill-hints' + query,
-        method: 'POST',
+        path: 'vaptsecure/v1/features/preview-revert?include_broken=' + (includeBroken ? '1' : '0'),
+        method: 'GET',
       }).then(res => {
-        setBackfillStatus({ updated_features: res.updated_features, updated_controls: res.updated_controls, dry_run: res.dry_run, force: res.force });
-        if (!dryRun && res.updated_features > 0) {
-          // Refresh features so the UI shows the new hints immediately
-          fetchData(selectedFile);
-        }
-        setSaveStatus({ message: `Hints backfilled (force): ${res.updated_features} feature(s), ${res.updated_controls} control(s) updated.`, type: 'success' });
-        setTimeout(() => setSaveStatus(null), 5000);
-        setTimeout(() => setBackfillStatus(null), 8000);
+        setBatchRevertModal({ previewData: res, isLoading: false, isExecuting: false });
       }).catch(err => {
-        setBackfillStatus({ error: err.message || 'Backfill failed.' });
-        setTimeout(() => setBackfillStatus(null), 5000);
+        setSaveStatus({ message: err.message || __('Failed to preview revert', 'vaptsecure'), type: 'error' });
+        setBatchRevertModal(null);
+      });
+    };
+
+    // v1.9.2 – Batch Revert: Execute the revert
+    const executeBatchRevert = () => {
+      if (!batchRevertModal?.previewData) return;
+      setBatchRevertModal(prev => ({ ...prev, isExecuting: true }));
+
+      apiFetch({
+        path: 'vaptsecure/v1/features/batch-revert',
+        method: 'POST',
+        data: { note: 'Batch revert to Draft via Workbench', include_broken: includeBroken }
+      }).then(res => {
+        setBatchRevertModal(null);
+        setSaveStatus({
+          message: sprintf(__('Successfully reverted %d features to Draft', 'vaptsecure'), res.reverted_count),
+          type: 'success'
+        });
+        // Refresh data to show updated statuses
+        fetchData(selectedFile);
+        setTimeout(() => setSaveStatus(null), 5000);
+      }).catch(err => {
+        setSaveStatus({ message: err.message || __('Batch revert failed', 'vaptsecure'), type: 'error' });
+        setBatchRevertModal(prev => ({ ...prev, isExecuting: false }));
       });
     };
 
@@ -5069,7 +5235,7 @@ window.vaptScriptLoaded = true;
           }, tab.title)
         )),
 
-        // Right Column: Badges + Backfill Hints
+        // Right Column: Badges + Batch Revert
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
           isSuper && el('span', {
             style: {
@@ -5085,23 +5251,15 @@ window.vaptScriptLoaded = true;
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
             }
           }, 'SUPERADMIN'),
-          // v1.8.0 – Backfill Hints button
-          isSuper && el(Tooltip, { text: __('Add contextual help text to all Implementation Controls that are missing hints, sourced from the risk catalogue.', 'vaptsecure') },
+          // v1.9.2 – Batch Revert to Draft button
+          isSuper && el(Tooltip, { text: __('Revert all features in Develop status back to Draft. This will delete all history and implementation data.', 'vaptsecure') },
             el(Button, {
-              id: 'vapt-backfill-hints-btn',
+              id: 'vapt-batch-revert-btn',
               variant: 'secondary',
-              isBusy: backfillStatus === 'running',
-              disabled: backfillStatus === 'running',
-              onClick: () => backfillHints(false),
-              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s' }
-            }, backfillStatus === 'running'
-              ? __('Backfilling…', 'vaptsecure')
-              : (backfillStatus && !backfillStatus.error)
-                ? `✅ ${backfillStatus.updated_features}F / ${backfillStatus.updated_controls}C`
-                : (backfillStatus && backfillStatus.error)
-                  ? __('❌ Backfill Failed', 'vaptsecure')
-                  : __('💡 Backfill Hints', 'vaptsecure')
-            )
+              isDestructive: true,
+              onClick: () => previewBatchRevert(),
+              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s', marginLeft: '5px' }
+            }, __('↩️ Revert All to Draft', 'vaptsecure'))
           )
         ])
       ]),
@@ -5165,6 +5323,19 @@ window.vaptScriptLoaded = true;
         transitioning: transitioning,
         onConfirm: confirmTransition,
         onCancel: () => setTransitioning(null)
+      }),
+
+      // v1.9.2 – Batch Revert Modal
+      batchRevertModal && el(BatchRevertModal, {
+        isOpen: !!batchRevertModal,
+        previewData: batchRevertModal.previewData,
+        isLoading: batchRevertModal.isLoading,
+        isExecuting: batchRevertModal.isExecuting,
+        includeBroken: includeBroken,
+        onToggleIncludeBroken: setIncludeBroken,
+        onRefresh: previewBatchRevert,
+        onConfirm: executeBatchRevert,
+        onCancel: () => setBatchRevertModal(null)
       }),
 
       designFeature && el(DesignModal, {
