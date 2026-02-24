@@ -102,6 +102,9 @@ class VAPTSECURE_Htaccess_Driver
 
         // [v3.12.7] Strip VAPTBuilder RISK-XXX comments
         $directive = preg_replace('/^#\s*VAPTBuilder\s+RISK-\d+:.*$/m', '', $directive);
+
+        // [v1.8.x] Strip # BEGIN VAPT / # END VAPT pattern library markers from injected code
+        $directive = preg_replace('/^#\s*(BEGIN|END)\s+VAPT\s+\S+\s*$/mi', '', $directive);
         $directive = trim($directive);
 
         $processed_directive = self::prepare_directive($directive);
@@ -120,13 +123,12 @@ class VAPTSECURE_Htaccess_Driver
       }
     }
 
-    // 2. Wrap collected rules in a marker comment for verification (v3.12.10 - Anonymous)
+    // 2. Wrap collected rules in a marker comment for verification
     if (!empty($rules)) {
       $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
-      $hash = substr(md5($feature_key), 0, 8); // Short hash for anonymity
 
       $header_block = "<IfModule mod_headers.c>\n  Header set X-VAPT-Enforced \"htaccess\"\n</IfModule>";
-      $id_marker = "# VAPTID-$hash";
+      $id_marker = "# {$feature_key}";
 
       // [FIX v3.12.14] Join marker and header with single \n to avoid blank line after marker
       $combined_header = $id_marker . "\n" . $header_block;
@@ -162,11 +164,10 @@ class VAPTSECURE_Htaccess_Driver
     }
 
     $content = file_get_contents($htaccess_path);
-    $hash = substr(md5($key), 0, 8);
-    $search_string = "VAPTID-$hash";
+    $search_string = $key;
     $found = (strpos($content, $search_string) !== false);
 
-    error_log("VAPT VERIFY: Looking for anonymous ID '$search_string' - " . ($found ? 'FOUND' : 'NOT FOUND'));
+    error_log("VAPT VERIFY: Looking for ID '$search_string' - " . ($found ? 'FOUND' : 'NOT FOUND'));
 
     // Look for the specific feature hash within our VAPT block
     return $found;
@@ -354,13 +355,18 @@ class VAPTSECURE_Htaccess_Driver
       }
     }
 
+    // Never wrap <Files> or <FilesMatch> blocks — they are self-contextualizing.
+    if (preg_match('/^\s*<Files(Match)?\s+/i', $directive)) {
+      return $directive;
+    }
+
     // Wrap mod_headers directives
-    if (stripos($directive, 'Header ') === 0) {
+    if (!preg_match('/<IfModule\s+mod_headers\.c>/i', $directive) && preg_match('/^\s*Header\s+/im', $directive)) {
       return "<IfModule mod_headers.c>\n    $directive\n</IfModule>";
     }
 
     // Wrap mod_rewrite directives
-    if (stripos($directive, 'RewriteEngine') === 0 || stripos($directive, 'RewriteCond') === 0 || stripos($directive, 'RewriteRule') === 0) {
+    if (!preg_match('/<IfModule\s+mod_rewrite\.c>/i', $directive) && preg_match('/^\s*(RewriteEngine|RewriteCond|RewriteRule)\s+/im', $directive)) {
       $lines = explode("\n", $directive);
       $formatted_lines = [];
       foreach ($lines as $line) {
@@ -372,11 +378,11 @@ class VAPTSECURE_Htaccess_Driver
     }
 
     // Wrap access control (mod_access_compat or mod_authz_core)
-    if (stripos($directive, 'Order ') === 0 || stripos($directive, 'Deny ') === 0 || stripos($directive, 'Allow ') === 0 || stripos($directive, 'Require ') === 0) {
+    if (!preg_match('/<IfModule\s+(mod_authz_core\.c|mod_access_compat\.c)>/i', $directive) && preg_match('/^\s*(Order|Deny|Allow|Require)\s+/im', $directive)) {
       // We'll wrap in a generic way or let consolidation handle it.
       // For now, let's wrap in mod_authz_core for modern Apache, or just mod_version if we wanted to be fancy.
       // Pragmattically, just wrapping in mod_authz_core for Require, or mod_access_compat for Order/Deny.
-      if (stripos($directive, 'Require ') === 0) {
+      if (preg_match('/^\s*Require\s+/im', $directive)) {
         return "<IfModule mod_authz_core.c>\n    $directive\n</IfModule>";
       } else {
         return "<IfModule mod_access_compat.c>\n    $directive\n</IfModule>";
@@ -397,13 +403,13 @@ class VAPTSECURE_Htaccess_Driver
     $vaptsecure_ids = [];
 
     foreach ($rules as $rule) {
-      // Extract VAPTID if present at the start of rule (v3.12.14 formatting)
-      if (preg_match('/^# VAPTID-([a-f0-9]+)/i', $rule, $id_match)) {
-        if (!in_array($id_match[0], $vaptsecure_ids)) {
-          $vaptsecure_ids[] = $id_match[0];
+      // Extract Risk ID marker if present at the start of rule (# RISK-XXX)
+      if (preg_match('/^# (RISK-\S+)/i', $rule, $id_match)) {
+        if (!in_array($id_match[1], $vaptsecure_ids)) {
+          $vaptsecure_ids[] = $id_match[1];
         }
-        // Remove the VAPTID line from the rule for further processing
-        $rule = trim(preg_replace('/^# VAPTID-[a-f0-9]+/i', '', $rule));
+        // Remove the ID line from the rule for further processing
+        $rule = trim(preg_replace('/^# RISK-\S+/i', '', $rule));
       }
 
       // [FIX v3.13.15] More robust IfModule detection to avoid mangling multi-block rules
@@ -436,7 +442,7 @@ class VAPTSECURE_Htaccess_Driver
     // 1. Add VAPTIDs at the top (joined to next element with only one \n)
     $ids_and_first = "";
     if (!empty($vaptsecure_ids)) {
-      $ids_and_first = implode("\n", $vaptsecure_ids) . "\n";
+      $ids_and_first = "# " . implode(", ", $vaptsecure_ids) . "\n";
     }
 
     // 2. Add mod_headers
