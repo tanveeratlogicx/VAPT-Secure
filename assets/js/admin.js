@@ -4627,7 +4627,9 @@ window.vaptScriptLoaded = true;
                     el(Button, {
                       className: 'vapt-aplus-workbench-btn',
                       style: {
-                        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                        background: (f.status === 'Develop' || f.status === 'develop') && f.has_history ? '#10b981' :
+                          (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' :
+                            'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
                         color: '#fff',
                         border: 'none',
                         fontWeight: '600',
@@ -5139,6 +5141,7 @@ window.vaptScriptLoaded = true;
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          position: 'relative',
           background: '#fff',
           padding: '0 20px',
           borderBottom: '1px solid #ccd0d4',
@@ -5152,48 +5155,37 @@ window.vaptScriptLoaded = true;
           el('span', { style: { fontSize: '11px', color: '#646970' } }, `v${settings.pluginVersion}`)
         ]),
 
-        // Center Column: Custom Tabs
-        el('div', { style: { display: 'flex', gap: '0' } }, tabs.map(tab =>
-          el('button', {
-            key: tab.name,
-            className: `vapt-custom-tab ${activeTab === tab.name ? 'is-active' : ''}`,
-            onClick: () => {
-              setActiveTab(tab.name);
-              localStorage.setItem('vaptsecure_admin_active_tab', tab.name);
-            },
-            style: {
-              background: 'none',
-              border: 'none',
-              padding: '16px 15px',
-              fontSize: '13px',
-              fontWeight: activeTab === tab.name ? '600' : '400',
-              color: activeTab === tab.name ? '#2271b1' : '#646970',
-              borderBottom: activeTab === tab.name ? '3px solid #2271b1' : '3px solid transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              margin: '0',
-              boxShadow: 'none',
-              outline: 'none'
-            }
-          }, tab.title)
-        )),
+        // Center: Custom Tabs (centered in the row)
+        el('div', { style: { position: 'absolute', left: '50%', transform: 'translateX(-50%)' } }, [
+          // Custom Tabs (centered)
+          el('div', { style: { display: 'flex', gap: '0' } }, tabs.map(tab =>
+            el('button', {
+              key: tab.name,
+              className: `vapt-custom-tab ${activeTab === tab.name ? 'is-active' : ''}`,
+              onClick: () => {
+                setActiveTab(tab.name);
+                localStorage.setItem('vaptsecure_admin_active_tab', tab.name);
+              },
+              style: {
+                background: 'none',
+                border: 'none',
+                padding: '16px 15px',
+                fontSize: '13px',
+                fontWeight: activeTab === tab.name ? '600' : '400',
+                color: activeTab === tab.name ? '#2271b1' : '#646970',
+                borderBottom: activeTab === tab.name ? '3px solid #2271b1' : '3px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                margin: '0',
+                boxShadow: 'none',
+                outline: 'none'
+              }
+            }, tab.title)
+          ))
+        ]),
 
-        // Right Column: Badges + Batch Revert
+        // Right: Batch Revert button
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
-          isSuper && el('span', {
-            style: {
-              fontSize: '10px',
-              color: '#fff',
-              background: '#1e3a8a',
-              padding: '4px 8px',
-              borderRadius: '5px',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              verticalAlign: 'middle',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-            }
-          }, 'SUPERADMIN'),
           // v1.9.2 – Batch Revert to Draft button
           isSuper && el(Tooltip, { text: __('Revert all features in Develop status back to Draft. This will delete all history and implementation data.', 'vaptsecure') },
             el(Button, {
@@ -5201,7 +5193,7 @@ window.vaptScriptLoaded = true;
               variant: 'secondary',
               isDestructive: true,
               onClick: () => previewBatchRevert(),
-              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s', marginLeft: '5px' }
+              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s' }
             }, __('↩️ Revert All to Draft', 'vaptsecure'))
           )
         ])

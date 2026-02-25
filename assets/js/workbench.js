@@ -479,26 +479,27 @@
             isBusy: isRefreshing,
             label: __('Refresh Data', 'vaptsecure')
           })
+        ]),
+        // Right side: Status Tabs
+        el('div', { style: { display: 'flex', alignItems: 'center', gap: '15px' } }, [
+          // Status Tabs moved to top right
+          el('div', { style: { display: 'flex', gap: '4px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' } },
+            availableStatuses.map(s => el(Button, {
+              key: s,
+              onClick: () => setActiveStatus(s),
+              style: {
+                background: activeStatus === s ? '#fff' : 'transparent',
+                color: activeStatus === s ? '#111827' : '#6b7280',
+                border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 600, fontSize: '12px',
+                boxShadow: activeStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }
+            }, STATUS_LABELS[s]))
+          )
         ])
       ]),
 
       el('div', { style: { display: 'flex', flexGrow: 1, overflow: 'hidden' } }, [
         el('aside', { className: 'vapt-workbench-sidebar', style: { width: '240px', borderRight: '1px solid #e5e7eb', background: '#fff', overflowY: 'auto', padding: '20px 0', flexShrink: 0 } }, [
-          // Status Tabs on Left Side
-          el('div', { style: { padding: '0 20px 15px', borderBottom: '1px solid #e5e7eb', marginBottom: '15px' } }, [
-            el('div', { style: { display: 'flex', gap: '4px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' } },
-              availableStatuses.map(s => el(Button, {
-                key: s,
-                onClick: () => setActiveStatus(s),
-                style: {
-                  background: activeStatus === s ? '#fff' : 'transparent',
-                  color: activeStatus === s ? '#111827' : '#6b7280',
-                  border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 600, fontSize: '12px',
-                  boxShadow: activeStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                }
-              }, STATUS_LABELS[s]))
-            )
-          ]),
           el('div', { style: { padding: '0 20px 10px', fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' } }, __('Feature Categories')),
           categories.length > 0 && el(Fragment, null, [
             el('button', {

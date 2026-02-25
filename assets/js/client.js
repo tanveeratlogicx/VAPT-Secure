@@ -513,7 +513,22 @@
             label: __('Refresh Data', 'vaptsecure')
           })
         ]),
-        // Status tabs removed for client dashboard - only Release features shown
+        // Right side: Status Tabs
+        el('div', { style: { display: 'flex', alignItems: 'center', gap: '15px' } }, [
+          // Status Tabs moved to top right
+          el('div', { style: { display: 'flex', gap: '4px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' } },
+            availableStatuses.map(s => el(Button, {
+              key: s,
+              onClick: () => setActiveStatus(s),
+              style: {
+                background: activeStatus === s ? '#fff' : 'transparent',
+                color: activeStatus === s ? '#111827' : '#6b7280',
+                border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 600, fontSize: '12px',
+                boxShadow: activeStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }
+            }, STATUS_LABELS[s]))
+          )
+        ])
       ]),
 
       // Main Content Area
