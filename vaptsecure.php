@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           1.9.1
+ * Version:           1.9.3
  * Author:            VAPT Team
  * Author URI:        https://vaptsecure.com/
  * License:           GPL-2.0+
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '1.9.1');
+  define('VAPTSECURE_VERSION', '1.9.3');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.0');
@@ -486,25 +486,13 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
       'dashicons-shield',
       80
     );
-
-    // 2. Add the first submenu item with same slug as parent to avoid "You do not have sufficient permissions" error
-    // This ensures the parent menu has a valid first submenu
-    add_submenu_page(
-      'vaptsecure',
-      __('VAPT Secure Dashboard', 'vaptsecure'),
-      __('Dashboard', 'vaptsecure'),
-      'read',
-      'vaptsecure',
-      'vaptsecure_render_client_status_page'
-    );
-
-    // 3. Sub-menus (Superadmin Only)
+    // 2. Sub-menus (Superadmin Only)
     if ($is_superadmin) {
       // Sub-menu 1: Workbench
       add_submenu_page(
         'vaptsecure',
         __('VAPTSecure Workbench', 'vaptsecure'),
-        __('Workbench', 'vaptsecure'),
+        __('VAPTSecure Workbench', 'vaptsecure'),
         'manage_options',
         'vaptsecure-workbench',
         'vaptsecure_render_client_status_page'
@@ -513,11 +501,13 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
       add_submenu_page(
         'vaptsecure',
         __('VAPTSecure Domain Admin', 'vaptsecure'),
-        __('Domain Admin', 'vaptsecure'),
+        __('VAPTSecure Domain Admin', 'vaptsecure'),
         'manage_options',
         'vaptsecure-domain-admin',
         'vaptsecure_render_admin_page'
       );
+      // Remove the default submenu item created by WordPress
+      remove_submenu_page('vaptsecure', 'vaptsecure');
     }
   }
 }
@@ -550,10 +540,16 @@ if (! function_exists('vaptsecure_handle_legacy_redirects')) {
 if (! function_exists('vaptsecure_render_client_status_page')) {
   function vaptsecure_render_client_status_page()
   {
+    // Check if this is the Workbench page
+    $is_workbench = isset($_GET['page']) && $_GET['page'] === 'vaptsecure-workbench';
+    // Also hide header for client dashboard (vaptsecure) - only show React app
+    $is_client_dashboard = isset($_GET['page']) && $_GET['page'] === 'vaptsecure';
 ?>
     <div class="wrap">
-      <h1 class="wp-heading-inline"><?php _e('VAPT Secure', 'vaptsecure'); ?></h1>
-      <hr class="wp-header-end" />
+      <?php if (!$is_workbench && !$is_client_dashboard): ?>
+        <h1 class="wp-heading-inline"><?php _e('VAPT Secure', 'vaptsecure'); ?></h1>
+        <hr class="wp-header-end" />
+      <?php endif; ?>
       <div id="vapt-client-root">
         <div style="padding: 40px; text-align: center; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px;">
           <span class="spinner is-active" style="float: none; margin: 0 auto;"></span>
@@ -728,7 +724,7 @@ function vaptsecure_enqueue_admin_assets($hook)
     ));
   }
   // 2. Client Dashboard (client.js) - "VAPT Secure" page
-  if ($screen->id === 'toplevel_page_vaptsecure' || strpos($screen->id, 'vaptsecure-workbench') !== false) {
+  if ($screen->id === 'toplevel_page_vaptsecure') {
     // Enqueue Generated Interface UI Component (Shared)
     wp_enqueue_script(
       'vapt-generated-interface-ui',
@@ -746,6 +742,31 @@ function vaptsecure_enqueue_admin_assets($hook)
       true
     );
     wp_localize_script('vapt-client-js', 'vaptSecureSettings', array(
+      'root' => esc_url_raw(rest_url()),
+      'homeUrl' => esc_url_raw(home_url()),
+      'nonce' => wp_create_nonce('wp_rest'),
+      'isSuper' => $is_superadmin,
+      'pluginVersion' => VAPTSECURE_VERSION,
+      'pluginName' => 'VAPT Secure'
+    ));
+  }
+  // 3. Superadmin Workbench (workbench.js)
+  if (strpos($screen->id, 'vaptsecure-workbench') !== false) {
+    wp_enqueue_script(
+      'vapt-generated-interface-ui',
+      plugin_dir_url(__FILE__) . 'assets/js/modules/generated-interface.js',
+      array('wp-element', 'wp-components'),
+      VAPTSECURE_VERSION,
+      true
+    );
+    wp_enqueue_script(
+      'vapt-workbench-js',
+      plugin_dir_url(__FILE__) . 'assets/js/workbench.js',
+      array('wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n', 'vapt-generated-interface-ui'),
+      VAPTSECURE_VERSION,
+      true
+    );
+    wp_localize_script('vapt-workbench-js', 'vaptSecureSettings', array(
       'root' => esc_url_raw(rest_url()),
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
