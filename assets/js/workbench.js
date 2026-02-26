@@ -6,7 +6,7 @@
 
   const { render, useState, useEffect, useMemo, Fragment, createElement: el } = wp.element || {};
   const { Button, ToggleControl, Spinner, Notice, Card, CardBody, CardHeader, CardFooter, Icon, Tooltip, Modal } = wp.components || {};
-  const settings = window.vaptSecureSettings || window.vaptSecureSettings || {};
+  const settings = window.vaptSecureSettings || {};
   const isSuper = settings.isSuper || false;
 
   // 🛡️ GLOBAL REST HOTPATCH (v3.8.16)
@@ -638,7 +638,7 @@
 
   const init = () => {
     const container = document.getElementById('vapt-client-root');
-    if (container) render(el(WorkbenchDashboard), container);
+    if (container && settings.isWorkbench) render(el(WorkbenchDashboard), container);
   };
   if (document.readyState === 'complete') init(); else document.addEventListener('DOMContentLoaded', init);
 })();

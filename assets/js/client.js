@@ -459,7 +459,7 @@
 
   const init = () => {
     const container = document.getElementById('vapt-client-root');
-    if (container) render(el(ClientDashboard), container);
+    if (container && settings.isClient) render(el(ClientDashboard), container);
   };
   if (document.readyState === 'complete') init(); else document.addEventListener('DOMContentLoaded', init);
 })();

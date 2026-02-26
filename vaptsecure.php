@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.1.0
+ * Version:           2.1.2
  * Author:            VAPT Team
  * Author URI:        https://vaptsecure.com/
  * License:           GPL-2.0+
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '2.1.0');
+  define('VAPTSECURE_VERSION', '2.1.2');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.1');
@@ -751,6 +751,8 @@ function vaptsecure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
+      'isWorkbench' => false,
+      'isClient' => false,
       'pluginVersion' => VAPTSECURE_VERSION,
       'pluginName' => 'VAPT Secure'
     ));
@@ -778,6 +780,8 @@ function vaptsecure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
+      'isWorkbench' => false,
+      'isClient' => true,
       'pluginVersion' => VAPTSECURE_VERSION,
       'pluginName' => 'VAPT Secure'
     ));
@@ -803,6 +807,8 @@ function vaptsecure_enqueue_admin_assets($hook)
       'homeUrl' => esc_url_raw(home_url()),
       'nonce' => wp_create_nonce('wp_rest'),
       'isSuper' => $is_superadmin,
+      'isWorkbench' => true,
+      'isClient' => false,
       'pluginVersion' => VAPTSECURE_VERSION,
       'pluginName' => 'VAPT Secure'
     ));
