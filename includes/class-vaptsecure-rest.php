@@ -395,6 +395,9 @@ class VAPTSECURE_REST
         $feature['source_file'] = $file;
         $feature['exists_in_multiple_files'] = false;
 
+        // 🛡️ Technical Insights (v1.9.15)
+        $feature['technical_notes'] = self::resolve_technical_notes_from_catalogue($key);
+
         $meta = VAPTSECURE_DB::get_feature_meta($key);
         if ($meta) {
           $feature['include_test_method'] = (bool) $meta['include_test_method'];
@@ -1702,6 +1705,28 @@ class VAPTSECURE_REST
       }
     }
     return null;
+  }
+
+  /**
+   * 🛡️ RESOLVE TECHNICAL NOTES (v1.9.15)
+   * Fetches actionable implementation notes from the pattern library.
+   */
+  private static function resolve_technical_notes_from_catalogue($feature_key)
+  {
+    $notes = [];
+    $pattern_lib_path = VAPTSECURE_PATH . 'data/enforcer_pattern_library_v2.0.json';
+    if (file_exists($pattern_lib_path)) {
+      $lib = json_decode(file_get_contents($pattern_lib_path), true);
+      if (isset($lib['patterns'][$feature_key])) {
+        $p = $lib['patterns'][$feature_key];
+        foreach (['htaccess', 'wp_config', 'wordpress', 'php_functions', 'fail2ban'] as $driver) {
+          if (isset($p[$driver]['note'])) {
+            $notes[$driver] = $p[$driver]['note'];
+          }
+        }
+      }
+    }
+    return $notes;
   }
 
   /**

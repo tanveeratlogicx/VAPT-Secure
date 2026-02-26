@@ -315,11 +315,18 @@
               el('div', { style: { display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' } }, [
                 el('span', { style: { fontSize: '12px', fontWeight: 600, color: '#334155', marginRight: '12px', whiteSpace: 'nowrap' } }, __('Enforce Rule')),
                 (() => {
-                  const isHtaccess = schema.enforcement && schema.enforcement.driver === 'htaccess';
-                  const isEnforced = isHtaccess ? true : (f.is_enforced === undefined || f.is_enforced === null || f.is_enforced == 1);
+                  const driver = schema.enforcement?.driver || (schema.client_deployment?.enforcement?.driver);
+                  const isHtaccess = driver === 'htaccess';
+                  const isServerLevel = ['htaccess', 'nginx', 'iis', 'caddy'].includes(driver);
+
+                  // v3.13.10 - Force TRUE and DISABLED for .htaccess as requested
+                  const isEnforced = isHtaccess ? true : ((f.is_enforced === undefined || f.is_enforced === null) ? true : (f.is_enforced == 1));
+
                   const toggle = el(ToggleControl, {
                     checked: isEnforced,
+                    disabled: isHtaccess,
                     onChange: (val) => {
+                      if (isHtaccess) return; // Guard
                       const implData = f.implementation_data || {};
                       const progressMsg = val
                         ? __('Writing to configuration...', 'vaptsecure')
@@ -327,6 +334,7 @@
                       const successMsg = val
                         ? __('✓ Code Injected Successfully', 'vaptsecure')
                         : __('✓ Removed Successfully', 'vaptsecure');
+
                       setEnforceStatus(f.key, progressMsg, 'info');
                       updateFeature(f.key, { is_enforced: val, implementation_data: implData }, null, true)
                         .then(() => setEnforceStatus(f.key, successMsg, 'success'));
@@ -335,8 +343,8 @@
                     style: { margin: 0 }
                   });
 
-                  return isHtaccess
-                    ? el(Tooltip, { text: __('Enforcement is permanently active via .htaccess (Server Level)', 'vaptsecure') }, el('div', { style: { display: 'inline-block' } }, toggle))
+                  return isServerLevel
+                    ? el(Tooltip, { text: isHtaccess ? __('Enforcement is permanently active via .htaccess (Server Level)', 'vaptsecure') : sprintf(__('Enforcement is active via %s driver (Server Level)', 'vaptsecure'), driver) }, el('div', { style: { display: 'inline-block' } }, toggle))
                     : toggle;
                 })()
               ])

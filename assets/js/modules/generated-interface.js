@@ -8,6 +8,73 @@
   const { __, sprintf } = wp.i18n;
 
   /**
+   * OWASP ENCYCLOPEDIA (v1.9.14)
+   * Localized descriptions for OWASP Top 10 categories.
+   */
+  // 🛡️ Deep Technical Insights (v1.9.16)
+  // Provides authoritative "Why it Matters" content for key risks to build trust.
+  const DEEP_INSIGHTS = {
+    "RISK-001": {
+      title: __("Why wp-cron.php Leads to DoS Attacks", "vaptsecure"),
+      bullets: [
+        __("Triggered on Every Load: Unlike a standard server-side cron, wp-cron.php runs every time a user visits the site, creating excessive load during high-traffic periods.", "vaptsecure"),
+        __("Resource Intensity: Attackers can send a large number of HTTP requests to wp-cron.php, overloading the server and causing it to crash or become unresponsive.", "vaptsecure"),
+        __("Database Overload: Attackers can trigger heavy MySQL queries, saturating database resources.", "vaptsecure"),
+        __("Self-Induced DoS: In high-traffic scenarios or bot attacks, the sheer number of legitimate or illegitimate requests causes the server to consume all available resources.", "vaptsecure")
+      ]
+    },
+    "RISK-002": {
+      title: __("XML-RPC: The Silent Entry Point", "vaptsecure"),
+      bullets: [
+        __("Multi-Call Brute Force: XML-RPC allows hundreds of login attempts in a single HTTP request, bypassing standard login rate limits.", "vaptsecure"),
+        __("DDoS Amplification: The Pingback feature can be exploited to turn your server into a drone for secondary DDoS attacks against other sites.", "vaptsecure"),
+        __("Legacy Exposure: While rarely used by modern apps, it remains a primary target for automated scripts scanning for easy entry points.", "vaptsecure")
+      ]
+    },
+    "RISK-003": {
+      title: __("Username Enumeration via REST API", "vaptsecure"),
+      bullets: [
+        __("Reconnaissance Target: Attackers use the /users endpoint to harvest valid usernames, making subsequent brute-force attacks significantly easier.", "vaptsecure"),
+        __("Privacy Risk: Exposes the internal handles of admins and authors to public scraping bots.", "vaptsecure"),
+        __("Bot Magnet: Automated scanners constantly probe this endpoint to build hit-lists for credential stuffing attacks.", "vaptsecure")
+      ]
+    },
+    "RISK-023": {
+      title: __("Security via Obscurity: Author IDs", "vaptsecure"),
+      bullets: [
+        __("ID Harvesting: The ?author=n query parameter allows bots to cycle through IDs to match usernames with public profiles.", "vaptsecure"),
+        __("Enumeration Loophole: Even if REST API is blocked, this legacy WordPress behavior remains an active path for username discovery.", "vaptsecure")
+      ]
+    },
+    "RISK-005": {
+      title: __("Information Disclosure: Directory Browsing", "vaptsecure"),
+      bullets: [
+        __("Server Reconnaissance: Enabled directory listing allows attackers to map your entire file structure, finding backup files, zip archives, or sensitive logs.", "vaptsecure"),
+        __("Unprotected Exposure: Exposes the existence of non-public folders or legacy scripts that should never be publicly accessible.", "vaptsecure")
+      ]
+    },
+    "RISK-013": {
+      title: __("Fingerprinting: Sensitivity of Default Files", "vaptsecure"),
+      bullets: [
+        __("Version Leakage: Files like readme.html and license.txt reveal your exact WordPress version, helping attackers tailor exploits to known vulnerabilities.", "vaptsecure"),
+        __("Automated Targeting: Scanners use these files to instantly identify your site's technology stack and patch level.", "vaptsecure")
+      ]
+    }
+  };
+
+  const OWASP_ENCYCLOPEDIA = {
+    'A01:2025 - Broken Access Control': __('Critical failure to enforce policy such that users can act outside of their intended permissions. This leads to unauthorized information disclosure, modification, or destruction of sensitive data assets.', 'vaptsecure'),
+    'A02:2025 - Security Misconfiguration': __('Occurs when security controls are inaccurately defined or neglected. This includes default accounts, unnecessary features (like XML-RPC or legacy cron), and overly verbose error messages that reveal system internals.', 'vaptsecure'),
+    'A03:2025 - Injection': __('Flaws where untrusted data is sent to an interpreter as part of a command or query. Exploits can trick the interpreter into executing unintended commands or accessing data without proper authorization.', 'vaptsecure'),
+    'A06:2025 - Insecure Design': __('Systemic architectural defects that allow for attack vectors by design. It addresses features that, while functioning as intended, lack the robust security patterns required to resist modern exploitation attempts.', 'vaptsecure'),
+    'A07:2025 - Authentication Failures': __('Failures in confirming user identity or managing sessions. Insecure implementation allows attackers to compromise passwords, keys, or session tokens to assume other users\' identities.', 'vaptsecure'),
+    // Fallback for 2021 IDs
+    'A01:2021 - Broken Access Control': __('Encompasses failures in permission enforcement, allowing unauthorized access to restricted data or system functions.', 'vaptsecure'),
+    'A04:2021 - Insecure Design': __('Architectural flaws that require defensive design patterns and threat mitigation rather than simple configuration patches.', 'vaptsecure'),
+    'A05:2021 - Security Misconfiguration': __('Improperly defined or maintained security settings, often leaving default access or unnecessary services active.', 'vaptsecure'),
+  };
+
+  /**
    * Universal URL Resolver (v3.13.2)
    * Standardizes on vaptSecureSettings.homeUrl and detects absolute paths/URLs.
    */
@@ -942,6 +1009,7 @@
     const currentData = feature.implementation_data ? (typeof feature.implementation_data === 'string' ? JSON.parse(feature.implementation_data) : feature.implementation_data) : {};
     const [localAlert, setLocalAlert] = useState(null);
     const [statusMap, setStatusMap] = useState({});
+    const [owaspModal, setOwaspModal] = useState(null);
     const timeoutsRef = useRef({});
 
     if (!schema || !schema.controls || !Array.isArray(schema.controls)) {
@@ -1044,6 +1112,72 @@
                 timeoutsRef.current[key].push(t1);
               }
             }),
+            // 🛡️ Protection Insight Hint (v3.13.20)
+            (safeRender(label) === __('Enable Protection', 'vaptsecure')) && el('div', {
+              style: {
+                marginTop: '-5px',
+                marginBottom: '15px',
+                padding: '10px 14px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start'
+              }
+            }, [
+              el(Icon, { icon: 'shield', size: 18, style: { color: '#475569', marginTop: '2px' } }),
+              el('div', { style: { flex: 1 } }, [
+                el('div', { style: { fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' } }, __('Protection Insight')),
+                (() => {
+                  const summary = (feature.summary || '').trim();
+                  const description = (feature.description || '').trim();
+                  const isDuplicate = summary === description && summary !== '';
+
+                  if (isDuplicate) {
+                    const owasp = feature.owasp?.owasp_top_10_2025 || feature.owasp?.owasp_top_10_2021_deprecated || feature.owasp_top_10 || '';
+                    const category = feature.category || '';
+                    const driver = schema.enforcement?.driver || 'hook';
+                    const techNote = feature.technical_notes ? feature.technical_notes[driver] : null;
+                    const deepInsight = DEEP_INSIGHTS[feature.key];
+
+                    return el('div', { style: { fontSize: '11px', color: '#1e293b', lineHeight: '1.5' } }, [
+                      techNote ? el('div', { style: { marginBottom: '4px', fontStyle: 'italic', color: '#475569' } }, [
+                        el('strong', { style: { color: '#1e293b', fontStyle: 'normal' } }, __('Caveat: ')),
+                        techNote
+                      ]) : null,
+                      deepInsight && el('div', { style: { marginBottom: '4px', color: '#0369a1', fontWeight: '600' } }, [
+                        el(Icon, { icon: 'lightbulb', size: 14, style: { marginRight: '4px', verticalAlign: 'text-bottom' } }),
+                        __('Deep Technical Insight Available', 'vaptsecure')
+                      ]),
+                      owasp && el('div', { style: { marginBottom: '2px' } }, [
+                        el('strong', { style: { color: '#444' } }, __('Standard: ')),
+                        el('span', {
+                          onClick: () => setOwaspModal(owasp),
+                          style: {
+                            color: '#0369a1',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }
+                        }, [
+                          owasp,
+                          el(Icon, { icon: 'info-outline', size: 14, style: { color: '#0369a1', marginTop: '1px' } })
+                        ])
+                      ]),
+                      el('div', null, [
+                        el('strong', { style: { color: '#444' } }, __('Security Layer: ')),
+                        el('span', null, category || __('System Core', 'vaptsecure'))
+                      ])
+                    ]);
+                  }
+
+                  return el('div', { style: { fontSize: '11px', color: '#334155', lineHeight: '1.4' } }, safeRender(feature.summary || feature.description || __('Provides active security hardening for this component.', 'vaptsecure')));
+                })()
+              ])
+            ]),
             // 🛡️ Localized Status Pill (v3.13.12)
             statusMap[key] && el('div', {
               style: {
@@ -1477,8 +1611,58 @@
         el('div', { style: { textAlign: 'right' } },
           el(Button, { isPrimary: true, onClick: () => setLocalAlert(null) }, __('OK', 'vaptsecure'))
         )
-      ])
+      ]),
 
+      // 🛡️ Technical Insight Modal
+      owaspModal && el(Modal, {
+        title: __('Implementation Objective & Deep Insight', 'vaptsecure'),
+        onRequestClose: () => setOwaspModal(null),
+        className: 'vapt-insight-modal',
+        style: { maxWidth: '550px' }
+      }, [
+        el('div', { style: { padding: '10px 0' } }, [
+          el('h3', { style: { fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '12px' } }, owaspModal),
+          (() => {
+            const driver = schema.enforcement?.driver || 'hook';
+            const techNote = feature.technical_notes ? feature.technical_notes[driver] : null;
+            const deepInsight = DEEP_INSIGHTS[feature.key];
+
+            return el('div', { style: { marginBottom: '15px' } }, [
+              // 1. Authoritative Deep Insight (High Value)
+              deepInsight ? el('div', { style: { marginBottom: '15px', background: '#f0fdf4', padding: '18px', borderRadius: '10px', border: '1px solid #bbf7d0' } }, [
+                el('strong', { style: { display: 'block', marginBottom: '10px', textTransform: 'uppercase', fontSize: '11px', color: '#166534', letterSpacing: '0.05em' } },
+                  deepInsight.title || __('Deep Technical Insight', 'vaptsecure')
+                ),
+                el('ul', { style: { margin: '0', paddingLeft: '18px', listStyleType: 'disc', color: '#14532d', fontSize: '14px', lineHeight: '1.6' } },
+                  deepInsight.bullets.map(b => el('li', { style: { marginBottom: '8px' } }, b))
+                )
+              ]) : el('div', { style: { marginBottom: '15px', background: '#f8fafc', padding: '18px', borderRadius: '10px', border: '1px solid #e2e8f0' } }, [
+                el('strong', { style: { display: 'block', marginBottom: '10px', textTransform: 'uppercase', fontSize: '11px', color: '#475569', letterSpacing: '0.05em' } },
+                  __('Risk Rationale', 'vaptsecure')
+                ),
+                el('div', { style: { fontSize: '14px', color: '#1e293b', lineHeight: '1.6' } },
+                  feature.summary || __('Authoritative risk assessment is currently being compiled for this protection.', 'vaptsecure')
+                )
+              ]),
+
+              // 2. Implementation Caveats
+              techNote && el('div', { style: { fontSize: '13px', color: '#1e293b', lineHeight: '1.6', background: '#f0f9ff', padding: '12px 15px', borderRadius: '8px', borderLeft: '4px solid #0ea5e9', marginBottom: '12px' } }, [
+                el('strong', { style: { display: 'block', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px', color: '#0369a1' } }, __('Implementation Advice')),
+                techNote
+              ]),
+
+              // 3. Attack Classification (Secondary)
+              el('div', { style: { fontSize: '13px', color: '#475569', lineHeight: '1.6', background: '#f8fafc', padding: '12px 15px', borderRadius: '8px', borderLeft: '4px solid #64748b' } }, [
+                el('strong', { style: { display: 'block', marginBottom: '4px', textTransform: 'uppercase', fontSize: '10px', color: '#475569' } }, __('Attack Classification')),
+                OWASP_ENCYCLOPEDIA[owaspModal] || __('Detailed technical standard information is currently being synchronized.', 'vaptsecure')
+              ])
+            ]);
+          })(),
+          el('div', { style: { marginTop: '20px', textAlign: 'right' } },
+            el(Button, { isPrimary: true, onClick: () => setOwaspModal(null) }, __('Close Reference', 'vaptsecure'))
+          )
+        ])
+      ])
     ]);
   };
 

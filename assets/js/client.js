@@ -321,29 +321,21 @@
               ])
             ]),
             el('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' } }, [
-              el('span', {
-                className: `vapt-status-badge status-${f.status.toLowerCase()}`,
-                style: {
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  textTransform: 'uppercase',
-                  color: '#fff',
-                  background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
-                    (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                }
-              }, f.status),
               el('div', { style: { display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' } }, [
                 el('span', { style: { fontSize: '12px', fontWeight: 600, color: '#334155', marginRight: '12px', whiteSpace: 'nowrap' } }, __('Enforce Rule')),
                 (() => {
-                  const isHtaccess = schema.enforcement && schema.enforcement.driver === 'htaccess';
-                  // Default to TRUE if undefined/null (v3.6.23)
-                  const isEnforced = isHtaccess ? true : (f.is_enforced === undefined || f.is_enforced === null || f.is_enforced == 1);
+                  const driver = schema.enforcement?.driver || (schema.client_deployment?.enforcement?.driver);
+                  const isHtaccess = driver === 'htaccess';
+                  const isServerLevel = ['htaccess', 'nginx', 'iis', 'caddy'].includes(driver);
+
+                  // v3.13.10 - Force TRUE and DISABLED for .htaccess as requested
+                  const isEnforced = isHtaccess ? true : ((f.is_enforced === undefined || f.is_enforced === null) ? true : (f.is_enforced == 1));
+
                   const toggle = el(ToggleControl, {
                     checked: isEnforced,
+                    disabled: isHtaccess,
                     onChange: (val) => {
+                      if (isHtaccess) return; // Guard
                       // [v1.3.12] Inline per-feature status — no global toast
                       const implData = f.implementation_data || {};
                       const progressMsg = val
@@ -352,6 +344,7 @@
                       const successMsg = val
                         ? __('✓ Code Injected Successfully', 'vaptsecure')
                         : __('✓ Removed Successfully', 'vaptsecure');
+
                       setEnforceStatus(f.key, progressMsg, 'info');
                       updateFeature(f.key, { is_enforced: val, implementation_data: implData }, null, true)
                         .then(() => setEnforceStatus(f.key, successMsg, 'success'));
@@ -360,8 +353,8 @@
                     style: { margin: 0 }
                   });
 
-                  return isHtaccess
-                    ? el(Tooltip, { text: __('Enforcement is permanently active via .htaccess (Server Level)', 'vaptsecure') }, el('div', { style: { display: 'inline-block' } }, toggle))
+                  return isServerLevel
+                    ? el(Tooltip, { text: isHtaccess ? __('Enforcement is permanently active via .htaccess (Server Level)', 'vaptsecure') : sprintf(__('Enforcement is active via %s driver (Server Level)', 'vaptsecure'), driver) }, el('div', { style: { display: 'inline-block' } }, toggle))
                     : toggle;
                 })()
               ])
@@ -456,7 +449,7 @@
           ])
         ]),
         el(CardFooter, { style: { borderTop: '1px solid #f3f4f6', padding: '12px 24px', background: '#fafafa' } }, [
-          el('span', { style: { fontSize: '11px', color: '#9ca3af' } }, sprintf(__('Feature Reference: %s', 'vaptsecure'), f.key))
+          // [v1.4.0] Simplified footer - removed Feature Reference
         ])
       ]);
     };
@@ -512,22 +505,6 @@
             isBusy: isRefreshing,
             label: __('Refresh Data', 'vaptsecure')
           })
-        ]),
-        // Right side: Status Tabs
-        el('div', { style: { display: 'flex', alignItems: 'center', gap: '15px' } }, [
-          // Status Tabs moved to top right
-          el('div', { style: { display: 'flex', gap: '4px', background: '#f3f4f6', padding: '4px', borderRadius: '8px' } },
-            availableStatuses.map(s => el(Button, {
-              key: s,
-              onClick: () => setActiveStatus(s),
-              style: {
-                background: activeStatus === s ? '#fff' : 'transparent',
-                color: activeStatus === s ? '#111827' : '#6b7280',
-                border: 'none', borderRadius: '6px', padding: '8px 12px', fontWeight: 600, fontSize: '12px',
-                boxShadow: activeStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-              }
-            }, STATUS_LABELS[s]))
-          )
         ])
       ]),
 

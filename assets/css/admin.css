@@ -1176,3 +1176,13 @@
     margin: 0 !important;
     font-size: 13px !important;
 }
+/* Technical Insight Modal Styling (v1.9.18) */
+.vapt-insight-modal .components-modal__content {
+    margin-top: 50px !important;
+    max-height: 80vh !important;
+    overflow-y: hidden !important; /* Avoid vertical scrollbar per user request */
+}
+
+.vapt-insight-modal .components-modal__header {
+    margin-bottom: 0 !important;
+}

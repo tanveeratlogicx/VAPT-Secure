@@ -398,6 +398,25 @@ window.vaptScriptLoaded = true;
       }
     };
 
+    const handleUpdateSchema = () => {
+      if (!window.VAPTSECURE_APlusGenerator) {
+        setAlertState({ message: __('A+ Generator is not loaded.', 'vaptsecure') });
+        return;
+      }
+
+      // v3.13.0 - Synthesize feature data for generation
+      const f = {
+        ...feature,
+        include_manual_protocol: includeProtocol ? 1 : 0,
+        include_operational_notes: includeNotes ? 1 : 0
+      };
+
+      const newSchema = window.VAPTSECURE_APlusGenerator.generate(f, customizationText);
+      onJsonChange(JSON.stringify(newSchema, null, 2));
+      setSaveStatus({ message: __('Schema Updated from A+ Logic!', 'vaptsecure'), type: 'success' });
+      setTimeout(() => setSaveStatus(null), 3000);
+    };
+
     const handleSave = () => {
       try {
         // Attempt to clean common paste artifacts (Markdown code blocks & invisible chars)
@@ -1257,17 +1276,33 @@ window.vaptScriptLoaded = true;
               el(Icon, { icon: 'visibility', size: 16 }),
               el('strong', { className: 'vapt-preview-title' }, __('Preview Panel: Effective Protections', 'vaptsecure'))
             ]),
-            el('div', { className: 'vapt-flex-row', style: { gap: '10px' } }, [
+            el('div', { className: 'vapt-preview-actions-row', style: { display: 'flex', gap: '10px', alignItems: 'center' } }, [
               el(Button, {
+                isSecondary: true,
+                isSmall: true,
+                onClick: handleUpdateSchema,
+                icon: 'update',
+                style: { fontWeight: '600' }
+              }, __('Update Schema', 'vaptsecure')),
+
+              // Intelligently show only the most suitable action (v3.13.1)
+              isAdaptiveDeployment ? el(Button, {
                 isPrimary: true,
                 className: 'vapt-btn-deploy-aplus',
                 onClick: handleSave,
                 isBusy: isSaving,
                 icon: 'cloud-upload',
                 style: { background: '#10b981', borderColor: '#059669', fontWeight: 'bold' }
-              }, __('Deploy', 'vaptsecure')),
-              el(Button, { isSecondary: true, isSmall: true, onClick: onClose }, __('Cancel', 'vaptsecure')),
-              el(Button, { isSecondary: true, isSmall: true, onClick: handleSave, isBusy: isSaving }, __('Save Status', 'vaptsecure'))
+              }, __('Deploy', 'vaptsecure')) : el(Button, {
+                isPrimary: true,
+                isSmall: true,
+                onClick: handleSave,
+                isBusy: isSaving,
+                icon: 'admin-settings',
+                style: { background: '#3b82f6', borderColor: '#2563eb', fontWeight: 'bold' }
+              }, __('Implement', 'vaptsecure')),
+
+              el(Button, { isSecondary: true, isSmall: true, onClick: onClose }, __('Cancel', 'vaptsecure'))
             ])
           ]),
           el('div', { className: 'vapt-design-modal-preview-body' }, [
@@ -1278,7 +1313,7 @@ window.vaptScriptLoaded = true;
                   el('h4', { className: 'vapt-card-title' }, __('Functional Implementation')),
                   GeneratedInterface
                     ? el(GeneratedInterface, {
-                      feature: { ...feature, generated_schema: schema, implementation_data: localImplData },
+                      feature: { ...feature, generated_schema: schema, implementation_data: localImplData, include_manual_protocol: includeProtocol ? 1 : 0, include_operational_notes: includeNotes ? 1 : 0 },
                       onUpdate: (newData) => setLocalImplData(newData)
                     })
                     : el('p', null, __('Loading Preview Interface...', 'vaptsecure'))

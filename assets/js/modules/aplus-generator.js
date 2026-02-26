@@ -128,6 +128,19 @@
         _instructions: customInstruction || "Generated via A+ Adaptive Workbench"
       };
 
+      // 🛡️ Enhanced Schema Injection (v3.3.1) - Inject Protocol & Notes if enabled
+      if (feature.include_manual_protocol == 1 || feature.manual_protocol) {
+        let steps = feature.manual_protocol || feature.verification_steps || feature.remediation_guidance || ["Scan the site to verify protection.", "Confirm block in logs."];
+        if (typeof steps === 'string') {
+          try { steps = JSON.parse(steps); } catch (e) { steps = steps.split('\n').filter(s => s.trim()); }
+        }
+        schema.manual_protocol = { steps: Array.isArray(steps) ? steps : (steps.steps || [steps]) };
+      }
+
+      if (feature.include_operational_notes == 1 || feature.operational_notes) {
+        schema.operational_notes = feature.operational_notes || feature.summary || feature.description || "Protects against unauthorized access and common exploit attempts.";
+      }
+
       return schema;
     },
 
