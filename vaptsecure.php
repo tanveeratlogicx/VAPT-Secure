@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.0.0
+ * Version:           2.1.0
  * Author:            VAPT Team
  * Author URI:        https://vaptsecure.com/
  * License:           GPL-2.0+
@@ -25,10 +25,10 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '2.0.0');
+  define('VAPTSECURE_VERSION', '2.1.0');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
-  define('VAPTSECURE_DATA_VERSION', '2.0.0');
+  define('VAPTSECURE_DATA_VERSION', '2.0.1');
 }
 if (! defined('VAPTSECURE_PATH')) {
   define('VAPTSECURE_PATH', plugin_dir_path(__FILE__));
@@ -119,6 +119,7 @@ function is_vaptsecure_superadmin()
 // Include core classes (new Builder includes)
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-auth.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-rest.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-logger.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-db.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-workflow.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
@@ -158,9 +159,24 @@ function vaptsecure_initialize_services()
  * Activation Hook: Initialize Database Tables
  */
 register_activation_hook(__FILE__, 'vaptsecure_activate_plugin');
+
+// Daily Cron for Log Pruning (v2.1.0)
+add_action('vaptsecure_daily_prune', 'vaptsecure_run_daily_prune');
+function vaptsecure_run_daily_prune()
+{
+  if (class_exists('VAPTSECURE_Logger')) {
+    VAPTSECURE_Logger::prune_logs();
+  }
+}
+
 function vaptsecure_activate_plugin()
 {
   global $wpdb;
+
+  // Schedule Cron
+  if (! wp_next_scheduled('vaptsecure_daily_prune')) {
+    wp_schedule_event(time(), 'daily', 'vaptsecure_daily_prune');
+  }
   $charset_collate = $wpdb->get_charset_collate();
   require_once ABSPATH . 'wp-admin/includes/upgrade.php';
   // Domains Table
@@ -239,12 +255,28 @@ function vaptsecure_activate_plugin()
         PRIMARY KEY  (id),
         KEY domain (domain)
     ) $charset_collate;";
+
+  // Security Events (Logs) Table (v2.1.0)
+  $table_events = "CREATE TABLE {$wpdb->prefix}vaptsecure_security_events (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        feature_key VARCHAR(100) NOT NULL,
+        event_type VARCHAR(50) DEFAULT 'block',
+        ip_address VARCHAR(45) NOT NULL,
+        request_uri TEXT,
+        details TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        KEY feature_key (feature_key),
+        KEY created_at (created_at)
+    ) $charset_collate;";
+
   dbDelta($table_domains);
   dbDelta($table_features);
   dbDelta($table_status);
   dbDelta($table_meta);
   dbDelta($table_history);
   dbDelta($table_builds);
+  dbDelta($table_events);
   // Ensure data directory exists
   if (! file_exists(VAPTSECURE_PATH . 'data')) {
     wp_mkdir_p(VAPTSECURE_PATH . 'data');

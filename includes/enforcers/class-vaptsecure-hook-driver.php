@@ -485,6 +485,9 @@ class VAPTSECURE_Hook_Driver
               }
               flock($fp, LOCK_UN);
               fclose($fp);
+              if (class_exists('VAPTSECURE_Logger')) {
+                VAPTSECURE_Logger::log($feature_key, 'block', "Rate limit exceeded: $current/$limit attempts.");
+              }
               wp_die("VAPT: Too Many Requests ($feature_key).", 'Rate Limit Exceeded', array('response' => 429));
             }
 
@@ -541,6 +544,9 @@ class VAPTSECURE_Hook_Driver
           header('X-VAPT-Enforced: php-dir');
           header('X-VAPT-Feature: ' . $key);
           header('Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature');
+          if (class_exists('VAPTSECURE_Logger')) {
+            VAPTSECURE_Logger::log($key, 'block', 'Directory Browsing Blocked');
+          }
           wp_die('VAPT: Directory Browsing is Blocked for Security.');
         }
       }
@@ -558,6 +564,9 @@ class VAPTSECURE_Hook_Driver
       header('X-VAPT-Feature: ' . $key);
       header('Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature');
       header('Content-Type: text/plain');
+      if (class_exists('VAPTSECURE_Logger')) {
+        VAPTSECURE_Logger::log($key, 'block', 'XML-RPC Access Blocked');
+      }
       wp_die('VAPT: XML-RPC Access is Blocked for Security.');
     }
   }
@@ -573,6 +582,9 @@ class VAPTSECURE_Hook_Driver
       header('X-VAPT-Enforced: php-null-byte');
       header('X-VAPT-Feature: ' . $key);
       header('Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature');
+      if (class_exists('VAPTSECURE_Logger')) {
+        VAPTSECURE_Logger::log($key, 'block', 'Null Byte Injection Blocked');
+      }
       wp_die('VAPT: Null Byte Injection Attempt Blocked.');
     }
   }
@@ -678,6 +690,9 @@ class VAPTSECURE_Hook_Driver
         header('X-VAPT-Enforced: php-author-enum');
         header('X-VAPT-Feature: ' . $key);
         header('Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature');
+        if (class_exists('VAPTSECURE_Logger')) {
+          VAPTSECURE_Logger::log($key, 'block', 'Author Enumeration Blocked');
+        }
         wp_die('VAPT: Author Enumeration is Blocked for Security.');
       }
     });

@@ -109,6 +109,28 @@ class VAPTSECURE_REST
       'permission_callback' => array($this, 'check_permission'),
     ));
 
+    // Security Stats & Logs (v2.1.0)
+    register_rest_route('vaptsecure/v1', '/stats/summary', array(
+      'methods'             => 'GET',
+      'callback'            => array($this, 'get_stats_summary'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+    register_rest_route('vaptsecure/v1', '/stats/logs', array(
+      'methods'             => 'GET',
+      'callback'            => array($this, 'get_stats_logs'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+    register_rest_route('vaptsecure/v1', '/stats/purge', array(
+      'methods'             => 'POST',
+      'callback'            => array($this, 'purge_stats_logs'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+    register_rest_route('vaptsecure/v1', '/stats/settings', array(
+      'methods'             => 'POST',
+      'callback'            => array($this, 'update_stats_settings'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+
     register_rest_route('vaptsecure/v1', '/domains', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_domains'),
@@ -2119,5 +2141,43 @@ class VAPTSECURE_REST
     });
 
     return $schema;
+  }
+
+  public function get_stats_summary()
+  {
+    if (class_exists('VAPTSECURE_Logger')) {
+      $summary = VAPTSECURE_Logger::get_stats_summary();
+      $summary['retention'] = get_option('vaptsecure_log_retention', 30);
+      return new WP_REST_Response($summary, 200);
+    }
+    return new WP_REST_Response(['error' => 'Logger not available'], 500);
+  }
+
+  public function get_stats_logs()
+  {
+    if (class_exists('VAPTSECURE_Logger')) {
+      $logs = VAPTSECURE_Logger::get_recent_logs(200);
+      return new WP_REST_Response($logs, 200);
+    }
+    return new WP_REST_Response(['error' => 'Logger not available'], 500);
+  }
+
+  public function purge_stats_logs()
+  {
+    if (class_exists('VAPTSECURE_Logger')) {
+      VAPTSECURE_Logger::clear_all();
+      return new WP_REST_Response(['success' => true], 200);
+    }
+    return new WP_REST_Response(['error' => 'Logger not available'], 500);
+  }
+
+  public function update_stats_settings($request)
+  {
+    $retention = (int) $request->get_param('retention');
+    if (in_array($retention, [30, 60, 90])) {
+      update_option('vaptsecure_log_retention', $retention);
+      return new WP_REST_Response(['success' => true], 200);
+    }
+    return new WP_REST_Response(['error' => 'Invalid retention value'], 400);
   }
 }

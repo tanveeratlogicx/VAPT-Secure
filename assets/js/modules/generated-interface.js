@@ -989,7 +989,7 @@
     ]);
   };
 
-  const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false }) => {
+  const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, showCategoryAsTooltip = false }) => {
     console.log('[VAPT] GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
     let schema = feature.generated_schema ? (typeof feature.generated_schema === 'string' ? JSON.parse(feature.generated_schema) : feature.generated_schema) : {};
 
@@ -1128,54 +1128,56 @@
             }, [
               el(Icon, { icon: 'shield', size: 18, style: { color: '#475569', marginTop: '2px' } }),
               el('div', { style: { flex: 1 } }, [
-                el('div', { style: { fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' } }, __('Protection Insight')),
-                (() => {
-                  const summary = (feature.summary || '').trim();
-                  const description = (feature.description || '').trim();
-                  const isDuplicate = summary === description && summary !== '';
-
-                  if (isDuplicate) {
-                    const owasp = feature.owasp?.owasp_top_10_2025 || feature.owasp?.owasp_top_10_2021_deprecated || feature.owasp_top_10 || '';
-                    const category = feature.category || '';
+                showCategoryAsTooltip ? el(Tooltip, {
+                  text: el('div', { style: { padding: '5px', maxWidth: '250px' } }, [
+                    el('strong', { style: { display: 'block', marginBottom: '4px' } }, sprintf(__("Security Layer: %s", "vaptsecure"), feature.category || __('System Core', 'vaptsecure'))),
+                    el('div', { style: { fontSize: '12px', lineHeight: '1.4' } }, feature.summary || feature.description || __("Authoritative risk assessment is currently being compiled.", "vaptsecure"))
+                  ])
+                }, el('div', { style: { cursor: 'help' } }, [
+                  el('div', { style: { fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                    __("Protection Insight"),
+                    el(Icon, { icon: 'info-outline', size: 12 })
+                  ]),
+                  (() => {
+                    const driver = schema.enforcement?.driver || 'hook';
+                    if (feature.technical_notes && feature.technical_notes[driver]) {
+                      return el('div', { style: { fontSize: '11px', color: '#1e293b', fontWeight: '600', marginBottom: '4px' } }, __("Implementation Advice Available", "vaptsecure"));
+                    }
+                    if (DEEP_INSIGHTS[feature.key]) {
+                      return el('div', { style: { fontSize: '11px', color: '#166534', fontWeight: '600', marginBottom: '4px' } }, __("Deep Technical Insight Available", "vaptsecure"));
+                    }
+                    return el('div', { style: { fontSize: '11px', color: '#64748b', fontStyle: 'italic' } }, __("Hover for Risk Description", "vaptsecure"));
+                  })()
+                ])) : el(Fragment, null, [
+                  el('div', { style: { fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' } }, __("Protection Insight")),
+                  (() => {
                     const driver = schema.enforcement?.driver || 'hook';
                     const techNote = feature.technical_notes ? feature.technical_notes[driver] : null;
                     const deepInsight = DEEP_INSIGHTS[feature.key];
+                    const owaspRef = feature.owasp?.owasp_top_10_2025 || feature.owasp?.owasp_top_10_2021_deprecated || feature.owasp_top_10 || '';
 
-                    return el('div', { style: { fontSize: '11px', color: '#1e293b', lineHeight: '1.5' } }, [
-                      techNote ? el('div', { style: { marginBottom: '4px', fontStyle: 'italic', color: '#475569' } }, [
-                        el('strong', { style: { color: '#1e293b', fontStyle: 'normal' } }, __('Caveat: ')),
-                        techNote
-                      ]) : null,
-                      deepInsight && el('div', { style: { marginBottom: '4px', color: '#0369a1', fontWeight: '600' } }, [
-                        el(Icon, { icon: 'lightbulb', size: 14, style: { marginRight: '4px', verticalAlign: 'text-bottom' } }),
-                        __('Deep Technical Insight Available', 'vaptsecure')
+                    return el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } }, [
+                      techNote && el('div', { style: { fontSize: '11px', color: '#1e293b', lineHeight: '1.4' } }, techNote),
+                      deepInsight && el('div', { style: { display: 'flex', alignItems: 'center', gap: '5px' } }, [
+                        el('span', { style: { fontSize: '11px', color: '#166534', fontWeight: '600' } }, __("Deep Technical Insight Available", "vaptsecure")),
+                        el(Button, {
+                          isLink: true,
+                          onClick: () => setOwaspModal(owaspRef),
+                          style: { fontSize: '11px', padding: 0, height: 'auto', minHeight: 'auto' }
+                        }, __("View Reference", "vaptsecure"))
                       ]),
-                      owasp && el('div', { style: { marginBottom: '2px' } }, [
-                        el('strong', { style: { color: '#444' } }, __('Standard: ')),
-                        el('span', {
-                          onClick: () => setOwaspModal(owasp),
-                          style: {
-                            color: '#0369a1',
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }
-                        }, [
-                          owasp,
-                          el(Icon, { icon: 'info-outline', size: 14, style: { color: '#0369a1', marginTop: '1px' } })
-                        ])
+                      owaspRef && el('div', { style: { fontSize: '11px', color: '#475569', display: 'flex', alignItems: 'center', gap: '5px' } }, [
+                        el('span', null, sprintf(__("Standard: %s", "vaptsecure"), owaspRef)),
+                        !deepInsight && el(Button, {
+                          isLink: true,
+                          onClick: () => setOwaspModal(owaspRef),
+                          style: { fontSize: '11px', padding: 0, height: 'auto', minHeight: 'auto' }
+                        }, el(Icon, { icon: 'info-outline', size: 14 }))
                       ]),
-                      el('div', null, [
-                        el('strong', { style: { color: '#444' } }, __('Security Layer: ')),
-                        el('span', null, category || __('System Core', 'vaptsecure'))
-                      ])
+                      el('div', { style: { fontSize: '11px', color: '#64748b' } }, sprintf(__("Security Layer: %s", "vaptsecure"), feature.category || __('System Core', 'vaptsecure')))
                     ]);
-                  }
-
-                  return el('div', { style: { fontSize: '11px', color: '#334155', lineHeight: '1.4' } }, safeRender(feature.summary || feature.description || __('Provides active security hardening for this component.', 'vaptsecure')));
-                })()
+                  })()
+                ])
               ])
             ]),
             // 🛡️ Localized Status Pill (v3.13.12)
