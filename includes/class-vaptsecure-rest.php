@@ -474,10 +474,13 @@ class VAPTSECURE_REST
           $enabled_features = array_column($feat_rows, 0);
         }
       }
+      // Client scope: Show ALL Released features by default.
+      // Domain feature table acts as an optional override (opt-out), not a required gate.
+      // Superadmins additionally see Draft/Develop features.
       $features = array_filter($features, function ($f) use ($enabled_features, $is_superadmin) {
         $s = $f['normalized_status'];
-        if ($s === 'release') return $is_superadmin || in_array($f['key'], $enabled_features);
-        return $is_superadmin && in_array($s, ['draft', 'develop', 'test']);
+        if ($s === 'release') return true; // Released features always visible to all
+        return $is_superadmin && in_array($s, ['draft', 'develop', 'test']); // Dev-mode only for superadmin
       });
       $features = array_values($features);
     }
