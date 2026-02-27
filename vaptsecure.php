@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.2.12
+ * Version:           2.2.15
  * Author:            VAPT Team
  * Author URI:        https://vaptsecure.com/
  * License:           GPL-2.0+
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '2.1.2');
+  define('VAPTSECURE_VERSION', '2.2.15');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.1');
@@ -143,7 +143,8 @@ add_action('plugins_loaded', 'vaptsecure_initialize_services');
 function vaptsecure_initialize_services()
 {
   if (class_exists('VAPTSECURE_REST')) {
-    new VAPTSECURE_REST();
+    // VAPTSECURE_Sync_Cron::init(); // Removed as requested
+    $rest = new VAPTSECURE_REST();
   }
   if (class_exists('VAPTSECURE_Auth')) {
     // Auth may provide static helpers but instantiate to register hooks if needed
@@ -368,18 +369,22 @@ if (! function_exists('vaptsecure_manual_db_fix')) {
         $wpdb->query("ALTER TABLE {$meta_table} ADD COLUMN wireframe_url TEXT DEFAULT NULL");
       }
       echo '<div class="notice notice-success"><p>Database migration complete. Statuses normalized to Draft, Develop, Release.</p></div>';
-      // 4. Force add is_enforced column
+      // 4. Ensure is_enforced and is_pushed columns exist
       $table_meta = $wpdb->prefix . 'vaptsecure_feature_meta';
       $col_enforced = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$table_meta} LIKE %s", 'is_enforced'));
       if (empty($col_enforced)) {
-        $wpdb->query("ALTER TABLE {$table_meta} ADD COLUMN is_enforced TINYINT(1) DEFAULT 1");
-        // Migration: Enable by default for existing records
-        $wpdb->query("UPDATE {$table_meta} SET is_enforced = 1 WHERE is_enforced IS NULL OR is_enforced = 0");
+        $wpdb->query("ALTER TABLE {$table_meta} ADD COLUMN is_enforced TINYINT(1) DEFAULT 0");
       } else {
-        // Migration: Update default for existing column
-        $wpdb->query("ALTER TABLE {$table_meta} ALTER COLUMN is_enforced SET DEFAULT 1");
-        // Migration: Force enable '0' or NULL values based on user request ("Protection should work out of the box")
-        $wpdb->query("UPDATE {$table_meta} SET is_enforced = 1 WHERE is_enforced IS NULL OR is_enforced = 0");
+        // Migration: Update default for existing column to 0 (v3.13.0 fix)
+        $wpdb->query("ALTER TABLE {$table_meta} ALTER COLUMN is_enforced SET DEFAULT 0");
+      }
+
+      $col_pushed = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$table_meta} LIKE %s", 'is_pushed'));
+      if (empty($col_pushed)) {
+        $wpdb->query("ALTER TABLE {$table_meta} ADD COLUMN is_pushed TINYINT(1) DEFAULT 0");
+        // Migration: Flag existing 'Release' features as pushed (v3.13.11)
+        $status_table = $wpdb->prefix . 'vaptsecure_feature_status';
+        $wpdb->query("UPDATE {$table_meta} m JOIN {$status_table} s ON m.feature_key = s.feature_key SET m.is_pushed = 1 WHERE s.status = 'Release'");
       }
       // 5. Force add assigned_to column
       $col_assigned = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$status_table} LIKE %s", 'assigned_to'));

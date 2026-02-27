@@ -88,7 +88,7 @@
     // If path is root default but feature implies a specific target, nudge it (v3.13.8)
     if ((!path || path === '/') && !configUrl && featureKey) {
       if (featureKey.includes('cron') || featureKey === 'RISK-001') sub = 'wp-cron.php';
-      else if (featureKey.includes('xmlrpc')) sub = 'xmlrpc.php';
+      else if (featureKey.includes('xmlrpc') || featureKey === 'RISK-002') sub = 'xmlrpc.php';
       else if (featureKey.includes('login')) sub = 'wp-login.php';
     }
 
@@ -153,7 +153,7 @@
   const PROBE_REGISTRY = {
     // 1. Header Probe: Verifies HTTP response headers
     check_headers: async (siteUrl, control, featureData, featureKey) => {
-      const url = resolveUrl('/', control.config?.url);
+      const url = resolveUrl('/', control.config?.url, featureKey);
       const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vaptsecure_test_context=login' : '';
       const resp = await fetch(url + '?vaptsecure_header_check=' + Date.now() + contextParam, { method: 'GET', cache: 'no-store' });
       const headers = {};
@@ -242,7 +242,7 @@
         // Process sequentially for real-time reporting (v3.6.25)
         for (let i = 0; i < load; i++) {
           try {
-            const url = resolveUrl('/', control.config?.url);
+            const url = resolveUrl('/', control.config?.url, featureKey);
             const r = await fetch(url + '?vaptsecure_test_spike=' + i + contextParam, { cache: 'no-store' });
             const respData = { status: r.status, headers: r.headers };
             responses.push(respData);
@@ -294,7 +294,7 @@
             success: true,
             message: `Rate limiter is ACTIVE. Security measures are working correctly.`,
             meta: resultMeta,
-            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Expected: 429`
+            raw: `URL: ${resolveUrl('/', control.config?.url, featureKey)} | Status: 429 | Expected: 429`
           };
         }
 
@@ -307,7 +307,7 @@
             success: false,
             message: `Server Error (500). Internal configuration or logic error detected.`,
             meta: resultMeta,
-            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 500 | Expected: 429`
+            raw: `URL: ${resolveUrl('/', control.config?.url, featureKey)} | Status: 500 | Expected: 429`
           };
         }
 
@@ -315,7 +315,7 @@
           success: false,
           message: `Rate Limiter is NOT active. Traffic was not restricted.`,
           meta: resultMeta,
-          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 429`
+          raw: `URL: ${resolveUrl('/', control.config?.url, featureKey)} | Status: 200 | Expected: 429`
         };
       } catch (err) {
         return {

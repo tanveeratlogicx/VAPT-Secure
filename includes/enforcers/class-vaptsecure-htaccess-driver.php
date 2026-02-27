@@ -89,7 +89,27 @@ class VAPTSECURE_Htaccess_Driver
 
     foreach ($mappings as $key => $directive) {
       $key_lower = strtolower($key);
-      if (!empty($data_map[$key_lower])) {
+      $data_value = null;
+
+      // [v3.13.16] ENHANCED MAPPING RESOLUTION
+      // 1. Direct match (Component ID)
+      if (isset($data_map[$key_lower])) {
+        $data_value = $data_map[$key_lower];
+      } else {
+        // 2. Lookup settings_key from schema components if direct match fails
+        $components = $schema['components'] ?? array();
+        foreach ($components as $comp) {
+          if (isset($comp['component_id']) && strtolower($comp['component_id']) === $key_lower) {
+            $settings_key = strtolower($comp['settings_key'] ?? '');
+            if ($settings_key && isset($data_map[$settings_key])) {
+              $data_value = $data_map[$settings_key];
+              break;
+            }
+          }
+        }
+      }
+
+      if (!empty($data_value)) {
         // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
         $directive = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'htaccess');
         if (empty($directive)) continue;
@@ -140,7 +160,7 @@ class VAPTSECURE_Htaccess_Driver
       );
     }
 
-    return $rules;
+    return array_unique($rules);
   }
 
   /**

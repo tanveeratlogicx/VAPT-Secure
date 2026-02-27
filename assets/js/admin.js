@@ -440,7 +440,8 @@ window.vaptScriptLoaded = true;
         const payload = {
           generated_schema: JSON.stringify(parsed),
           implementation_data: JSON.stringify(localImplData),
-          is_enforced: 1, // Force activation on Save & Deploy (v3.12.3)
+          is_enforced: (localImplData && localImplData.feat_enabled) ? 1 : 0,
+          is_pushed: 1,
           is_adaptive_deployment: isAdaptiveDeployment ? 1 : 0,
           include_verification_engine: hasTestActions ? 1 : 0,
           include_verification_guidance: 1,
@@ -4766,9 +4767,10 @@ window.vaptScriptLoaded = true;
                     el(Button, {
                       className: 'vapt-aplus-workbench-btn',
                       style: {
-                        background: (f.status === 'Develop' || f.status === 'develop') && f.has_history ? '#10b981' :
-                          (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' :
-                            'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                        background: (f.status === 'Develop' || f.status === 'develop') && (f.is_enforced == 1 || f.is_enforced === true) ? '#10b981' :
+                          (f.status === 'Develop' || f.status === 'develop') ? '#3b82f6' :
+                            (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' :
+                              'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
                         color: '#fff',
                         border: 'none',
                         fontWeight: '600',
@@ -4968,7 +4970,7 @@ window.vaptScriptLoaded = true;
 
     const updateFeature = (key, data) => {
       // Optimistic Update
-      setFeatures(prev => prev.map(f => f.key === key ? { ...f, ...data } : f));
+      setFeatures(prev => prev.map(f => (f.key === key || f.id === key) ? { ...f, ...data } : f));
       setSaveStatus({ message: __('Saving...', 'vaptsecure'), type: 'info' });
 
       return apiFetch({
@@ -4991,7 +4993,7 @@ window.vaptScriptLoaded = true;
 
       const safeFeatures = Array.isArray(features) ? features : [];
       const feature = safeFeatures.find(f => f.key === key);
-      let updates = { status: nextStatus, history_note: note, dev_instruct: dev_instruct };
+      let updates = { status: nextStatus, history_note: note, dev_instruct: dev_instruct, is_enforced: 0, is_pushed: 0 };
 
       // Save Wireframe if provided
       if (wireframeUrl) {

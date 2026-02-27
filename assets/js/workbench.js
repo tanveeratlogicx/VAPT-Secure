@@ -174,19 +174,21 @@
       return features.filter(f => {
         const s = f.normalized_status || (f.status ? f.status.toLowerCase() : '');
         const active = activeStatus.toLowerCase();
+        const isPushed = f.is_pushed || false;
 
         if (active === 'all') {
-          return s !== 'draft';
+          // Show all that are either Released or explicitly Pushed
+          return s === 'release' || (['develop', 'test'].includes(s) && isPushed);
         }
 
-        if (active === 'develop') return ['develop', 'in_progress'].includes(s);
+        if (active === 'develop') return ['develop', 'in_progress'].includes(s) && isPushed;
 
         if (active === 'release') {
           const originalStatus = (f.status || '').toLowerCase();
           return originalStatus === 'release';
         }
 
-        return s === active;
+        return s === active && (s === 'release' || isPushed);
       });
     }, [features, activeStatus]);
 

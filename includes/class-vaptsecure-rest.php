@@ -411,6 +411,7 @@ class VAPTSECURE_REST
         if ($norm_status === 'available')   $norm_status = 'draft';
         $feature['normalized_status'] = $norm_status;
         $feature['status'] = ucfirst($norm_status);
+        $feature['lifecycle_status'] = ucfirst($norm_status);
         $feature['implemented_at'] = $st['implemented_at'];
         $feature['assigned_to'] = $st['assigned_to'];
         $feature['has_history'] = isset($history_counts[$key]) && $history_counts[$key]->count > 0;
@@ -427,6 +428,7 @@ class VAPTSECURE_REST
           $feature['include_verification_engine'] = isset($meta['include_verification_engine']) ? (bool) $meta['include_verification_engine'] : false;
           $feature['include_verification_guidance'] = isset($meta['include_verification_guidance']) ? (bool) $meta['include_verification_guidance'] : true;
           $feature['is_enforced'] = (bool) $meta['is_enforced'];
+          $feature['is_pushed'] = isset($meta['is_pushed']) ? (bool) $meta['is_pushed'] : false;
           $feature['is_adaptive_deployment'] = isset($meta['is_adaptive_deployment']) ? (bool) $meta['is_adaptive_deployment'] : false;
           $feature['wireframe_url'] = $meta['wireframe_url'];
           $feature['dev_instruct'] = isset($meta['dev_instruct']) ? $meta['dev_instruct'] : '';
@@ -479,8 +481,16 @@ class VAPTSECURE_REST
       // Superadmins additionally see Draft/Develop features.
       $features = array_filter($features, function ($f) use ($enabled_features, $is_superadmin) {
         $s = $f['normalized_status'];
+        $is_pushed = isset($f['is_pushed']) && $f['is_pushed'];
+
         if ($s === 'release') return true; // Released features always visible to all
-        return $is_superadmin && in_array($s, ['draft', 'develop', 'test']); // Dev-mode only for superadmin
+
+        // v3.13.11: Superadmins see 'develop' or 'test' ONLY if they have been pushed (Deployed Step 2)
+        if ($is_superadmin && in_array($s, ['develop', 'test'])) {
+          return $is_pushed;
+        }
+
+        return false;
       });
       $features = array_values($features);
     }
@@ -604,6 +614,7 @@ class VAPTSECURE_REST
     $wireframe_url = $request->get_param('wireframe_url');
     $generated_schema = $request->get_param('generated_schema');
     $implementation_data = $request->get_param('implementation_data');
+    $is_pushed = $request->get_param('is_pushed');
     $reset_history = $request->get_param('reset_history');
 
     // FIX: Lifecycle race condition. Capture initial status before transition runs.
@@ -638,6 +649,8 @@ class VAPTSECURE_REST
 
     $is_adaptive = $request->get_param('is_adaptive_deployment');
     if ($is_adaptive !== null) $meta_updates['is_adaptive_deployment'] = $is_adaptive ? 1 : 0;
+
+    if ($is_pushed !== null) $meta_updates['is_pushed'] = $is_pushed ? 1 : 0;
 
     if ($wireframe_url !== null) $meta_updates['wireframe_url'] = $wireframe_url;
 

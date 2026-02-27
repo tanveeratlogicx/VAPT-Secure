@@ -105,6 +105,7 @@ class VAPTSECURE_DB
       'include_manual_protocol'       => '%d',
       'include_operational_notes'     => '%d',
       'is_enforced'                   => '%d',
+      'is_pushed'                     => '%d',
       'wireframe_url'                 => '%s',
       'generated_schema'              => '%s',
       'implementation_data'           => '%s',

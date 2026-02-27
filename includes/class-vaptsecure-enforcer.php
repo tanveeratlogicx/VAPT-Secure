@@ -233,18 +233,25 @@ class VAPTSECURE_Enforcer
   }
 
   // Helper to fetch enforced features (DRY)
-  private static function get_enforced_features()
+  public static function get_enforced_features()
   {
     global $wpdb;
     $table = $wpdb->prefix . 'vaptsecure_feature_meta';
-    return $wpdb->get_results("SELECT m.*, s.status FROM $table m LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key WHERE m.is_enforced = 1", ARRAY_A);
+    return $wpdb->get_results("
+      SELECT m.*, s.status 
+      FROM $table m 
+      LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key 
+      WHERE m.is_enforced = 1 
+      AND s.status IS NOT NULL 
+      AND LOWER(s.status) NOT IN ('draft', 'available')
+    ", ARRAY_A);
   }
 
   // Helpers for Schema/Impl Resolution
-  private static function resolve_schema($meta)
+  public static function resolve_schema($meta)
   {
-    $status = $meta['status'] ?? 'draft';
-    $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
+    $status = strtolower($meta['status'] ?? 'draft');
+    $raw = (in_array($status, ['test', 'release', 'implemented']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
     $schema = $raw ? json_decode($raw, true) : [];
 
     // [v3.12.5] Inject feature key if missing
@@ -255,10 +262,10 @@ class VAPTSECURE_Enforcer
     return $schema;
   }
 
-  private static function resolve_impl($meta)
+  public static function resolve_impl($meta)
   {
-    $status = $meta['status'] ?? 'draft';
-    $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
+    $status = strtolower($meta['status'] ?? 'draft');
+    $raw = (in_array($status, ['test', 'release', 'implemented']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
     return $raw ? json_decode($raw, true) : [];
   }
 
@@ -336,14 +343,18 @@ class VAPTSECURE_Enforcer
     // [FIX v1.4.0] Only apply key filter when we actually have active keys.
     $active_keys = self::get_active_file_keys();
     if (!empty($active_keys)) {
+      error_log('VAPT DEBUG rebuild_config - Filtering enforced features by active keys.');
       $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
         return in_array($feat['feature_key'], $active_keys);
       });
+    } else {
+      error_log('VAPT DEBUG rebuild_config - No active keys found, applying all enforced features.');
     }
 
     $all_rules = array();
 
     if (!empty($enforced_features)) {
+      error_log('VAPT DEBUG rebuild_config - Found ' . count($enforced_features) . ' enforced features after filtering.');
       foreach ($enforced_features as $meta) {
         $schema = self::resolve_schema($meta);
         $impl_data = self::resolve_impl($meta);
@@ -352,11 +363,16 @@ class VAPTSECURE_Enforcer
         if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
           $feature_rules = VAPTSECURE_Config_Driver::generate_rules($impl_data, $schema);
           if (!empty($feature_rules)) {
+            error_log("VAPT DEBUG rebuild_config - Generated rules for " . $meta['feature_key']);
             $all_rules[] = "// Rule for: " . ($meta['feature_key']);
             $all_rules = array_merge($all_rules, $feature_rules);
+          } else {
+            error_log("VAPT DEBUG rebuild_config - No config rules generated for " . $meta['feature_key']);
           }
         }
       }
+    } else {
+      error_log('VAPT DEBUG rebuild_config - No enforced features found to process.');
     }
 
     return VAPTSECURE_Config_Driver::write_batch($all_rules);
@@ -436,10 +452,13 @@ class VAPTSECURE_Enforcer
     if (is_array($directive)) {
       // 1. Check for specific platform keys
       $platform_keys = [
-        $platform,
+        $platform, // e.g. .htaccess or wp-config.php
         '.' . ltrim($platform, '.'), // .htaccess
-        str_replace('-', '_', $platform), // wp_config
-        str_replace('_', '-', $platform), // wp-config
+        str_replace('-', '_', $platform), // wp_config.php
+        str_replace('_', '-', $platform), // wp-config.php
+        basename($platform, '.php'), // wp-config -> wp_config below
+        str_replace('-', '_', basename($platform, '.php')), // wp_config
+        ltrim(basename($platform, '.php'), '.'), // htaccess
       ];
 
       foreach ($platform_keys as $pK) {
