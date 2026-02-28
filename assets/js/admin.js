@@ -2319,7 +2319,19 @@ window.vaptScriptLoaded = true;
               setViewFeaturesModalDomain(d);
               setViewFeaturesModalOpen(true);
             }
-          }, `${d.features.length} ${__('Features', 'vaptsecure')} `) : `${(Array.isArray(d.features) ? d.features.length : 0)} ${__('Features', 'vaptsecure')} `),
+          }, `${(() => {
+            const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
+              const feature = features.find(f => f.key === featureKey);
+              return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
+            });
+            return releaseFeatures.length;
+          })()} ${__('Features', 'vaptsecure')} `) : `${(() => {
+            const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
+              const feature = features.find(f => f.key === featureKey);
+              return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
+            });
+            return releaseFeatures.length;
+          })()} ${__('Features', 'vaptsecure')} `),
           el('td', null, el('span', { style: { fontSize: '12px', color: (d.license_type !== 'developer' && d.manual_expiry_date && new Date(d.manual_expiry_date) < new Date()) ? '#dc2626' : 'inherit' } },
             d.license_type === 'developer'
               ? __('Never', 'vaptsecure')
@@ -2570,7 +2582,7 @@ window.vaptScriptLoaded = true;
             overflowY: 'auto'
           }
         },
-          (features || []).filter(f => (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key)).map(f =>
+          (displayFeatures || []).filter(f => (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key)).map(f =>
             el(Card, {
               key: f.key,
               style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }

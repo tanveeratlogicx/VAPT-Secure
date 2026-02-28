@@ -752,6 +752,11 @@
   };
 
   const TestRunnerControl = ({ control, featureData, featureKey }) => {
+    // Hide Site Integrity Check for non-superadmin users only
+    const isSuperAdmin = window.vaptSecureSettings && window.vaptSecureSettings.isSuper;
+    if (control.label === 'Site Integrity Check' && !isSuperAdmin) {
+      return null;
+    }
     const [status, setStatus] = useState('idle');
     const [result, setResult] = useState(null);
     const [progress, setProgress] = useState(null);
