@@ -1972,7 +1972,7 @@ window.vaptScriptLoaded = true;
     ]);
   };
 
-  const DomainFeatures = ({ domains = [], features = [], isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains = [], setSelectedDomains, dataFiles = [], selectedFile, onSelectFile }) => {
+  const DomainFeatures = ({ domains = [], features = [], isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains = [], setSelectedDomains, dataFiles = [], selectedFile, onSelectFile, deletingId }) => {
     const [newDomain, setNewDomain] = useState('');
     const [isWildcardNew, setIsWildcardNew] = useState(false);
     const [activeCategory, setActiveCategory] = useState('all');
@@ -2075,303 +2075,236 @@ window.vaptScriptLoaded = true;
       };
     }, [domains]);
 
-    return el(PanelBody, { className: 'vapt-feature-panel', title: __('Domain Specific Features', 'vaptsecure'), initialOpen: true }, [
-      // Summary Pill Row (Synced with Feature List)
-      el('div', {
-        style: {
-          display: 'flex',
-          gap: '15px',
-          padding: '6px 15px',
-          background: '#fff',
-          border: '1px solid #dcdcde',
-          borderRadius: '4px',
-          marginBottom: '10px',
-          alignItems: 'center',
-          fontSize: '11px',
-          color: '#333'
-        }
-      }, [
-        el('span', { style: { fontWeight: '700', textTransform: 'uppercase', fontSize: '10px', color: '#666' } }, __('Summary:', 'vaptsecure')),
-        el('span', { style: { fontWeight: '600', color: '#2271b1' } }, sprintf(__('Total Domains: %d', 'vaptsecure'), domainStats.total)),
-        el('span', { style: { color: '#46b450', fontWeight: '700' } }, sprintf(__('Active: %d', 'vaptsecure'), domainStats.active)),
-        el('span', { style: { color: '#d63638', fontWeight: '600' } }, sprintf(__('Disabled: %d', 'vaptsecure'), domainStats.disabled)),
-
+    return el(Fragment, null, [
+      el(PanelBody, { className: 'vapt-feature-panel', title: __('Domain Specific Features', 'vaptsecure'), initialOpen: true }, [
+        // Summary Pill Row (Synced with Feature List)
         el('div', {
           style: {
-            marginLeft: 'auto',
             display: 'flex',
+            gap: '15px',
+            padding: '6px 15px',
+            background: '#fff',
+            border: '1px solid #dcdcde',
+            borderRadius: '4px',
+            marginBottom: '10px',
             alignItems: 'center',
-            gap: '12px',
-            padding: '2px 0'
+            fontSize: '11px',
+            color: '#333'
           }
         }, [
-          el('span', { style: { fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', color: '#64748b' } }, __('Data Sources:', 'vaptsecure')),
-          el('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } }, [
-            // "All Data Files" Option (Only show for 3+ files)
-            dataFiles.length >= 3 && el('label', {
-              key: 'all-files',
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: (selectedFile || '').split(',').includes('__all__') ? '700' : '500',
-                color: (selectedFile || '').split(',').includes('__all__') ? '#1e3a8a' : '#64748b'
-              }
-            }, [
-              el('input', {
-                type: 'checkbox',
-                checked: (selectedFile || '').split(',').includes('__all__'),
-                onChange: () => onSelectFile('__all__'),
-                style: { margin: 0, width: '12px', height: '12px' }
-              }),
-              __('All Data Files', 'vaptsecure')
-            ]),
-            // Individual Files
-            ...dataFiles.map(file => {
-              const BASELINE_FILE = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
-              const isBaseline = file.value === BASELINE_FILE;
-              const isAllSelected = (selectedFile || '').split(',').includes('__all__');
-              const isChecked = isAllSelected || (selectedFile || '').split(',').includes(file.value) || isBaseline;
+          el('span', { style: { fontWeight: '700', textTransform: 'uppercase', fontSize: '10px', color: '#666' } }, __('Summary:', 'vaptsecure')),
+          el('span', { style: { fontWeight: '600', color: '#2271b1' } }, sprintf(__('Total Domains: %d', 'vaptsecure'), domainStats.total)),
+          el('span', { style: { color: '#46b450', fontWeight: '700' } }, sprintf(__('Active: %d', 'vaptsecure'), domainStats.active)),
+          el('span', { style: { color: '#d63638', fontWeight: '600' } }, sprintf(__('Disabled: %d', 'vaptsecure'), domainStats.disabled)),
 
-              return el('label', {
-                key: file.value,
+          el('div', {
+            style: {
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '2px 0'
+            }
+          }, [
+            el('span', { style: { fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', color: '#64748b' } }, __('Data Sources:', 'vaptsecure')),
+            el('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } }, [
+              // "All Data Files" Option (Only show for 3+ files)
+              dataFiles.length >= 3 && el('label', {
+                key: 'all-files',
                 style: {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  cursor: isBaseline ? 'default' : 'pointer',
+                  cursor: 'pointer',
                   fontSize: '10px',
-                  fontWeight: isChecked ? '700' : '500',
-                  color: isChecked ? '#1e3a8a' : '#64748b',
-                  opacity: (isBaseline && !isAllSelected) ? 0.7 : 1
+                  fontWeight: (selectedFile || '').split(',').includes('__all__') ? '700' : '500',
+                  color: (selectedFile || '').split(',').includes('__all__') ? '#1e3a8a' : '#64748b'
                 }
               }, [
                 el('input', {
                   type: 'checkbox',
-                  checked: isChecked,
-                  disabled: isAllSelected || isBaseline,
-                  onChange: () => onSelectFile(file.value),
+                  checked: (selectedFile || '').split(',').includes('__all__'),
+                  onChange: () => onSelectFile('__all__'),
                   style: { margin: 0, width: '12px', height: '12px' }
                 }),
-                file.label
-              ]);
-            })
+                __('All Data Files', 'vaptsecure')
+              ]),
+              // Individual Files
+              ...dataFiles.map(file => {
+                const BASELINE_FILE = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
+                const isBaseline = file.value === BASELINE_FILE;
+                const isAllSelected = (selectedFile || '').split(',').includes('__all__');
+                const isChecked = isAllSelected || (selectedFile || '').split(',').includes(file.value) || isBaseline;
+
+                return el('label', {
+                  key: file.value,
+                  style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: isBaseline ? 'default' : 'pointer',
+                    fontSize: '10px',
+                    fontWeight: isChecked ? '700' : '500',
+                    color: isChecked ? '#1e3a8a' : '#64748b',
+                    opacity: (isBaseline && !isAllSelected) ? 0.7 : 1
+                  }
+                }, [
+                  el('input', {
+                    type: 'checkbox',
+                    checked: isChecked,
+                    disabled: isAllSelected || isBaseline,
+                    onChange: () => onSelectFile(file.value),
+                    style: { margin: 0, width: '12px', height: '12px' }
+                  }),
+                  file.label
+                ]);
+              })
+            ])
           ])
         ])
       ]),
 
-      el('div', {
-        style: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '10px'
-        }
-      }, [
-        el('div', { key: 'add-domain-header', style: { fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' } }, __('Add New Domain', 'vaptsecure'))
-      ]),
-      el('div', {
-        key: 'add-domain-row',
-        style: {
-          marginBottom: '20px',
-          display: 'flex',
-          gap: '15px',
-          alignItems: 'center',
-          background: '#f8fafc',
-          padding: '15px',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0'
-        }
-      }, [
-        el('div', { style: { flex: 1 } }, [
-          el(TextControl, {
-            label: __('Domain Name', 'vaptsecure'),
-            value: newDomain,
-            onChange: (val) => setNewDomain(val),
-            placeholder: 'example.com',
-            __nextHasNoMarginBottom: true
-          })
-        ]),
-        el('div', { style: { minWidth: '150px' } }, [
-          el(SelectControl, {
-            label: __('Type', 'vaptsecure'),
-            value: isWildcardNew ? 'wildcard' : 'standard',
-            options: [
-              { label: __('Standard', 'vaptsecure'), value: 'standard' },
-              { label: __('Wildcard (*.domain)', 'vaptsecure'), value: 'wildcard' }
-            ],
-            onChange: (val) => setIsWildcardNew(val === 'wildcard'),
-            __nextHasNoMarginBottom: true
-          })
-        ]),
-        el(Button, {
-          isPrimary: true,
-          onClick: () => {
-            const domain = (newDomain || '').trim();
-            if (!domain) return;
-            // console.log('Adding domain:', domain, 'isWildcard:', isWildcardNew);
-            addDomain(domain, isWildcardNew);
-            setNewDomain('');
-            setIsWildcardNew(false);
-          },
-          style: { alignSelf: 'flex-end', height: '32px' }
-        }, __('Add Domain', 'vaptsecure')),
-        (selectedDomains || []).length > 0 && el(Button, {
-          isDestructive: true,
-          onClick: () => {
-            const count = (selectedDomains || []).length;
-            setConfirmState({
-              message: sprintf(__('Are you sure you want to delete %d selected domains?', 'vaptsecure'), count),
-              onConfirm: () => {
-                batchDeleteDomains(selectedDomains);
-                setConfirmState(null);
-              },
-              isDestructive: true
-            });
-          },
-          style: { alignSelf: 'flex-end', height: '32px', marginLeft: 'auto' }
-        }, __('Delete Selected', 'vaptsecure'))
-      ]),
-
-      el('table', { key: 'table', className: 'wp-list-table widefat fixed striped' }, [
-        el('thead', null, el('tr', null, [
-          el('th', { style: { width: '40px' } }, el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
-            el(CheckboxControl, {
-              checked: (domains || []).length > 0 && (selectedDomains || []).length === (domains || []).length,
-              indeterminate: (selectedDomains || []).length > 0 && (selectedDomains || []).length < (domains || []).length,
-              onChange: (val) => setSelectedDomains(val ? (domains || []).map(d => d.id) : []),
+      el('div', { key: 'domain-table-wrap', style: { marginTop: '10px' } }, [
+        el('table', { key: 'table', className: 'wp-list-table widefat fixed striped' }, [
+          el('thead', null, el('tr', null, [
+            el('th', { style: { width: '40px' } }, el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+              el(CheckboxControl, {
+                checked: (domains || []).length > 0 && (selectedDomains || []).length === (domains || []).length,
+                indeterminate: (selectedDomains || []).length > 0 && (selectedDomains || []).length < (domains || []).length,
+                onChange: (val) => setSelectedDomains(val ? (domains || []).map(d => d.id) : []),
+                __nextHasNoMarginBottom: true
+              }),
+              el('span', { style: { fontSize: '10px', opacity: 0.6, fontWeight: 600, whiteSpace: 'nowrap' } }, __('ALL', 'vaptsecure'))
+            ])),
+            el('th', {
+              style: { cursor: 'pointer', userSelect: 'none' },
+              onClick: () => requestSort('domain')
+            }, [
+              __('Domain', 'vaptsecure'),
+              el(SortIndicator, { column: 'domain' })
+            ]),
+            el('th', { style: { width: '100px' } }, __('Status', 'vaptsecure')),
+            el('th', {
+              style: { width: '180px', cursor: 'pointer', userSelect: 'none' },
+              onClick: () => requestSort('is_wildcard')
+            }, [
+              __('Type', 'vaptsecure'),
+              el(SortIndicator, { column: 'is_wildcard' })
+            ]),
+            el('th', { style: { width: '120px' } }, __('License', 'vaptsecure')),
+            el('th', null, __('Features Enabled', 'vaptsecure')),
+            el('th', { style: { width: '120px' } }, __('Expiry Date', 'vaptsecure')),
+            el('th', { style: { width: '220px' } }, __('Actions', 'vaptsecure'))
+          ])),
+          el('tbody', null, sortedDomains.map((d) => el('tr', { key: d.id }, [
+            el('td', null, el(CheckboxControl, {
+              checked: (selectedDomains || []).includes(d.id),
+              onChange: () => toggleDomainSelection(d.id),
               __nextHasNoMarginBottom: true
-            }),
-            el('span', { style: { fontSize: '10px', opacity: 0.6, fontWeight: 600, whiteSpace: 'nowrap' } }, __('ALL', 'vaptsecure'))
-          ])),
-          el('th', {
-            style: { cursor: 'pointer', userSelect: 'none' },
-            onClick: () => requestSort('domain')
-          }, [
-            __('Domain', 'vaptsecure'),
-            el(SortIndicator, { column: 'domain' })
-          ]),
-          el('th', { style: { width: '100px' } }, __('Status', 'vaptsecure')),
-          el('th', {
-            style: { width: '180px', cursor: 'pointer', userSelect: 'none' },
-            onClick: () => requestSort('is_wildcard')
-          }, [
-            __('Type', 'vaptsecure'),
-            el(SortIndicator, { column: 'is_wildcard' })
-          ]),
-          el('th', { style: { width: '120px' } }, __('License', 'vaptsecure')),
-          el('th', null, __('Features Enabled', 'vaptsecure')),
-          el('th', { style: { width: '120px' } }, __('Expiry Date', 'vaptsecure')),
-          el('th', { style: { width: '220px' } }, __('Actions', 'vaptsecure'))
-        ])),
-        el('tbody', null, sortedDomains.map((d) => el('tr', { key: d.id }, [
-          el('td', null, el(CheckboxControl, {
-            checked: (selectedDomains || []).includes(d.id),
-            onChange: () => toggleDomainSelection(d.id),
-            __nextHasNoMarginBottom: true
-          })),
-          el('td', null, el('strong', null, d.domain)),
-          el('td', null, el(Button, {
-            isLink: true,
-            onClick: () => {
-              const currentEnabled = !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0);
-              addDomain(d.domain, (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1), !currentEnabled, d.id);
-            },
-            style: { color: (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? '#d63638' : '#00a32a', fontWeight: 600, textDecoration: 'none' },
-            title: __('Click to toggle domain status', 'vaptsecure')
-          }, [
-            el(Dashicon, { icon: (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? 'hidden' : 'visibility', size: 16, style: { marginRight: '4px' } }),
-            (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? __('Disabled', 'vaptsecure') : __('Active', 'vaptsecure')
-          ])),
-          el('td', null, el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
-            el(Button, {
+            })),
+            el('td', null, el('strong', null, d.domain)),
+            el('td', null, el(Button, {
+              isLink: true,
+              onClick: () => {
+                const currentEnabled = !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0);
+                addDomain(d.domain, (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1), !currentEnabled, d.id);
+              },
+              style: { color: (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? '#d63638' : '#00a32a', fontWeight: 600, textDecoration: 'none' },
+              title: __('Click to toggle domain status', 'vaptsecure')
+            }, [
+              el(Dashicon, { icon: (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? 'hidden' : 'visibility', size: 16, style: { marginRight: '4px' } }),
+              (d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0) ? __('Disabled', 'vaptsecure') : __('Active', 'vaptsecure')
+            ])),
+            el('td', null, el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
+              el(Button, {
+                isLink: true,
+                onClick: (e) => {
+                  e.preventDefault();
+                  const currentWildcard = (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1);
+                  const nextWildcard = !currentWildcard;
+                  addDomain(d.domain, nextWildcard, !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0), d.id);
+                },
+                style: { textDecoration: 'none', color: (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1) ? '#2271b1' : '#64748b', fontWeight: 600 },
+                title: __('Click to toggle domain type', 'vaptsecure')
+              }, (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1) ? __('Wildcard', 'vaptsecure') : __('Standard', 'vaptsecure')),
+              el(Dashicon, { icon: 'update', size: 14, style: { opacity: 0.5 } })
+            ])),
+            el('td', null, el('span', {
+              style: {
+                display: 'inline-block',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+                background: d.license_type === 'developer' ? '#f3e8ff' : (d.license_type === 'pro' ? '#fff1f2' : '#f1f5f9'),
+                color: d.license_type === 'developer' ? '#6b21a8' : (d.license_type === 'pro' ? '#be123c' : '#475569'),
+                border: '1px solid transparent'
+              }
+            }, d.license_type || 'Standard')),
+            el('td', null, (Array.isArray(d.features) && d.features.length > 0) ? el(Button, {
               isLink: true,
               onClick: (e) => {
                 e.preventDefault();
-                const currentWildcard = (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1);
-                const nextWildcard = !currentWildcard;
-                addDomain(d.domain, nextWildcard, !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0), d.id);
-              },
-              style: { textDecoration: 'none', color: (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1) ? '#2271b1' : '#64748b', fontWeight: 600 },
-              title: __('Click to toggle domain type', 'vaptsecure')
-            }, (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1) ? __('Wildcard', 'vaptsecure') : __('Standard', 'vaptsecure')),
-            el(Dashicon, { icon: 'update', size: 14, style: { opacity: 0.5 } })
-          ])),
-          el('td', null, el('span', {
-            style: {
-              display: 'inline-block',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '11px',
-              fontWeight: 600,
-              textTransform: 'capitalize',
-              background: d.license_type === 'developer' ? '#f3e8ff' : (d.license_type === 'pro' ? '#fff1f2' : '#f1f5f9'),
-              color: d.license_type === 'developer' ? '#6b21a8' : (d.license_type === 'pro' ? '#be123c' : '#475569'),
-              border: '1px solid transparent'
-            }
-          }, d.license_type || 'Standard')),
-          el('td', null, (Array.isArray(d.features) && d.features.length > 0) ? el(Button, {
-            isLink: true,
-            onClick: (e) => {
-              e.preventDefault();
-              setViewFeaturesModalDomain(d);
-              setViewFeaturesModalOpen(true);
-            }
-          }, `${(() => {
-            const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
-              const feature = features.find(f => f.key === featureKey);
-              return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
-            });
-            return releaseFeatures.length;
-          })()} ${__('Features', 'vaptsecure')} `) : `${(() => {
-            const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
-              const feature = features.find(f => f.key === featureKey);
-              return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
-            });
-            return releaseFeatures.length;
-          })()} ${__('Features', 'vaptsecure')} `),
-          el('td', null, el('span', { style: { fontSize: '12px', color: (d.license_type !== 'developer' && d.manual_expiry_date && new Date(d.manual_expiry_date) < new Date()) ? '#dc2626' : 'inherit' } },
-            d.license_type === 'developer'
-              ? __('Never', 'vaptsecure')
-              : (d.manual_expiry_date ? new Date(d.manual_expiry_date).toLocaleDateString() : '-')
-          )),
-          el('td', null, el('div', { style: { display: 'flex', gap: '8px' } }, [
-            el(Button, {
-              isSecondary: true,
-              isSmall: true,
-              onClick: () => {
-                setEditDomainData({
-                  id: d.id,
-                  domain: d.domain,
-                  is_wildcard: (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1),
-                  is_enabled: !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0)
-                });
-                setEditModalOpen(true);
+                setViewFeaturesModalDomain(d);
+                setViewFeaturesModalOpen(true);
               }
-            }, __('Edit', 'vaptsecure')),
-            el(Button, {
-              isSecondary: true,
-              isSmall: true,
-              onClick: () => { setSelectedDomain(d); setDomainModalOpen(true); }
-            }, __('Manage Features', 'vaptsecure')),
-            el(Button, {
-              isDestructive: true,
-              isSmall: true,
-              onClick: () => {
-                setConfirmState({
-                  message: sprintf(__('Are you sure you want to delete the domain "%s"? This action cannot be undone.', 'vaptsecure'), d.domain),
-                  onConfirm: () => {
-                    deleteDomain(d.id);
-                    setConfirmState(null);
-                  },
-                  isDestructive: true
-                });
-              }
-            }, __('Delete', 'vaptsecure'))
-          ]))
-        ])))
+            }, `${(() => {
+              const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
+                const feature = features.find(f => f.key === featureKey);
+                return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
+              });
+              return releaseFeatures.length;
+            })()} ${__('Features', 'vaptsecure')} `) : `${(() => {
+              const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
+                const feature = features.find(f => f.key === featureKey);
+                return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
+              });
+              return releaseFeatures.length;
+            })()} ${__('Features', 'vaptsecure')} `),
+            el('td', null, el('span', { style: { fontSize: '12px', color: (d.license_type !== 'developer' && d.manual_expiry_date && new Date(d.manual_expiry_date) < new Date()) ? '#dc2626' : 'inherit' } },
+              d.license_type === 'developer'
+                ? __('Never', 'vaptsecure')
+                : (d.manual_expiry_date ? new Date(d.manual_expiry_date).toLocaleDateString() : '-')
+            )),
+            el('td', null, el('div', { style: { display: 'flex', gap: '8px' } }, [
+              el(Button, {
+                isSecondary: true,
+                isSmall: true,
+                onClick: () => {
+                  setEditDomainData({
+                    id: d.id,
+                    domain: d.domain,
+                    is_wildcard: (d.is_wildcard === '1' || d.is_wildcard === true || d.is_wildcard === 1),
+                    is_enabled: !(d.is_enabled === '0' || d.is_enabled === false || d.is_enabled === 0)
+                  });
+                  setEditModalOpen(true);
+                }
+              }, __('Edit', 'vaptsecure')),
+              el(Button, {
+                isSecondary: true,
+                isSmall: true,
+                onClick: () => { setSelectedDomain(d); setDomainModalOpen(true); }
+              }, __('Manage Features', 'vaptsecure')),
+              el(Button, {
+                isDestructive: true,
+                isSmall: true,
+                isBusy: deletingId === d.id,
+                disabled: deletingId === d.id,
+                onClick: () => {
+                  setConfirmState({
+                    message: sprintf(__('Are you sure you want to delete the domain "%s"? This action cannot be undone.', 'vaptsecure'), d.domain),
+                    onConfirm: () => {
+                      deleteDomain(d.id);
+                      setConfirmState(null);
+                    },
+                    isDestructive: true
+                  });
+                }
+              }, deletingId === d.id ? __('Deleting...', 'vaptsecure') : __('Delete', 'vaptsecure'))
+            ]))
+          ])))
+        ])
       ]),
 
       // Edit Domain Modal
@@ -2650,7 +2583,7 @@ window.vaptScriptLoaded = true;
       name: 'VAPT Security',
       description: '',
       author: 'Tanveer Malik',
-      plugin_uri: 'https://vapt.builder',
+      plugin_uri: 'https://vaptsecure.net',
       author_uri: 'https://tanveermalik.com',
       text_domain: 'vapt-security'
     });
@@ -2984,7 +2917,7 @@ window.vaptScriptLoaded = true;
     ]);
   };
 
-  const LicenseManager = ({ domains, fetchData, isSuper, loading, addDomain, deleteDomain, globalSetConfirmState }) => {
+  const LicenseManager = ({ domains, fetchData, isSuper, loading, addDomain, deleteDomain, globalSetConfirmState, deletingId }) => {
     // Manage state for the selected domain (if multiple, allows switching)
     const [selectedDomainId, setSelectedDomainId] = useState(() => (Array.isArray(domains) && domains.length > 0) ? domains[0].id : null);
 
@@ -3021,6 +2954,9 @@ window.vaptScriptLoaded = true;
       license_scope: 'single',
       installation_limit: 1
     });
+
+    // New Domain Mode State
+    const [isCreatingNew, setIsCreatingNew] = useState(false);
 
     // Sorting and Filtering state for the table
     const [sortBy, setSortBy] = useState('domain');
@@ -3102,7 +3038,8 @@ window.vaptScriptLoaded = true;
       }
     }, [currentDomain, isSaving, loading]);
 
-    const isDirty = currentDomain ? (
+    const isDirty = (currentDomain || isCreatingNew) ? (
+      isCreatingNew ||
       formState.domain !== (currentDomain.domain || '') ||
       formState.is_wildcard !== !!parseInt(currentDomain.is_wildcard || 0) ||
       formState.license_id !== (currentDomain.license_id || '') ||
@@ -3183,7 +3120,7 @@ window.vaptScriptLoaded = true;
       });
 
       let payload = {
-        id: currentDomain.id,
+        id: isCreatingNew ? undefined : currentDomain.id,
         domain: formState.domain,
         is_wildcard: formState.is_wildcard ? 1 : 0,
         license_id: formState.license_id,
@@ -3222,15 +3159,19 @@ window.vaptScriptLoaded = true;
         data: payload
       }).then(res => {
         if (res.success && res.domain) {
-          setLocalStatus({ message: __('License Updated!', 'vaptsecure'), type: 'success' });
+          setLocalStatus({ message: isCreatingNew ? __('Domain Registered!', 'vaptsecure') : __('License Updated!', 'vaptsecure'), type: 'success' });
           return fetchData().finally(() => {
             setIsSaving(false);
+            if (isCreatingNew) {
+              setIsCreatingNew(false);
+              setSelectedDomainId(res.domain.id);
+            }
             setTimeout(() => setLocalStatus(null), 3000);
           });
         }
         setIsSaving(false);
       }).catch(err => {
-        setLocalStatus({ message: __('Update Failed', 'vaptsecure'), type: 'error' });
+        setLocalStatus({ message: isCreatingNew ? __('Failed to register', 'vaptsecure') : __('Update Failed', 'vaptsecure'), type: 'error' });
         setIsSaving(false);
         setTimeout(() => setLocalStatus(null), 3000);
       });
@@ -3363,12 +3304,26 @@ window.vaptScriptLoaded = true;
         el('div', { className: 'vapt-license-card' }, [
           el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' } }, [
             el('div', { style: { flex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
-              el('h3', { style: { margin: 0 } }, __('Add License', 'vaptsecure')),
-              ((Array.isArray(domains) && domains.length > 1) ?
-                el('span', { style: { color: '#dc3232', fontWeight: 500, fontSize: '13px', marginRight: '5px' } }, __('Select Domain Context', 'vaptsecure'))
-                : null)
+              el('h3', { style: { margin: 0 } }, isCreatingNew ? __('Register New Domain', 'vaptsecure') : __('Update License', 'vaptsecure')),
+              (!isCreatingNew && el(Button, {
+                isSmall: true,
+                isSecondary: true,
+                onClick: () => {
+                  setIsCreatingNew(true);
+
+                  const baseDate = new Date();
+                  baseDate.setDate(baseDate.getDate() + 30); // Default to standard 30 days
+                  const defaultExpiry = baseDate.toISOString().split('T')[0];
+
+                  setFormState({
+                    domain: '', is_wildcard: false, license_id: '',
+                    license_type: 'standard', manual_expiry_date: defaultExpiry,
+                    auto_renew: false, license_scope: 'single', installation_limit: 1
+                  });
+                }
+              }, __('+ Add New Domain', 'vaptsecure')))
             ]),
-            ((Array.isArray(domains) && domains.length > 1) ? el('div', { style: { flex: 1, minWidth: '120px' } },
+            (!isCreatingNew && (Array.isArray(domains) && domains.length > 1) ? el('div', { style: { flex: 1, minWidth: '120px' } },
               el(SelectControl, {
                 value: selectedDomainId,
                 options: domains.map(d => ({ label: d.domain, value: d.id })),
@@ -3379,13 +3334,14 @@ window.vaptScriptLoaded = true;
             ) : el('div', { style: { flex: 1, minWidth: '120px' } }))
           ]),
 
-          el('div', { style: { display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '15px' } }, [
+          el('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '15px' } }, [
             el('div', { style: { flex: 2 } }, el(TextControl, {
-              label: __('Domain Name', 'vaptsecure'),
+              label: isCreatingNew ? __('New Domain Name', 'vaptsecure') : __('Domain Name (Rename)', 'vaptsecure'),
               value: formState.domain,
               disabled: isSaving,
               onChange: (val) => setFormState({ ...formState, domain: val }),
-              style: { marginBottom: 0 }
+              style: { marginBottom: 0 },
+              help: !isCreatingNew ? __('Warning: Changing this will rename the current domain.', 'vaptsecure') : ''
             })
             ),
 
@@ -3490,18 +3446,24 @@ window.vaptScriptLoaded = true;
             el(Button, {
               isPrimary: true,
               isBusy: isSaving && !localStatus?.message.includes('Manual'),
-              disabled: !isDirty || isSaving,
+              disabled: !isDirty || isSaving || !formState.domain,
               onClick: () => handleUpdate(false)
-            }, __('Update License', 'vaptsecure')),
+            }, isCreatingNew ? __('Register Domain & License', 'vaptsecure') : __('Update License', 'vaptsecure')),
 
-            el(Button, {
+            (isCreatingNew && el(Button, {
+              isSecondary: true,
+              disabled: isSaving,
+              onClick: () => setIsCreatingNew(false)
+            }, __('Cancel', 'vaptsecure'))),
+
+            (!isCreatingNew && el(Button, {
               isSecondary: true,
               isBusy: isSaving && localStatus?.message.includes('Manual'),
               disabled: formState.auto_renew || isSaving,
               onClick: () => handleUpdate(true)
-            }, __('Manual Renew', 'vaptsecure')),
+            }, __('Manual Renew', 'vaptsecure'))),
 
-            (currentDomain.renewals_count > 0) && el('div', { className: 'vapt-correction-controls' }, [
+            (!isCreatingNew && currentDomain.renewals_count > 0) && el('div', { className: 'vapt-correction-controls' }, [
               el(Button, {
                 className: 'is-link',
                 onClick: () => handleRollback('undo')
@@ -3645,8 +3607,33 @@ window.vaptScriptLoaded = true;
                       isDestructive: true,
                       onConfirm: () => { deleteDomain(dom.id); globalSetConfirmState(null); }
                     });
+                  },
+                  isBusy: deletingId === dom.id,
+                  disabled: deletingId === dom.id
+                }, deletingId === dom.id ? __('Deleting...', 'vaptsecure') : __('Delete', 'vaptsecure')),
+                isSuper && dom.manual_expiry_date && el(Button, {
+                  isDestructive: true,
+                  isSmall: true,
+                  style: { marginLeft: '5px' },
+                  onClick: () => {
+                    globalSetConfirmState({
+                      isOpen: true,
+                      type: 'invalidate_license',
+                      message: __('Are you sure you want to invalidate this license? This will instantly trigger the kill-switch on the client side.', 'vaptsecure'),
+                      isDestructive: true,
+                      onConfirm: () => {
+                        apiFetch({
+                          path: 'vaptsecure/v1/domains/update',
+                          method: 'POST',
+                          data: { id: dom.id, action: 'invalidate' }
+                        }).then(() => {
+                          fetchData();
+                          globalSetConfirmState(null);
+                        });
+                      }
+                    });
                   }
-                }, __('Delete', 'vaptsecure'))
+                }, __('Invalidate', 'vaptsecure'))
               ]))
             ]))
           )
@@ -4842,6 +4829,8 @@ window.vaptScriptLoaded = true;
     const [sortBySource, setSortBySource] = useState(false); // Primary Sort
     const [sortSourceDirection, setSortSourceDirection] = useState('desc'); // Primary Sort Direction
 
+    const [deletingId, setDeletingId] = useState(null);
+
     // Field Mapping State
     const [fieldMapping, setFieldMapping] = useState(() => {
       const saved = localStorage.getItem('vaptsecure_field_mapping');
@@ -5080,10 +5069,12 @@ window.vaptScriptLoaded = true;
     };
 
     const deleteDomain = (domainId) => {
+      setDeletingId(domainId);
       apiFetch({
         path: `vaptsecure/v1/domains/delete?id=${domainId}`,
         method: 'DELETE'
-      }).then(() => fetchData());
+      }).then(() => fetchData())
+        .finally(() => setDeletingId(null));
     };
 
     const batchDeleteDomains = (ids) => {
@@ -5394,8 +5385,8 @@ window.vaptScriptLoaded = true;
             sortSourceDirection,
             setSortSourceDirection
           });
-          case 'license': return el(LicenseManager, { domains, fetchData, isSuper, loading, addDomain, deleteDomain, globalSetConfirmState: setConfirmState });
-          case 'domains': return el(DomainFeatures, { domains, features, isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains, setSelectedDomains, dataFiles, selectedFile, onSelectFile });
+          case 'license': return el(LicenseManager, { domains, fetchData, isSuper, loading, addDomain, deleteDomain, globalSetConfirmState: setConfirmState, deletingId });
+          case 'domains': return el(DomainFeatures, { domains, features, isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains, setSelectedDomains, dataFiles, selectedFile, onSelectFile, deletingId });
           case 'build': return el(BuildGenerator, { domains, features, activeFile: selectedFile, setAlertState });
           default: return null;
         }
