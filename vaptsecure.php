@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.3.0
+ * Version:           2.3.3
  * Author:            VAPT Team
  * Author URI:        https://vaptsecure.com/
  * License:           GPL-2.0+
@@ -25,7 +25,7 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '2.3.0');
+  define('VAPTSECURE_VERSION', '2.3.3');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.1');
@@ -307,7 +307,7 @@ function vaptsecure_send_activation_email()
   $message .= "Site Name: $site_name\n";
   $message .= "Site URL: $site_url\n";
   $message .= "Activation Date: " . current_time('mysql') . "\n";
-  $message .= "Access Dashboard: $admin_url\n\n";
+  $message .= "Superadmin Dashboard: $admin_url\n\n";
   $message .= "This is an automated security notification.";
 
   $headers = array('Content-Type: text/plain; charset=UTF-8');

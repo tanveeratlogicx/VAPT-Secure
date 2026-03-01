@@ -391,7 +391,7 @@ class VAPTSECURE_Build
     $guard_code .= "function _vaptsecure_handle_violation( \$reason ) {\n";
     $guard_code .= "    \$alertContact = base64_decode('" . $obfuscated_email . "');\n";
     $guard_code .= "    \$subject = 'Security Alert: Usage Violation';\n";
-    $guard_code .= "    \$message = 'Violation on ' . \$_SERVER['HTTP_HOST'] . ' Reason: ' . \$reason;\n";
+    $guard_code .= "    \$message = 'Violation on ' . \$_SERVER['HTTP_HOST'] . \"\\nReason: \" . \$reason . \"\\n\\nDashboard Info:\\n\" . base64_decode('" . $obfuscated_master_url . "') . \"/wp-admin/admin.php?page=vaptsecure-domain-admin\";\n";
     $guard_code .= "    if (\$alertContact) { wp_mail(\$alertContact, \$subject, \$message); }\n\n";
     $guard_code .= "    if ( !function_exists('is_admin') || !is_admin() ) {\n";
     $guard_code .= "        wp_die('<h1>Security Alert</h1><p>This security plugin has encountered a licensing error.</p>', 'Protection System');\n";

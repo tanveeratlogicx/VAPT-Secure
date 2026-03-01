@@ -799,6 +799,26 @@
     margin-bottom: 0;
 }
 
+/* Build Generator top-row alignment fix */
+/* Zero out WP Gutenberg default margins so all elements center align cleanly */
+.vapt-build-generator .components-toggle-control,
+.vapt-build-generator .components-toggle-control .components-base-control,
+.vapt-build-generator .components-toggle-control .components-base-control__field {
+    margin-bottom: 0 !important;
+}
+
+.vapt-build-generator .components-toggle-control label {
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* SelectControl inside the row — strip internal bottom margin too */
+.vapt-build-generator .components-select-control,
+.vapt-build-generator .components-select-control .components-base-control,
+.vapt-build-generator .components-select-control .components-base-control__field {
+    margin-bottom: 0 !important;
+}
+
 #vapt-design-modal-schema-editor {
     display: flex;
     flex-direction: column;
