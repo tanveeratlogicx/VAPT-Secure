@@ -149,6 +149,12 @@ class VAPTSECURE_REST
       'permission_callback' => array($this, 'check_permission'),
     ));
 
+    register_rest_route('vaptsecure/v1', '/license/verify', array(
+      'methods'  => 'POST',
+      'callback' => array($this, 'verify_license'),
+      'permission_callback' => '__return_true', // Public for client plugins
+    ));
+
     register_rest_route('vaptsecure/v1', '/domains/delete', array(
       'methods'  => 'DELETE',
       'callback' => array($this, 'delete_domain'),
@@ -1093,6 +1099,7 @@ class VAPTSECURE_REST
       $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $domain_id), ARRAY_N);
       $domain['features'] = array_column($feat_rows, 0);
       $domain['imported_at'] = get_option('vaptsecure_imported_at_' . $domain['domain'], null);
+      $domain['version'] = get_option('vaptsecure_imported_version_' . $domain['domain'], '1.0.0');
     }
 
     return new WP_REST_Response($domains, 200);
@@ -1144,6 +1151,14 @@ class VAPTSECURE_REST
     if ($license_scope === null && $current) $license_scope = $current['license_scope'] ?: 'single';
     if ($installation_limit === null && $current) $installation_limit = $current['installation_limit'] ?: 1;
 
+    // Auto-generate license ID for new domains if missing (Glitch Fix)
+    if (!$current && empty($license_id)) {
+      $prefix = 'STD-';
+      if ($license_type === 'pro') $prefix = 'PRO-';
+      if ($license_type === 'developer') $prefix = 'DEV-';
+      $license_id = $prefix . strtoupper(substr(md5(uniqid()), 0, 9));
+    }
+
     if ($manual_expiry_date) {
       $manual_expiry_date = date('Y-m-d 00:00:00', strtotime($manual_expiry_date));
     }
@@ -1152,7 +1167,9 @@ class VAPTSECURE_REST
     $current_exp_ts = ($current && !empty($current['manual_expiry_date'])) ? strtotime(date('Y-m-d', strtotime($current['manual_expiry_date']))) : 0;
     $new_exp_ts = $manual_expiry_date ? strtotime(date('Y-m-d', strtotime($manual_expiry_date))) : 0;
 
-    if ($action === 'undo' && !empty($history)) {
+    if ($action === 'invalidate') {
+      $manual_expiry_date = '1970-01-01 00:00:00';
+    } else if ($action === 'undo' && !empty($history)) {
       $last = array_pop($history);
       $days = (int) $last['duration_days'];
       $manual_expiry_date = date('Y-m-d 00:00:00', strtotime($current['manual_expiry_date'] . " -$days days"));
@@ -1228,6 +1245,39 @@ class VAPTSECURE_REST
     return new WP_REST_Response(array('success' => true, 'domain' => $fresh), 200);
   }
 
+  public function verify_license($request)
+  {
+    global $wpdb;
+    $data = $request->get_json_params();
+    if (!$data || !isset($data['license_id']) || !isset($data['domain'])) {
+      return new WP_REST_Response(array('status' => 'error', 'message' => 'Invalid payload'), 400);
+    }
+
+    $license_id = sanitize_text_field($data['license_id']);
+    $domain = sanitize_text_field($data['domain']);
+
+    $table_name = $wpdb->prefix . 'vaptsecure_domains';
+    $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE license_id = %s", $license_id), ARRAY_A);
+
+    if (!$record) {
+      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'License not found'), 200);
+    }
+
+    if ((int)$record['is_enabled'] !== 1) {
+      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'License revoked'), 200);
+    }
+
+    if (!empty($record['manual_expiry_date']) && strtotime($record['manual_expiry_date']) < time()) {
+      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'License expired'), 200);
+    }
+
+    if ($record['license_scope'] === 'single' && $record['domain'] !== $domain) {
+      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'Domain mismatch'), 200);
+    }
+
+    return new WP_REST_Response(array('status' => 'valid'), 200);
+  }
+
   public function delete_domain($request)
   {
     $domain_id = $request->get_param('id');
@@ -1292,6 +1342,9 @@ class VAPTSECURE_REST
     require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
     try {
       $download_url = VAPTSECURE_Build::generate($data);
+      if (!empty($data['domain']) && !empty($data['version'])) {
+        update_option('vaptsecure_imported_version_' . $data['domain'], $data['version']);
+      }
       return new WP_REST_Response(array('success' => true, 'download_url' => $download_url), 200);
     } catch (Exception $e) {
       return new WP_REST_Response(array('success' => false, 'message' => $e->getMessage()), 500);
@@ -1318,6 +1371,7 @@ class VAPTSECURE_REST
     $saved = file_put_contents($filepath, $config_content);
 
     if ($saved !== false) {
+      update_option('vaptsecure_imported_version_' . $domain, $version);
       return new WP_REST_Response(array('success' => true, 'path' => $filepath, 'filename' => $filename), 200);
     } else {
       return new WP_REST_Response(array('error' => 'Failed to write config file to plugin root'), 500);
