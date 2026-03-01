@@ -179,7 +179,9 @@ class VAPTSECURE_Build
       // Ensure NO markdown files are copied except what is explicitly processed later
       if (!$item->isDir() && strtolower(pathinfo($item->getFilename(), PATHINFO_EXTENSION)) === 'md') {
         // We will generate our own README.md and USER_GUIDE.md later, block all .md files globally
-        continue;
+        if (strpos($subPath, 'data' . DIRECTORY_SEPARATOR) !== 0) {
+          continue;
+        }
       }
 
       // Handle Data Directory (Intelligent Bundling)
@@ -187,7 +189,14 @@ class VAPTSECURE_Build
         if ($active_data_file) {
           if ($item->isDir()) {
             // Let the data directory pass so it gets created
+            if ($subPath !== 'data') {
+              continue;
+            }
           } else {
+            // Check if file is inside a subdirectory of data/ and skip it
+            if (dirname($subPath) !== 'data') {
+              continue;
+            }
             $ext = strtolower(pathinfo($item->getFilename(), PATHINFO_EXTENSION));
 
             // Only consider markdown and JSON files
@@ -208,7 +217,7 @@ class VAPTSECURE_Build
                   foreach ($md_files as $md_file) {
                     $md_content = file_get_contents($md_file);
                     // Look for filenames ending in .json mentioned in the markdown
-                    if (preg_match_all('/([a-zA-Z0-9_\-]+\.json)/i', $md_content, $matches)) {
+                    if (preg_match_all('/([a-zA-Z0-9_\-\.]+\.json)/i', $md_content, $matches)) {
                       foreach ($matches[1] as $match) {
                         $allowed_json_files[] = strtolower($match);
                       }
