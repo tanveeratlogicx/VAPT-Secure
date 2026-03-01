@@ -34,9 +34,9 @@ class VAPTSECURE_Build
     // Master URL Local Environment Detection
     $current_host = $_SERVER['HTTP_HOST'];
     if (preg_match('/\.local$|\.test$|localhost|^127\.0\.0\.1/', $current_host)) {
-        $master_url = 'https://vaptsecure.net';
+      $master_url = 'https://vaptsecure.net';
     } else {
-        $master_url = get_site_url();
+      $master_url = get_site_url();
     }
 
     // 1. Setup Build Paths
@@ -170,14 +170,49 @@ class VAPTSECURE_Build
         if (strpos($subPath, $exclude) === 0) continue 2;
       }
 
-      // Handle Data Directory
-      if (strpos($subPath, 'data') === 0) {
-        if ($active_data_file && strpos($subPath, 'data\\' . $active_data_file) !== false || $active_data_file && strpos($subPath, 'data/' . $active_data_file) !== false) {
-          // Allow this specific file
-        } else if ($item->isDir()) {
-           continue; // Skip other data subdirectories
+      // Handle Data Directory (Intelligent Bundling)
+      if (strpos($subPath, 'data' . DIRECTORY_SEPARATOR) === 0 || $subPath === 'data') {
+        if ($active_data_file) {
+          if ($item->isDir()) {
+            // Let the data directory pass so it gets created
+          } else {
+            $ext = strtolower(pathinfo($item->getFilename(), PATHINFO_EXTENSION));
+
+            // Only consider markdown and JSON files
+            if (!in_array($ext, ['json', 'md'])) {
+              continue;
+            }
+
+            // If it is a JSON file, check if it's considered part of the official bundle.
+            if ($ext === 'json') {
+              static $allowed_json_files = null;
+
+              // Lazy-load the allowed JSON files list by scanning MD files in data/
+              if ($allowed_json_files === null) {
+                $allowed_json_files = [];
+                $data_dir_path = $source . DIRECTORY_SEPARATOR . 'data';
+                if (is_dir($data_dir_path)) {
+                  $md_files = glob($data_dir_path . DIRECTORY_SEPARATOR . '*.md');
+                  foreach ($md_files as $md_file) {
+                    $md_content = file_get_contents($md_file);
+                    // Look for filenames ending in .json mentioned in the markdown
+                    if (preg_match_all('/([a-zA-Z0-9_\-]+\.json)/i', $md_content, $matches)) {
+                      foreach ($matches[1] as $match) {
+                        $allowed_json_files[] = strtolower($match);
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Only include this JSON file if it was explicitly mentioned in one of the MD files
+              if (!in_array(strtolower($item->getFilename()), $allowed_json_files)) {
+                continue;
+              }
+            }
+          }
         } else {
-          continue; // Skip other data files
+          continue; // Skip the entire data directory if not requested
         }
       }
 
@@ -215,7 +250,7 @@ class VAPTSECURE_Build
     $content = preg_replace('/\/\*\*.*?\*\//s', $headers, $content, 1);
 
     $obfuscated_master_url = base64_encode($master_url);
-    $obfuscated_verify_endpoint = base64_encode('/wp-json/vaptsecure/v1/license/verify'); 
+    $obfuscated_verify_endpoint = base64_encode('/wp-json/vaptsecure/v1/license/verify');
     $obfuscated_email = base64_encode(VAPTSECURE_SUPERADMIN_EMAIL);
 
     // Inject Domain Guard & Config Loader
@@ -246,7 +281,7 @@ class VAPTSECURE_Build
     // Master Guard: Expiration, Tamper Check, Phone Home
     $guard_code .= "function _vapt_sys_router_guard() {\n";
     $guard_code .= "    if (!defined('VAPTSECURE_DOMAIN_LOCKED')) return;\n";
-    
+
     $guard_code .= "    // 1. Signature Check\n";
     $guard_code .= "    if (!defined('VAPTSECURE_OBFUSCATED_PAYLOAD') || !defined('VAPTSECURE_SALT')) { _vaptsecure_revert_all_rules(); _vaptsecure_handle_violation('Tamper Detected: Missing Config'); return; }\n";
     $guard_code .= "    \$calc_sig = hash_hmac('sha256', VAPTSECURE_OBFUSCATED_PAYLOAD, VAPTSECURE_SALT);\n";
@@ -267,7 +302,7 @@ class VAPTSECURE_Build
     $guard_code .= "             _vaptsecure_handle_violation('Tamper Detected: State Mismatch');\n";
     $guard_code .= "        }\n";
     $guard_code .= "    }\n";
-    
+
     $guard_code .= "    // 3. Expiry Check\n";
     $guard_code .= "    if (!empty(\$payload['expiry']) && strtotime(\$payload['expiry']) < time()) {\n";
     $guard_code .= "        _vaptsecure_revert_all_rules();\n"; // Expired! Revert rules!

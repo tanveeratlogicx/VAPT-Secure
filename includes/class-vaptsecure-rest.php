@@ -1099,6 +1099,7 @@ class VAPTSECURE_REST
       $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $domain_id), ARRAY_N);
       $domain['features'] = array_column($feat_rows, 0);
       $domain['imported_at'] = get_option('vaptsecure_imported_at_' . $domain['domain'], null);
+      $domain['version'] = get_option('vaptsecure_imported_version_' . $domain['domain'], '1.0.0');
     }
 
     return new WP_REST_Response($domains, 200);
@@ -1341,6 +1342,9 @@ class VAPTSECURE_REST
     require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
     try {
       $download_url = VAPTSECURE_Build::generate($data);
+      if (!empty($data['domain']) && !empty($data['version'])) {
+        update_option('vaptsecure_imported_version_' . $data['domain'], $data['version']);
+      }
       return new WP_REST_Response(array('success' => true, 'download_url' => $download_url), 200);
     } catch (Exception $e) {
       return new WP_REST_Response(array('success' => false, 'message' => $e->getMessage()), 500);
@@ -1367,6 +1371,7 @@ class VAPTSECURE_REST
     $saved = file_put_contents($filepath, $config_content);
 
     if ($saved !== false) {
+      update_option('vaptsecure_imported_version_' . $domain, $version);
       return new WP_REST_Response(array('success' => true, 'path' => $filepath, 'filename' => $filename), 200);
     } else {
       return new WP_REST_Response(array('error' => 'Failed to write config file to plugin root'), 500);

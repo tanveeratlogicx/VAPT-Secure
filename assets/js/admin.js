@@ -2617,11 +2617,23 @@ window.vaptScriptLoaded = true;
         description: desc
       }));
 
-      // Sync Imported At
-      if (selectedDomain && selectedDomain.imported_at) {
-        setImportedAt(selectedDomain.imported_at);
+      // Sync Imported At & Version Auto-Increment
+      if (selectedDomain) {
+        if (selectedDomain.imported_at) setImportedAt(selectedDomain.imported_at);
+        else setImportedAt(null);
+
+        // Auto-increment version. If 1.0.0, becomes 1.0.1. If nothing, defaults to 1.0.0.
+        const lastVersion = selectedDomain.version || '1.0.0';
+        const vParts = lastVersion.split('.');
+        if (vParts.length === 3) {
+          const newPatch = parseInt(vParts[2], 10) + 1;
+          setBuildVersion(`${vParts[0]}.${vParts[1]}.${newPatch}`);
+        } else {
+          setBuildVersion('1.0.0');
+        }
       } else {
         setImportedAt(null);
+        setBuildVersion('1.0.0'); // Default for Universal/No-domain
       }
     }, [whiteLabel.name, buildDomain, domains, features]);
 
@@ -2920,9 +2932,14 @@ window.vaptScriptLoaded = true;
               isSecondary: true,
               style: { width: '100%', marginTop: '20px' },
               onClick: forceReImport,
-              disabled: generating || !buildDomain
+              disabled: generating || !buildDomain || (buildDomain !== window.location.hostname && buildDomain !== window.location.hostname.replace(/^www\./, ''))
             }, __('Force Re-import from Server', 'vaptsecure')),
-            el('p', { style: { fontSize: '11px', color: '#94a3b8', marginTop: '10px', textAlign: 'center' } }, __('Forces sync with vapt-locked-config.php', 'vaptsecure'))
+            el('p', {
+              style: { fontSize: '11px', color: (buildDomain && buildDomain !== window.location.hostname && buildDomain !== window.location.hostname.replace(/^www\./, '')) ? '#ef4444' : '#94a3b8', marginTop: '10px', textAlign: 'center' }
+            }, (buildDomain && buildDomain !== window.location.hostname && buildDomain !== window.location.hostname.replace(/^www\./, ''))
+              ? __('This action is only available for the current active domain.', 'vaptsecure')
+              : __('Forces sync with vapt-locked-config.php', 'vaptsecure')
+            )
           ])
         ])
       ])
@@ -3320,6 +3337,7 @@ window.vaptScriptLoaded = true;
               (!isCreatingNew && el(Button, {
                 isSmall: true,
                 isSecondary: true,
+                disabled: isDirty,
                 onClick: () => {
                   setIsCreatingNew(true);
 
@@ -3562,6 +3580,14 @@ window.vaptScriptLoaded = true;
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
+              className: `manage - column sortable ${sortBy === 'version' ? 'sorted ' + sortOrder : ''} `,
+              onClick: () => toggleSort('version'),
+              style: { cursor: 'pointer' }
+            }, [
+              el('span', null, __('Version', 'vaptsecure')),
+              el('span', { className: 'sorting-indicator' })
+            ]),
+            el('th', {
               className: `manage - column sortable ${sortBy === 'license_type' ? 'sorted ' + sortOrder : ''} `,
               onClick: () => toggleSort('license_type'),
               style: { cursor: 'pointer' }
@@ -3588,8 +3614,35 @@ window.vaptScriptLoaded = true;
             el('th', { style: { width: '80px' } }, __('Renewals', 'vaptsecure')),
             el('th', { style: { width: '80px', textAlign: 'right' } }, __('Actions', 'vaptsecure')),
           ])),
-          el('tbody', null, sortedDomains.length === 0 ? el('tr', null, el('td', { colSpan: 7 }, __('No domains found.', 'vaptsecure'))) :
-            sortedDomains.map((dom) => el('tr', { key: dom.id, className: dom.id == selectedDomainId ? 'is-selected' : '' }, [
+          el('tbody', null, sortedDomains.length === 0 ? el('tr', null, el('td', { colSpan: 8 }, __('No domains found.', 'vaptsecure'))) :
+            sortedDomains.sort((a, b) => {
+              if (sortBy === 'license_id') return sortOrder === 'asc' ? (a.license_id || '').localeCompare(b.license_id || '') : (b.license_id || '').localeCompare(a.license_id || '');
+              if (sortBy === 'domain') return sortOrder === 'asc' ? a.domain.localeCompare(b.domain) : b.domain.localeCompare(a.domain);
+              if (sortBy === 'license_type') return sortOrder === 'asc' ? (a.license_type || '').localeCompare(b.license_type || '') : (b.license_type || '').localeCompare(a.license_type || '');
+              if (sortBy === 'installation_limit') return sortOrder === 'asc' ? (parseInt(a.installation_limit) || 1) - (parseInt(b.installation_limit) || 1) : (parseInt(b.installation_limit) || 1) - (parseInt(a.installation_limit) || 1);
+              if (sortBy === 'first_activated_at') {
+                if (!a.first_activated_at) return sortOrder === 'asc' ? 1 : -1;
+                if (!b.first_activated_at) return sortOrder === 'asc' ? -1 : 1;
+                if (a.first_activated_at < b.first_activated_at) return sortOrder === 'asc' ? -1 : 1;
+                if (a.first_activated_at > b.first_activated_at) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+              }
+              if (sortBy === 'manual_expiry_date') {
+                if (!a.manual_expiry_date) return sortOrder === 'asc' ? 1 : -1;
+                if (!b.manual_expiry_date) return sortOrder === 'asc' ? -1 : 1;
+                if (a.manual_expiry_date < b.manual_expiry_date) return sortOrder === 'asc' ? -1 : 1;
+                if (a.manual_expiry_date > b.manual_expiry_date) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+              }
+              if (sortBy === 'version') {
+                const vA = a.version || '1.0.0';
+                const vB = b.version || '1.0.0';
+                if (vA < vB) return sortOrder === 'asc' ? -1 : 1;
+                if (vA > vB) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+              }
+              return 0;
+            }).map((dom) => el('tr', { key: dom.id, className: dom.id == selectedDomainId ? 'is-selected' : '' }, [
               el('td', null, el('code', { style: { fontSize: '11px' } }, dom.license_id || '-')),
               el('td', null, dom.license_id ? (() => {
                 const usageCount = licenseUsage[dom.license_id] || 0;
@@ -3619,6 +3672,7 @@ window.vaptScriptLoaded = true;
                 (dom.is_wildcard == 1) && el('span', { style: { marginLeft: '8px', fontSize: '10px', background: '#f0f0f1', padding: '2px 6px', borderRadius: '10px' } }, __('Wildcard', 'vaptsecure')),
                 el('button', { type: 'button', className: 'toggle-row' }, el('span', { className: 'screen-reader-text' }, __('Show more details', 'vaptsecure')))
               ]),
+              el('td', { style: { fontWeight: '500', color: '#475569' } }, dom.version || '1.0.0'),
               el('td', null, el('span', { className: `vapt-license-badge ${dom.license_type || 'standard'}` }, (dom.license_type || 'Standard').toUpperCase())),
               el('td', null, dom.first_activated_at ? formatDate(dom.first_activated_at) : '-'),
               el('td', null, dom.license_type === 'developer' ? __('Never', 'vaptsecure') : (dom.manual_expiry_date ? formatDate(dom.manual_expiry_date) : '-')),
@@ -3639,7 +3693,6 @@ window.vaptScriptLoaded = true;
                     addDomain(dom.domain, dom.is_wildcard, nextState, dom.id);
                   }
                 }, (dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? __('Inactive', 'vaptsecure') : __('Active', 'vaptsecure')),
-                el(Button, { isSecondary: true, isSmall: true, onClick: () => handleEdit(dom) }, __('Edit', 'vaptsecure')),
                 isSuper && el(Button, {
                   isDestructive: true,
                   isSmall: true,
