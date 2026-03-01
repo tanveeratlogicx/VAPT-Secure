@@ -1,0 +1,60 @@
+VAPT-Secure Build Process Analysis Report
+
+Generated on: 2026-03-01 14:10 +05:00 (Revised)
+
+Overview
+--------------------------------------------------
+This report details the execution flow, functions, and inclusions involved when the "Download Zip" button is clicked on the Domain Admin page (vaptsecure-domain-admin) of the VAPT-Secure plugin.
+
+Execution Flow
+--------------------------------------------------
+
+1. Frontend Trigger
+   When the "Download Zip" button is clicked in the Domain Admin interface, an AJAX POST request is made to the REST API endpoint:
+   /wp-json/vaptsecure/v1/build/generate
+
+2. REST API Handler (class-vaptsecure-rest.php)
+   The endpoint is handled by VAPTSECURE_REST::generate_build(). This function parses the incoming payload (including white-label details, features, and license scope) and delegates the core logic to VAPTSECURE_Build::generate().
+
+3. Core Build Logic (class-vaptsecure-build.php)
+   The VAPTSECURE_Build::generate() method operates in the following sequential steps:
+
+   a. Fetching License Info: Retrieves domain records from the vaptsecure_domains database table to attach license_id, manual_expiry_date, license_scope, and installation_limit.
+   
+   b. Path Setup (Dynamic): Defines storage paths in the WordPress wp-content/uploads/ directory using the dynamic plugin slug (e.g., /wp-content/uploads/my-security/). The directory is secured via .htaccess and index.php. A temporary directory is used for assembly.
+   
+   c. Generating Configuration: Creates a PHP configuration file (config-{domain}.php) with features and licenses defined as constants, including an obfuscated license payload and HMAC SHA256 signature for tamper detection.
+   
+   d. File Replication & Exclusion: Recursively copies the plugin payload to the assembly directory. 
+      - Excludes dev folders: .git, .vscode, node_modules, brain, tests, etc.
+      - Rigorous Markdown Exclusion: ALL native .md files in the source are excluded from the copy to ensure internal development guides or plans do not reach the client build.
+   
+   e. Intelligent Data Bundling: Tightly bundles only active JSON and MD files from the data/ folder that are explicitly referenced within the security definitions.
+   
+   f. Header & Guard Injection: Rewrites the main plugin file ([plugin-slug].php):
+      - Injects White-Labeled WordPress plugin headers.
+      - Proactive Collision Guard: Injects a check at the very top of the file to see if VAPTSECURE_VERSION is already defined. If a conflict is detected, it halts execution with an admin notice and attempts to autonomously deactivate and delete the older conflicting plugin directory to prevent crashes.
+      - Runtime Guards: Injects _vapt_sys_router_guard() for license signature validation, expiry checks, domain locking, and master server phone-home verification.
+      
+   g. Generating Documentation: Dynamically generates a README.md (active modules) and a USER_GUIDE.md (installation and feature overview) for the build.
+   
+   h. Zip Archive Creation: Packs the assembled contents into a .zip file stored in the dynamically named slug folder.
+   
+   i. Cleanup: Recursively destroys all temporary assembly folders.
+   
+   j. Return URL: Responds with the reachable download URL for the zip.
+
+Inclusions & Exclusions
+--------------------------------------------------
+
+Inclusions:
+  - Custom configuration file config-{domain}.php.
+  - Dynamically generated README.md and USER_GUIDE.md.
+  - Renamed main plugin PHP file with Collision Guard and Runtime Security Guards.
+  - Intelligent data bundle (JSON/MD schema files from the data directory).
+  - Original includes, assets, and standard functional directories.
+
+Exclusions:
+  - .git, .vscode, node_modules, brain, tests, .agent, vapt-debug.txt.
+  - ALL source markdown files (Implementation Plan, Developer Guides, SKILL.md, etc.) are strictly excluded via the recursive copier.
+  - Orphaned JSON files in the data/ directory not explicitly linked to active features.

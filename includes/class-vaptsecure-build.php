@@ -39,9 +39,11 @@ class VAPTSECURE_Build
       $master_url = get_site_url();
     }
 
+    $plugin_slug = sanitize_title($white_label['text_domain'] ?: $white_label['name']);
+
     // 1. Setup Build Paths
     $upload_dir = wp_upload_dir();
-    $base_storage_dir = $upload_dir['basedir'] . '/VAPT-Builds'; // Custom Storage Path
+    $base_storage_dir = $upload_dir['basedir'] . '/' . $plugin_slug; // Dynamic Storage Path
 
     // Ensure storage directory exists
     if (!file_exists($base_storage_dir)) {
@@ -59,7 +61,6 @@ class VAPTSECURE_Build
     $temp_dir = get_temp_dir() . 'vapt-build-' . time() . '-' . wp_generate_password(8, false);
     wp_mkdir_p($temp_dir);
 
-    $plugin_slug = sanitize_title($white_label['text_domain'] ?: $white_label['name']);
     $plugin_dir = $temp_dir . '/' . $plugin_slug;
     wp_mkdir_p($plugin_dir);
 
@@ -90,7 +91,7 @@ class VAPTSECURE_Build
     self::rewrite_main_plugin_file($plugin_dir, $plugin_slug, $white_label, $version, $domain, $master_url);
 
     // 6. Generate Documentation
-    self::generate_docs($plugin_dir, $domain, $version, $features);
+    self::generate_docs($plugin_dir, $domain, $version, $features, $white_label);
 
     // 7. Create ZIP Archive
     $zip_filename = "{$plugin_slug}-{$version}.zip";
@@ -106,7 +107,7 @@ class VAPTSECURE_Build
     self::recursive_rmdir($temp_dir);
 
     // Return URL to the ZIP
-    $base_storage_url = $upload_dir['baseurl'] . '/VAPT-Builds';
+    $base_storage_url = $upload_dir['baseurl'] . '/' . $plugin_slug;
     return $base_storage_url . '/' . $domain . '/' . $version . '/' . $zip_filename;
   }
 
@@ -166,8 +167,19 @@ class VAPTSECURE_Build
       $subPath = $iterator->getSubPathName();
 
       // Check Exclusions
+      $is_excluded = false;
       foreach ($exclusions as $exclude) {
-        if (strpos($subPath, $exclude) === 0) continue 2;
+        if (strpos($subPath, $exclude) === 0) {
+          $is_excluded = true;
+          break;
+        }
+      }
+      if ($is_excluded) continue;
+
+      // Ensure NO markdown files are copied except what is explicitly processed later
+      if (!$item->isDir() && strtolower(pathinfo($item->getFilename(), PATHINFO_EXTENSION)) === 'md') {
+        // We will generate our own README.md and USER_GUIDE.md later, block all .md files globally
+        continue;
       }
 
       // Handle Data Directory (Intelligent Bundling)
@@ -248,6 +260,36 @@ class VAPTSECURE_Build
 
     // Regex replace the existing header block
     $content = preg_replace('/\/\*\*.*?\*\//s', $headers, $content, 1);
+
+    // Provide a safe guard against Duplicate installations (Collision Prevention & Cleanup)
+    $collision_guard = "\n// Proactive Collision Guard & Cleanup\n";
+    $collision_guard .= "if (defined('VAPTSECURE_VERSION')) {\n";
+    $collision_guard .= "    add_action('admin_notices', function() {\n";
+    $collision_guard .= "        echo '<div class=\"notice notice-error is-dismissible\"><p><strong>Security Alert:</strong> Another version of VAPT Secure (or a White Labeled instance) is already active. This instance has halted to prevent a fatal crash.</p></div>';\n";
+    $collision_guard .= "    });\n";
+    // Attempt Auto-Cleanup of the old plugin directory
+    $collision_guard .= "    if (function_exists('deactivate_plugins')) {\n";
+    $collision_guard .= "        require_once ABSPATH . 'wp-admin/includes/plugin.php';\n";
+    $collision_guard .= "        require_once ABSPATH . 'wp-admin/includes/file.php';\n";
+    $collision_guard .= "        \$active_plugins = get_option('active_plugins', array());\n";
+    $collision_guard .= "        \$this_plugin = plugin_basename(__FILE__);\n";
+    $collision_guard .= "        foreach (\$active_plugins as \$plugin) {\n";
+    $collision_guard .= "            if (\$plugin !== \$this_plugin && (strpos(\$plugin, 'vapt-secure.php') !== false || strpos(file_get_contents(WP_PLUGIN_DIR . '/' . \$plugin), 'VAPTSECURE_VERSION') !== false)) {\n";
+    $collision_guard .= "                deactivate_plugins(\$plugin);\n";
+    $collision_guard .= "                \$plugin_dir = dirname(WP_PLUGIN_DIR . '/' . \$plugin);\n";
+    $collision_guard .= "                if (\$plugin_dir !== WP_PLUGIN_DIR) {\n";
+    $collision_guard .= "                    WP_Filesystem();\n";
+    $collision_guard .= "                    global \$wp_filesystem;\n";
+    $collision_guard .= "                    if (\$wp_filesystem) { \$wp_filesystem->delete(\$plugin_dir, true); }\n";
+    $collision_guard .= "                }\n";
+    $collision_guard .= "            }\n";
+    $collision_guard .= "        }\n";
+    $collision_guard .= "    }\n";
+    $collision_guard .= "    return;\n";
+    $collision_guard .= "}\n";
+
+    // Insert the collision guard immediately after the ABSPATH check instead of relying on string replacement
+    $content = str_replace("if (! defined('ABSPATH')) {\n  exit;\n}", "if (! defined('ABSPATH')) {\n  exit;\n}\n" . $collision_guard, $content);
 
     $obfuscated_master_url = base64_encode($master_url);
     $obfuscated_verify_endpoint = base64_encode('/wp-json/vaptsecure/v1/license/verify');
@@ -359,8 +401,8 @@ class VAPTSECURE_Build
     $guard_code .= "add_action('init', '_vapt_sys_router_guard');\n";
     $guard_code .= "add_action('admin_init', '_vapt_sys_router_guard');\n";
 
-    // Insert after defined('ABSPATH') check
-    $content = str_replace("if (! defined('ABSPATH')) {\n  exit;\n}", "if (! defined('ABSPATH')) {\n  exit;\n}\n" . $guard_code, $content);
+    // Insert Domain Guard after the collision guard
+    $content = str_replace($collision_guard, $collision_guard . $guard_code, $content);
 
     // Remove the original file from the copy if it was copied by the recursive copier
     if (file_exists($plugin_dir . '/vaptsecure.php')) unlink($plugin_dir . '/vaptsecure.php');
@@ -369,16 +411,33 @@ class VAPTSECURE_Build
     file_put_contents($dest_main, $content);
   }
 
-  private static function generate_docs($dir, $domain, $version, $features)
+  private static function generate_docs($dir, $domain, $version, $features, $white_label)
   {
-    $readme = "# Security Build for $domain\n\n";
-    $readme .= "Version: $version\n";
+    // Generate README.md
+    $readme = "# Security Build for " . esc_html($domain) . "\n\n";
+    $readme .= "Version: " . esc_html($version) . "\n";
     $readme .= "Generated: " . date('Y-m-d') . "\n\n";
     $readme .= "## Active Protection Modules\n";
     foreach ($features as $f) {
       $readme .= "- " . strtoupper(str_replace('-', ' ', $f)) . "\n";
     }
     file_put_contents($dir . '/README.md', $readme);
+
+    // Generate USER_GUIDE.md
+    $guide = "# User Guide: " . esc_html($white_label['name']) . "\n\n";
+    $guide .= "Welcome to your custom security implementation for **" . esc_html($domain) . "**.\n\n";
+    $guide .= "## Installation\n\n";
+    $guide .= "1. Log into your WordPress admin dashboard.\n";
+    $guide .= "2. Navigate to **Plugins > Add New**.\n";
+    $guide .= "3. Click **Upload Plugin** and select this zip file.\n";
+    $guide .= "4. Click **Install Now** and then **Activate Plugin**.\n\n";
+    $guide .= "## Active Protections\n\n";
+    $guide .= "This targeted build automatically enforces the following security definitions:\n\n";
+    foreach ($features as $f) {
+      $guide .= "- **" . strtoupper(str_replace('-', ' ', $f)) . "**\n";
+    }
+    $guide .= "\n\n---\n*Generated specifically for " . esc_html($domain) . " on " . date('Y-m-d') . " by " . esc_html($white_label['author']) . "*\n";
+    file_put_contents($dir . '/USER_GUIDE.md', $guide);
   }
 
   private static function add_dir_to_zip($dir, $zip, $zip_path)
