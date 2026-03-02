@@ -440,7 +440,20 @@ window.vaptScriptLoaded = true;
         const payload = {
           generated_schema: JSON.stringify(parsed),
           implementation_data: JSON.stringify(localImplData),
-          is_enforced: (localImplData && localImplData.feat_enabled) ? 1 : 0,
+          is_enforced: (() => {
+            // 1. Check explicit user interaction first (v3.13.21 Fix)
+            if (localImplData && localImplData.feat_enabled !== undefined) {
+              const val = localImplData.feat_enabled;
+              return (val === true || val === 1 || val === '1' || val === 'true') ? 1 : 0;
+            }
+            // 2. Fallback to schema default if no interaction has occurred (A+ Workbench Auto-Sync)
+            const featEnabledControl = (parsed.controls || []).find(c => c.key === 'feat_enabled');
+            if (featEnabledControl && featEnabledControl.default !== undefined) {
+              const def = featEnabledControl.default;
+              return (def === true || def === 1 || def === '1' || def === 'true') ? 1 : 0;
+            }
+            return 0;
+          })(),
           is_pushed: 1,
           is_adaptive_deployment: isAdaptiveDeployment ? 1 : 0,
           include_verification_engine: hasTestActions ? 1 : 0,
