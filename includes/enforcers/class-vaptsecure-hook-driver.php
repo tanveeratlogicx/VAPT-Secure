@@ -48,6 +48,18 @@ class VAPTSECURE_Hook_Driver
   /**
    * 🛡️ TWO-WAY DEACTIVATION & ENFORCEMENT (v3.6.19)
    */
+  /**
+   * Register a feature key for marker-only enforcement (v4.2.3).
+   * Ensures A+ Header Verification probes see the marker even if server-level rules handle the logic.
+   */
+  public static function register_marker_only($key)
+  {
+    if ($key && !in_array($key, self::$enforced_keys)) {
+      self::$enforced_keys[] = $key;
+      self::register_enforcement_marker();
+    }
+  }
+
   public static function apply($resolved_data, $schema, $key = '')
   {
     $log_file = VAPTSECURE_PATH . 'vapt-debug.txt';

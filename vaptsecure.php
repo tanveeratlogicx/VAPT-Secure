@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.3.9
+ * Version:           2.4.0
  * Author:            VAPT Team
  * Author URI:        https://vaptsecure.com/
  * License:           GPL-2.0+
@@ -25,10 +25,10 @@ if (! defined('ABSPATH')) {
  * The current version of the plugin.
  */
 if (! defined('VAPTSECURE_VERSION')) {
-  define('VAPTSECURE_VERSION', '2.3.9');
+  define('VAPTSECURE_VERSION', '2.4.0');
 }
 if (! defined('VAPTSECURE_DATA_VERSION')) {
-  define('VAPTSECURE_DATA_VERSION', '2.0.1');
+  define('VAPTSECURE_DATA_VERSION', '2.0.2');
 }
 if (! defined('VAPTSECURE_PATH')) {
   define('VAPTSECURE_PATH', plugin_dir_path(__FILE__));

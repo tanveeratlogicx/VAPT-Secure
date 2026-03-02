@@ -108,14 +108,7 @@
           "command": "apachectl -t",
           "expected": "Exit 0, no syntax errors"
         },
-        "rollback": "Remove # BEGIN VAPT RISK-002 ... # END VAPT RISK-002 block from .htaccess",
-        "driver": {
-          "write_mode": "top",
-          "target_file": ".htaccess",
-          "write_block": "# BEGIN VAPT RISK-002\n<Files \"xmlrpc.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-002",
-          "idempotency_check": "# BEGIN VAPT RISK-002",
-          "if_found": "skip"
-        }
+        "rollback": "Remove # BEGIN VAPT RISK-002 ... # END VAPT RISK-002 block from .htaccess"
       },
       "cloudflare": {
         "implementation_type": "waf_custom_rule",
@@ -129,6 +122,11 @@
         "implementation_type": "web_config_request_filtering",
         "web_config_snippet": "<!-- BEGIN VAPT RISK-002 -->\n<configuration>\n  <system.webServer>\n    <security><requestFiltering><hiddenSegments>\n      <add segment=\"xmlrpc.php\" />\n    </hiddenSegments></requestFiltering></security>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-002 -->",
         "verification": "curl -sI https://yoursite.com/xmlrpc.php | findstr HTTP"
+      },
+      "nginx": {
+        "implementation_type": "nginx_location_block",
+        "nginx_snippet": "# BEGIN VAPT RISK-002\nlocation = /xmlrpc.php { deny all; return 403; }\n# END VAPT RISK-002",
+        "verification": "curl -sI https://yoursite.com/xmlrpc.php | grep HTTP"
       },
       "caddy": {
         "implementation_type": "caddy_respond_block",
@@ -191,6 +189,11 @@
           "IIS URL Rewrite Module 2.1 \u2014 install from Web Platform Installer"
         ],
         "verification": "appcmd validate config && curl -sI https://yoursite.com | findstr HTTP"
+      },
+      "nginx": {
+        "implementation_type": "nginx_location_block",
+        "nginx_snippet": "# BEGIN VAPT RISK-003\nlocation ~ ^/wp-json/wp/v2/users { deny all; return 403; }\n# END VAPT RISK-003",
+        "verification": "curl -sI https://yoursite.com/wp-json/wp/v2/users | grep HTTP"
       },
       "caddy": {
         "implementation_type": "caddy_respond_block",
@@ -293,6 +296,11 @@
           "IIS URL Rewrite Module 2.1 \u2014 install from Web Platform Installer"
         ],
         "verification": "appcmd validate config && curl -sI https://yoursite.com | findstr HTTP"
+      },
+      "nginx": {
+        "implementation_type": "nginx_if_block",
+        "nginx_snippet": "# BEGIN VAPT RISK-005\nif ($args ~* \"author=\\d+\") { return 403; }\n# END VAPT RISK-005",
+        "verification": "curl -sI https://yoursite.com/?author=1 | grep HTTP"
       },
       "caddy": {
         "implementation_type": "caddy_respond_block",
@@ -553,6 +561,11 @@
         "web_config_snippet": "<!-- BEGIN VAPT RISK-011 -->\n<configuration>\n  <system.webServer>\n    <security><requestFiltering><hiddenSegments>\n      <add segment=\"readme.html\" />\n    </hiddenSegments></requestFiltering></security>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-011 -->",
         "verification": "curl -sI https://yoursite.com/readme.html | findstr HTTP"
       },
+      "nginx": {
+        "implementation_type": "nginx_location_block",
+        "nginx_snippet": "# BEGIN VAPT RISK-011\nlocation = /readme.html { deny all; return 403; }\n# END VAPT RISK-011",
+        "verification": "curl -sI https://yoursite.com/readme.html | grep HTTP"
+      },
       "caddy": {
         "implementation_type": "caddy_respond_block",
         "caddyfile_snippet": "# BEGIN VAPT RISK-011\n@risk011 {\n    path /readme.html\n}\nrespond @risk011 \"Access Denied\" 403\n# END VAPT RISK-011",
@@ -613,6 +626,11 @@
         "web_config_snippet": "<!-- BEGIN VAPT RISK-012 -->\n<configuration>\n  <system.webServer>\n    <httpProtocol>\n      <customHeaders>\n        <remove name=\"Strict-Transport-Security\" />\n        <add name=\"Strict-Transport-Security\" value=\"max-age=31536000; includeSubDomains; preload\" />\n      </customHeaders>\n    </httpProtocol>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-012 -->",
         "verification": "curl -sI https://yoursite.com | findstr \"Strict-Transport-Security\""
       },
+      "nginx": {
+        "implementation_type": "nginx_header",
+        "nginx_snippet": "# BEGIN VAPT RISK-012\nadd_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;\n# END VAPT RISK-012",
+        "verification": "curl -sI https://yoursite.com | grep -i 'Strict-Transport-Security'"
+      },
       "caddy": {
         "implementation_type": "caddy_header",
         "caddyfile_snippet": "# BEGIN VAPT RISK-012\nheader {\n    Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n    defer\n}\n# END VAPT RISK-012",
@@ -665,6 +683,11 @@
         "implementation_type": "web_config_directory_browsing",
         "web_config_snippet": "<!-- BEGIN VAPT RISK-013 -->\n<configuration>\n  <system.webServer>\n    <directoryBrowse enabled=\"false\" />\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-013 -->",
         "verification": "curl -s https://yoursite.com/wp-content/uploads/ | findstr Index"
+      },
+      "nginx": {
+        "implementation_type": "nginx_autoindex",
+        "nginx_snippet": "# BEGIN VAPT RISK-013\nautoindex off;\n# END VAPT RISK-013",
+        "verification": "curl -sI https://yoursite.com/wp-content/uploads/ | grep Index"
       },
       "caddy": {
         "implementation_type": "caddy_file_server",
@@ -726,6 +749,11 @@
         "web_config_snippet": "<!-- BEGIN VAPT RISK-014 -->\n<configuration>\n  <system.webServer>\n    <httpProtocol>\n      <customHeaders>\n        <remove name=\"X-Frame-Options\" />\n        <add name=\"X-Frame-Options\" value=\"SAMEORIGIN\" />\n      </customHeaders>\n    </httpProtocol>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-014 -->",
         "verification": "curl -sI https://yoursite.com | findstr \"X-Frame-Options\""
       },
+      "nginx": {
+        "implementation_type": "nginx_header",
+        "nginx_snippet": "# BEGIN VAPT RISK-014\nadd_header X-Frame-Options \"SAMEORIGIN\" always;\n# END VAPT RISK-014",
+        "verification": "curl -sI https://yoursite.com | grep -i 'X-Frame-Options'"
+      },
       "caddy": {
         "implementation_type": "caddy_header",
         "caddyfile_snippet": "# BEGIN VAPT RISK-014\nheader {\n    X-Frame-Options \"SAMEORIGIN\"\n    defer\n}\n# END VAPT RISK-014",
@@ -785,6 +813,11 @@
         "implementation_type": "web_config_http_headers",
         "web_config_snippet": "<!-- BEGIN VAPT RISK-015 -->\n<configuration>\n  <system.webServer>\n    <httpProtocol>\n      <customHeaders>\n        <remove name=\"X-Content-Type-Options\" />\n        <add name=\"X-Content-Type-Options\" value=\"nosniff\" />\n      </customHeaders>\n    </httpProtocol>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-015 -->",
         "verification": "curl -sI https://yoursite.com | findstr \"X-Content-Type-Options\""
+      },
+      "nginx": {
+        "implementation_type": "nginx_header",
+        "nginx_snippet": "# BEGIN VAPT RISK-015\nadd_header X-Content-Type-Options \"nosniff\" always;\n# END VAPT RISK-015",
+        "verification": "curl -sI https://yoursite.com | grep -i 'X-Content-Type-Options'"
       },
       "caddy": {
         "implementation_type": "caddy_header",
@@ -846,6 +879,11 @@
         "web_config_snippet": "<!-- BEGIN VAPT RISK-016 -->\n<configuration>\n  <system.webServer>\n    <httpProtocol>\n      <customHeaders>\n        <remove name=\"X-XSS-Protection\" />\n        <add name=\"X-XSS-Protection\" value=\"1; mode=block\" />\n      </customHeaders>\n    </httpProtocol>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-016 -->",
         "verification": "curl -sI https://yoursite.com | findstr \"X-XSS-Protection\""
       },
+      "nginx": {
+        "implementation_type": "nginx_header",
+        "nginx_snippet": "# BEGIN VAPT RISK-016\nadd_header X-XSS-Protection \"1; mode=block\" always;\n# END VAPT RISK-016",
+        "verification": "curl -sI https://yoursite.com | grep -i 'X-XSS-Protection'"
+      },
       "caddy": {
         "implementation_type": "caddy_header",
         "caddyfile_snippet": "# BEGIN VAPT RISK-016\nheader {\n    X-XSS-Protection \"1; mode=block\"\n    defer\n}\n# END VAPT RISK-016",
@@ -905,6 +943,11 @@
         "implementation_type": "web_config_http_headers",
         "web_config_snippet": "<!-- BEGIN VAPT RISK-017 -->\n<configuration>\n  <system.webServer>\n    <httpProtocol>\n      <customHeaders>\n        <remove name=\"Referrer-Policy\" />\n        <add name=\"Referrer-Policy\" value=\"strict-origin-when-cross-origin\" />\n      </customHeaders>\n    </httpProtocol>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-017 -->",
         "verification": "curl -sI https://yoursite.com | findstr \"Referrer-Policy\""
+      },
+      "nginx": {
+        "implementation_type": "nginx_header",
+        "nginx_snippet": "# BEGIN VAPT RISK-017\nadd_header Referrer-Policy \"strict-origin-when-cross-origin\" always;\n# END VAPT RISK-017",
+        "verification": "curl -sI https://yoursite.com | grep -i 'Referrer-Policy'"
       },
       "caddy": {
         "implementation_type": "caddy_header",
@@ -966,6 +1009,11 @@
         "web_config_snippet": "<!-- BEGIN VAPT RISK-018 -->\n<configuration>\n  <system.webServer>\n    <httpProtocol>\n      <customHeaders>\n        <remove name=\"Permissions-Policy\" />\n        <add name=\"Permissions-Policy\" value=\"geolocation=(), microphone=(), camera=()\" />\n      </customHeaders>\n    </httpProtocol>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-018 -->",
         "verification": "curl -sI https://yoursite.com | findstr \"Permissions-Policy\""
       },
+      "nginx": {
+        "implementation_type": "nginx_header",
+        "nginx_snippet": "# BEGIN VAPT RISK-018\nadd_header Permissions-Policy \"geolocation=(), microphone=(), camera=()\" always;\n# END VAPT RISK-018",
+        "verification": "curl -sI https://yoursite.com | grep -i 'Permissions-Policy'"
+      },
       "caddy": {
         "implementation_type": "caddy_header",
         "caddyfile_snippet": "# BEGIN VAPT RISK-018\nheader {\n    Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n    defer\n}\n# END VAPT RISK-018",
@@ -1025,6 +1073,11 @@
         "web_config_snippet": "<!-- BEGIN VAPT RISK-019 -->\n<configuration>\n  <system.webServer>\n    <security><requestFiltering><fileExtensions>\n          <add fileExtension=\".env\" allowed=\"false\" />\n          <add fileExtension=\".git\" allowed=\"false\" />\n          <add fileExtension=\".sql\" allowed=\"false\" />\n          <add fileExtension=\".log\" allowed=\"false\" />\n          <add fileExtension=\".ini\" allowed=\"false\" />\n          <add fileExtension=\".yml\" allowed=\"false\" />\n          <add fileExtension=\".yaml\" allowed=\"false\" />\n          <add fileExtension=\".bak\" allowed=\"false\" />\n          <add fileExtension=\".conf\" allowed=\"false\" />\n    </fileExtensions></requestFiltering></security>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-019 -->",
         "verification": "curl -sI https://yoursite.com/test.bak | findstr HTTP"
       },
+      "nginx": {
+        "implementation_type": "nginx_location_block",
+        "nginx_snippet": "# BEGIN VAPT RISK-019\nlocation ~* \\.(env|git|sql|log|ini|yml|yaml|bak|conf)$ { deny all; return 403; }\n# END VAPT RISK-019",
+        "verification": "curl -sI https://yoursite.com/test.sql | grep HTTP"
+      },
       "caddy": {
         "implementation_type": "caddy_respond_block",
         "caddyfile_snippet": "# BEGIN VAPT RISK-019\n@risk019 {\n    path *.env\n    path *.git\n    path *.sql\n    path *.log\n    path *.ini\n    path *.yml\n    path *.yaml\n    path *.bak\n    path *.conf\n}\nrespond @risk019 \"Access Denied\" 403\n# END VAPT RISK-019",
@@ -1083,6 +1136,11 @@
         "implementation_type": "web_config_request_filtering_extensions",
         "web_config_snippet": "<!-- BEGIN VAPT RISK-020 -->\n<configuration>\n  <system.webServer>\n    <security><requestFiltering><fileExtensions>\n          <add fileExtension=\".php\" allowed=\"false\" />\n    </fileExtensions></requestFiltering></security>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-020 -->",
         "verification": "curl -sI https://yoursite.com/test.bak | findstr HTTP"
+      },
+      "nginx": {
+        "implementation_type": "nginx_location_block",
+        "nginx_snippet": "# BEGIN VAPT RISK-020\nlocation ~* /uploads/.*\\.php$ { deny all; return 403; }\n# END VAPT RISK-020",
+        "verification": "curl -sI https://yoursite.com/wp-content/uploads/test.php | grep HTTP"
       },
       "caddy": {
         "implementation_type": "caddy_respond_block",

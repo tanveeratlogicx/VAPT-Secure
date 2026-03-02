@@ -67,55 +67,124 @@ class VAPTSECURE_IIS_Driver
     return (strpos($content, "VAPT-Feature: $key") !== false);
   }
 
+  /**
+   * Translates Apache-style rules to IIS XML fragments.
+   */
   private static function translate_to_iis($key, $directive)
   {
     // 1. Headers -> <customHeaders>
-    if (strpos($directive, 'Header set') !== false) {
-      $clean = str_replace(['Header set ', '"'], ['', ''], $directive);
-      $parts = explode(' ', $clean, 2);
+    if (strpos($directive, 'Header') !== false && strpos($directive, 'set') !== false) {
+      $clean = str_replace(['Header always set ', 'Header set ', '"'], ['', '', ''], $directive);
+      $parts = explode(' ', trim($clean), 2);
       if (count($parts) == 2) {
-        return '<add name="' . $parts[0] . '" value="' . $parts[1] . '" />';
+        return '<add name="' . $parts[0] . '" value="' . trim($parts[1]) . '" />';
       }
     }
 
     // 2. Directory Browsing -> <directoryBrowse enabled="false" />
-    if (strpos($directive, 'Options -Indexes') !== false) {
+    if (strpos($directive, 'Options -Indexes') !== false || $key === 'disable_directory_browsing') {
       return '<directoryBrowse enabled="false" />';
     }
 
     // 3. Block XMLRPC -> <requestFiltering><hiddenSegments>...
-    if ($key === 'block_xmlrpc') {
-      return '<hiddenSegments><add segment="xmlrpc.php" /></hiddenSegments>';
+    if ($key === 'block_xmlrpc' || strpos($directive, 'xmlrpc.php') !== false) {
+      return '<add segment="xmlrpc.php" />';
+    }
+
+    // 4. Block Sensitive Files
+    if ($key === 'block_sensitive_files') {
+      return '<add segment="web.config" /><add segment="wp-config.php" />';
     }
 
     return null;
   }
 
   /**
-   * Writes batch to web.config
-   * WARNING: XML manipulation is fragile. We use simple regex/string replacements for safety.
+   * Writes batch to web.config using marker-based replacement.
+   * [v4.2.3] Robust XML Block Insertion.
    */
   public static function write_batch($all_rules_array)
   {
     $config_path = ABSPATH . 'web.config';
 
-    // Structure:
-    // <configuration>
-    //   <system.webServer>
-    //      <httpProtocol><customHeaders>...
-    //      <security><requestFiltering>...
-
-    // For MVP, we will simplify: We will only support Custom Headers injection for now to demonstrate capability.
-    // Full XML parsing is risky without DOMDocument validation.
-
-    if (!file_exists($config_path)) {
-      // Create basic web.config?
-      // Skipping auto-creation to avoid breaking existing IIS setups.
-      return false;
+    // Ensure directory exists
+    $dir = dirname($config_path);
+    if (!is_dir($dir)) {
+      wp_mkdir_p($dir);
     }
 
-    // TODO: Full XML injection logic.
-    // For now, we return true to simulate success for the structure.
+    $content = "";
+    if (file_exists($config_path)) {
+      $content = file_get_contents($config_path);
+    } else {
+      // Initial skeleton if missing
+      $content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<configuration>\n    <system.webServer>\n    </system.webServer>\n</configuration>";
+    }
+
+    $start_marker = "<!-- BEGIN VAPT SECURITY RULES -->";
+    $end_marker = "<!-- END VAPT SECURITY RULES -->";
+
+    // Prepare headers and nodes
+    $header_nodes = [];
+    $segment_nodes = [];
+    $misc_nodes = [];
+
+    // 🛡️ COMPLIANCE MARKER (v4.2.3)
+    $header_nodes[] = '<add name="X-VAPT-Enforced" value="iis" />';
+
+    foreach ($all_rules_array as $rule) {
+      if (strpos($rule, '<add name=') !== false) {
+        $header_nodes[] = $rule;
+      } elseif (strpos($rule, '<add segment=') !== false) {
+        $segment_nodes[] = $rule;
+      } elseif (!empty($rule)) {
+        $misc_nodes[] = $rule;
+      }
+    }
+
+    // Construct the VAPT XML block
+    $vapt_block = "\n        " . $start_marker . "\n";
+
+    if (!empty($header_nodes)) {
+      $vapt_block .= "        <httpProtocol>\n            <customHeaders>\n                " . implode("\n                ", array_unique($header_nodes)) . "\n            </customHeaders>\n        </httpProtocol>\n";
+    }
+
+    if (!empty($segment_nodes)) {
+      $vapt_block .= "        <security>\n            <requestFiltering>\n                <hiddenSegments>\n                    " . implode("\n                    ", array_unique($segment_nodes)) . "\n                </hiddenSegments>\n            </requestFiltering>\n        </security>\n";
+    }
+
+    foreach (array_unique($misc_nodes) as $node) {
+      if (strpos($node, '<!--') === 0) continue; // Skip comments in main flow
+      $vapt_block .= "        " . $node . "\n";
+    }
+
+    $vapt_block .= "        " . $end_marker . "\n";
+
+    // Strip old block
+    $start_pos = strpos($content, $start_marker);
+    $end_pos = strpos($content, $end_marker);
+
+    if ($start_pos !== false && $end_pos !== false && $end_pos > $start_pos) {
+      $before = substr($content, 0, $start_pos);
+      $after = substr($content, $end_pos + strlen($end_marker));
+      $content = trim($before) . "\n" . trim($after);
+    }
+
+    // Insert into <system.webServer>
+    if (strpos($content, '<system.webServer>') !== false) {
+      $parts = explode('<system.webServer>', $content, 2);
+      $new_content = $parts[0] . "<system.webServer>" . $vapt_block . $parts[1];
+    } else {
+      // Fallback: End of file
+      $new_content = $content . $vapt_block;
+    }
+
+    // Write
+    if (trim($new_content) !== trim($content) || !file_exists($config_path)) {
+      @copy($config_path, $config_path . '.bak');
+      return @file_put_contents($config_path, trim($new_content) . "\n", LOCK_EX) !== false;
+    }
+
     return true;
   }
 }
