@@ -132,6 +132,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-002\n@risk002 {\n    path /xmlrpc.php\n}\nrespond @risk002 \"Access Denied\" 403\n# END VAPT RISK-002",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-002\n<Files \"xmlrpc.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-002",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-003": {
@@ -199,6 +205,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-003\n@risk003 {\n    path /wp-json/wp/v2/users*\n}\nrespond @risk003 \"Access Denied\" 403\n# END VAPT RISK-003",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-003\n<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    RewriteRule ^wp-json/wp/v2/users$ - [F,L]\n    RewriteRule ^wp-json/wp/v2/users/ - [F,L]\n</IfModule>\n# END VAPT RISK-003",
+                "verification": "apachectl -t && curl -sI 'https://yoursite.com/' | grep HTTP",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-004": {
@@ -306,6 +318,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-005\n@risk005 {\n    query author=*\n}\nrespond @risk005 \"Access Denied\" 403\n# END VAPT RISK-005",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-005\n<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    RewriteCond %{QUERY_STRING} (^|&)author=\\d+ [NC]\n    RewriteRule ^ - [F,L]\n</IfModule>\n# END VAPT RISK-005",
+                "verification": "apachectl -t && curl -sI 'https://yoursite.com/' | grep HTTP",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-006": {
@@ -570,6 +588,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-011\n@risk011 {\n    path /readme.html\n}\nrespond @risk011 \"Access Denied\" 403\n# END VAPT RISK-011",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-011\n<Files \"readme.html\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-011",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-012": {
@@ -635,6 +659,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-012\nheader {\n    Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n    defer\n}\n# END VAPT RISK-012",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Strict-Transport-Security'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-012\nHeader always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n# END VAPT RISK-012",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Strict-Transport-Security'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-013": {
@@ -693,6 +723,12 @@
                 "implementation_type": "caddy_file_server",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-013\n# Directory listing disabled by default in Caddy file_server.\n# Ensure \"browse\" is NOT present:\nfile_server\n# END VAPT RISK-013",
                 "note": "Caddy disables directory listing by default. Remove 'browse' if present."
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-013\nOptions -Indexes\n# END VAPT RISK-013",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-014": {
@@ -758,6 +794,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-014\nheader {\n    X-Frame-Options \"SAMEORIGIN\"\n    defer\n}\n# END VAPT RISK-014",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'X-Frame-Options'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-014\nHeader always set X-Frame-Options \"SAMEORIGIN\"\n# END VAPT RISK-014",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'X-Frame-Options'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-015": {
@@ -823,6 +865,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-015\nheader {\n    X-Content-Type-Options \"nosniff\"\n    defer\n}\n# END VAPT RISK-015",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'X-Content-Type-Options'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-015\nHeader always set X-Content-Type-Options \"nosniff\"\n# END VAPT RISK-015",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'X-Content-Type-Options'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-016": {
@@ -888,6 +936,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-016\nheader {\n    X-XSS-Protection \"1; mode=block\"\n    defer\n}\n# END VAPT RISK-016",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'X-XSS-Protection'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-016\nHeader always set X-XSS-Protection \"1; mode=block\"\n# END VAPT RISK-016",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'X-XSS-Protection'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-017": {
@@ -953,6 +1007,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-017\nheader {\n    Referrer-Policy \"strict-origin-when-cross-origin\"\n    defer\n}\n# END VAPT RISK-017",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Referrer-Policy'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-017\nHeader always set Referrer-Policy \"strict-origin-when-cross-origin\"\n# END VAPT RISK-017",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Referrer-Policy'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-018": {
@@ -1018,6 +1078,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-018\nheader {\n    Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n    defer\n}\n# END VAPT RISK-018",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Permissions-Policy'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-018\nHeader always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n# END VAPT RISK-018",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Permissions-Policy'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-019": {
@@ -1082,6 +1148,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-019\n@risk019 {\n    path *.env\n    path *.git\n    path *.sql\n    path *.log\n    path *.ini\n    path *.yml\n    path *.yaml\n    path *.bak\n    path *.conf\n}\nrespond @risk019 \"Access Denied\" 403\n# END VAPT RISK-019",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-019\n<FilesMatch \"\\.(env|git|sql|log|ini|yml|yaml|bak|conf)$\">\n    Order Deny,Allow\n    Deny from all\n</FilesMatch>\n# END VAPT RISK-019",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-020": {
@@ -1146,6 +1218,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-020\n@risk020 {\n    path *.php\n}\nrespond @risk020 \"Access Denied\" 403\n# END VAPT RISK-020",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-020\n<FilesMatch \"\\.php$\">\n    Order Deny,Allow\n    Deny from all\n</FilesMatch>\n# END VAPT RISK-020",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-021": {
@@ -1210,6 +1288,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-021\n@risk021 {\n    path /wp-config.php\n}\nrespond @risk021 \"Access Denied\" 403\n# END VAPT RISK-021",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-021\n<Files \"wp-config.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-021",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-022": {
@@ -1275,6 +1359,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-022\nheader {\n    Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n    defer\n}\n# END VAPT RISK-022",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Content-Security-Policy'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-022\nHeader always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n# END VAPT RISK-022",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Content-Security-Policy'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-023": {
@@ -1342,6 +1432,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-023\n@risk023 {\n    method TRACE\n}\nrespond @risk023 \"Access Denied\" 403\n# END VAPT RISK-023",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-023\n<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    RewriteCond %{REQUEST_METHOD} ^TRACE [NC]\n    RewriteRule .* - [F,L]\n</IfModule>\n# END VAPT RISK-023",
+                "verification": "apachectl -t && curl -sI 'https://yoursite.com/' | grep HTTP",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-024": {
@@ -1412,6 +1508,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-024\nheader {\n    -Server\n    -X-Powered-By\n    defer\n}\n# END VAPT RISK-024",
                 "note": "Caddy omits Server header by default; this explicitly removes if a proxy upstream adds it."
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-024\nHeader unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n# END VAPT RISK-024",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Server'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-025": {
@@ -1468,6 +1570,12 @@
             "caddy": {
                 "implementation_type": "notes_only",
                 "note": "No direct Caddy equivalent for: FileETag None"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-025\nFileETag None\n# END VAPT RISK-025",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-026": {
@@ -1524,6 +1632,12 @@
             "caddy": {
                 "implementation_type": "notes_only",
                 "note": "No direct Caddy equivalent for: Options -FollowSymLinks\nOptions +SymLinksIfOwnerMatch"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-026\nOptions -FollowSymLinks\nOptions +SymLinksIfOwnerMatch\n# END VAPT RISK-026",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-027": {
@@ -1588,6 +1702,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-027\n@risk027 {\n    path /install.php\n}\nrespond @risk027 \"Access Denied\" 403\n# END VAPT RISK-027",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-027\n<Files \"install.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-027",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-028": {
@@ -1652,6 +1772,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-028\n@risk028 {\n    path /upgrade.php\n}\nrespond @risk028 \"Access Denied\" 403\n# END VAPT RISK-028",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-028\n<Files \"upgrade.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-028",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-029": {
@@ -1716,6 +1842,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-029\n@risk029 {\n    path *.bak\n    path *.backup\n    path *.old\n    path *.orig\n    path *.save\n    path *.swp\n    path *.sql\n    path *.dump\n}\nrespond @risk029 \"Access Denied\" 403\n# END VAPT RISK-029",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-029\n<FilesMatch \"\\.(bak|backup|old|orig|save|swp|sql|dump)$\">\n    Order Deny,Allow\n    Deny from all\n</FilesMatch>\n# END VAPT RISK-029",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-030": {
@@ -1780,6 +1912,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-030\n@risk030 {\n    path *.log\n}\nrespond @risk030 \"Access Denied\" 403\n# END VAPT RISK-030",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-030\n<FilesMatch \"\\.(log|error_log|access_log)$\">\n    Order Deny,Allow\n    Deny from all\n</FilesMatch>\n# END VAPT RISK-030",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-031": {
@@ -1845,6 +1983,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-031\nheader {\n    Cross-Origin-Resource-Policy \"same-origin\"\n    defer\n}\n# END VAPT RISK-031",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Resource-Policy'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-031\nHeader always set Cross-Origin-Resource-Policy \"same-origin\"\n# END VAPT RISK-031",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Resource-Policy'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-032": {
@@ -1910,6 +2054,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-032\nheader {\n    Cross-Origin-Embedder-Policy \"require-corp\"\n    defer\n}\n# END VAPT RISK-032",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Embedder-Policy'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-032\nHeader always set Cross-Origin-Embedder-Policy \"require-corp\"\n# END VAPT RISK-032",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Embedder-Policy'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-033": {
@@ -1975,6 +2125,12 @@
                 "implementation_type": "caddy_header",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-033\nheader {\n    Cross-Origin-Opener-Policy \"same-origin\"\n    defer\n}\n# END VAPT RISK-033",
                 "verification": "caddy validate && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Opener-Policy'"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-033\nHeader always set Cross-Origin-Opener-Policy \"same-origin\"\n# END VAPT RISK-033",
+                "verification": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Opener-Policy'",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-034": {
@@ -2039,6 +2195,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-034\n@risk034 {\n    path /debug.log\n}\nrespond @risk034 \"Access Denied\" 403\n# END VAPT RISK-034",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-034\n<Files \"debug.log\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-034",
+                "verification": "apachectl -t",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-035": {
@@ -2106,6 +2268,12 @@
                 "implementation_type": "caddy_respond_block",
                 "caddyfile_snippet": "# BEGIN VAPT RISK-035\n@risk035 {\n    path /server-status* /server-info*\n}\nrespond @risk035 \"Access Denied\" 403\n# END VAPT RISK-035",
                 "verification": "caddy validate && curl -sI https://yoursite.com/blocked | grep HTTP"
+            },
+            "litespeed": {
+                "implementation_type": "litespeed_htaccess",
+                "litespeed_snippet": "# BEGIN VAPT RISK-035\n<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    RewriteRule ^server-status - [F,L]\n    RewriteRule ^server-info - [F,L]\n</IfModule>\n# END VAPT RISK-035",
+                "verification": "apachectl -t && curl -sI 'https://yoursite.com/' | grep HTTP",
+                "note": "Litespeed natively supports Apache .htaccess directives."
             }
         },
         "RISK-036": {
