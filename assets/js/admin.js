@@ -441,6 +441,8 @@ window.vaptScriptLoaded = true;
           generated_schema: JSON.stringify(parsed),
           implementation_data: JSON.stringify(localImplData),
           is_enforced: (() => {
+            // v2.3.7 Fix: Deploying via A+ Adaptive Deploy always implies enforcement (button turns green)
+            if (isAdaptiveDeployment) return 1;
             // 1. Check explicit user interaction first (v3.13.21 Fix)
             if (localImplData && localImplData.feat_enabled !== undefined) {
               const val = localImplData.feat_enabled;
