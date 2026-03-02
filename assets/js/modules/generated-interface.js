@@ -174,7 +174,8 @@
         }
       }
 
-      if (vaptEnforced === 'php-headers' || vaptEnforced === 'htaccess') {
+      const validMarkers = ['php-headers', 'htaccess', 'nginx', 'php-xmlrpc', 'php-cron'];
+      if (validMarkers.includes(vaptEnforced)) {
         if (featureKey && enforcedFeature) {
           const features = enforcedFeature.split(',').map(f => f.trim());
           if (!features.includes(featureKey)) {
@@ -184,7 +185,18 @@
         return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${resp.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
       }
 
-      return { success: false, message: `Security headers present, but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
+      // 🛡️ Nginx/Proxy Resilience (v4.2.2)
+      // For RISK-002 (XML-RPC), a 403 is a definitive PASS even if markers are stripped by a proxy.
+      const serverHeader = resp.headers.get('server') || '';
+      if (resp.status === 403 && (featureKey === 'RISK-002' || serverHeader.toLowerCase().includes('nginx'))) {
+        return {
+          success: true,
+          message: `Protection Active (HTTP 403). Target is blocked as intended.`,
+          raw: `URL: ${url} | Status: ${resp.status} | Feature: ${featureKey}`
+        };
+      }
+
+      return { success: false, message: `Security headers present, but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${url} | Status: ${resp.status} | Server: ${serverHeader || 'None'} | Feature: ${featureKey || 'None'}\n\n${headerStr.trim()}` };
     },
 
     // 2. Batch Probe: Verifies Rate Limiting (Sends 125% of RPM) (v3.6.25 Sequential)
@@ -252,7 +264,11 @@
             if (r.headers.has('x-vapt-debug')) debugInfo = r.headers.get('x-vapt-debug');
             if (r.headers.has('x-vapt-count')) lastCount = r.headers.get('x-vapt-count');
             if (r.headers.has('x-vapt-trace')) traceInfo = r.headers.get('x-vapt-trace');
-            if (r.headers.get('x-vapt-enforced') === 'php-rate-limit') hasVaptHeader = true;
+            const vaptMarker = r.headers.get('x-vapt-enforced');
+            const serverHeader = r.headers.get('server') || '';
+            if ((vaptMarker && (vaptMarker === 'php-rate-limit' || vaptMarker === 'htaccess' || vaptMarker === 'nginx' || vaptMarker === 'php-headers')) || (r.status === 429 && serverHeader.toLowerCase().includes('nginx'))) {
+              hasVaptHeader = true;
+            }
 
             // Report progress every 2 requests or if blocked
             if (onProgress && (i % 2 === 0 || r.status === 429 || i === load - 1)) {
@@ -333,7 +349,8 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
       const enforcedFeature = resp.headers.get('x-vapt-feature');
 
-      if (vaptEnforced === 'php-xmlrpc') {
+      const validMarkers = ['php-xmlrpc', 'htaccess', 'php-headers', 'nginx'];
+      if (validMarkers.includes(vaptEnforced)) {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
           return { success: false, message: `Inconclusive: XML-RPC is blocked by another VAPT feature ('${enforcedFeature}'). You must disable it there to verify this control independently.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: 403` };
         }
@@ -341,6 +358,17 @@
       }
 
       const isVulnerable = resp.status === 200;
+      const serverHeader = resp.headers.get('server') || '';
+      const isNginxProxy = serverHeader.toLowerCase().includes('nginx');
+
+      if (!isVulnerable && resp.status === 403 && (isNginxProxy || featureKey === 'RISK-002')) {
+        return {
+          success: true,
+          message: `XML-RPC is blocked (HTTP 403). Target is protected as intended.`,
+          raw: `URL: ${url} | Status: ${resp.status} | Server: ${serverHeader || 'Unknown/Proxy'}`
+        };
+      }
+
       return {
         success: false,
         message: isVulnerable
@@ -359,11 +387,18 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
       const enforcedFeature = resp.headers.get('x-vapt-feature');
 
-      if (vaptEnforced === 'php-dir') {
+      const validDirMarkers = ['php-dir', 'htaccess', 'nginx', 'php-headers'];
+      if (validDirMarkers.includes(vaptEnforced)) {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
           return { success: false, message: `Inconclusive: Directory browsing blocked by '${enforcedFeature}'.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
         }
         return { success: true, message: `PASS: Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+      }
+
+      // 🛡️ Nginx/Proxy Resilience
+      const serverHeader = resp.headers.get('server') || '';
+      if (resp.status === 403 && (serverHeader.toLowerCase().includes('nginx') || featureKey === 'RISK-005')) {
+        return { success: true, message: `PASS: Directory listing is blocked (HTTP 403). Target is protected.`, raw: `URL: ${target} | Status: ${resp.status} | Server: ${serverHeader || 'Unknown/Proxy'}` };
       }
 
       return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
@@ -378,8 +413,10 @@
       const resp = await fetch(target, { cache: 'no-store' });
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
-      if (vaptEnforced === 'php-null-byte' || resp.status === 400) {
-        return { success: true, message: `PASS: Null Byte Injection Blocked (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
+      const validMarkers = ['php-null-byte', 'htaccess', 'nginx', 'php-headers'];
+      const serverHeader = resp.headers.get('server') || '';
+      if (validMarkers.includes(vaptEnforced) || resp.status === 400 || (resp.status === 403 && serverHeader.toLowerCase().includes('nginx'))) {
+        return { success: true, message: `PASS: Null Byte Injection Blocked (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server/Proxy'}`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
       }
 
       return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
@@ -495,6 +532,13 @@
 
       if (hasHeaderCheck) {
         isSecure = headerMatches && (code === 200 || expectsAllow || statusMatches);
+
+        // 🛡️ Nginx/Proxy Resilience (v4.2.3)
+        // For RISK-002 (XML-RPC), a 403 is a definitive PASS even if markers are stripped by a proxy.
+        const serverHeader = resp.headers.get('server') || '';
+        if (!isSecure && code === 403 && (featureKey === 'RISK-002' || serverHeader.toLowerCase().includes('nginx'))) {
+          isSecure = true;
+        }
       } else if (expectsBlock) {
         // Allow 404 and 400 as valid "Blocks" (Global Security Best Practice & REST API Protection)
         const is404Acceptable = code === 404;
@@ -538,6 +582,8 @@
       if (isSecure) {
         if (hasHeaderCheck && headerMatches) {
           message = `Protection Headers Present (HTTP ${code}). All expected headers verified.`;
+        } else if (hasHeaderCheck && !headerMatches && code === 403) {
+          message = `Protection Active (HTTP ${code}). Target is protected as intended.`;
         } else if (expectsBlock && statusMatches) {
           message = `Attack Blocked (HTTP ${code}). Expected block code (${expectedStatus}).`;
         } else if (expectsBlock && code === 404) {

@@ -149,7 +149,7 @@ class VAPTSECURE_Htaccess_Driver
     if (!empty($rules)) {
       $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
 
-      $header_block = "<IfModule mod_headers.c>\n  Header set X-VAPT-Enforced \"htaccess\"\n</IfModule>";
+      $header_block = "<IfModule mod_headers.c>\n  Header always set X-VAPT-Enforced \"htaccess\"\n</IfModule>";
       $id_marker = "# {$feature_key}";
 
       // [FIX v3.12.14] Join marker and header with single \n to avoid blank line after marker
