@@ -48,28 +48,14 @@ class VAPTSECURE_Hook_Driver
   /**
    * 🛡️ TWO-WAY DEACTIVATION & ENFORCEMENT (v3.6.19)
    */
-  public static function apply($impl_data, $schema, $key = '')
+  public static function apply($resolved_data, $schema, $key = '')
   {
     $log_file = VAPTSECURE_PATH . 'vapt-debug.txt';
     $log = "VAPT Enforcement Run at " . current_time('mysql') . "\n";
     $log .= "Feature: $key\n";
 
-    // 1. Resolve Data (Merge Defaults)
-    $resolved_data = array();
-    if (isset($schema['controls']) && is_array($schema['controls'])) {
-      foreach ($schema['controls'] as $control) {
-        if (isset($control['key'])) {
-          $key_name = $control['key'];
-          $resolved_data[$key_name] = isset($impl_data[$key_name]) ? $impl_data[$key_name] : (isset($control['default']) ? $control['default'] : null);
-        }
-      }
-    }
-    if (!empty($impl_data)) {
-      $resolved_data = array_merge($resolved_data, $impl_data);
-    }
-
     // 2. TWO-WAY STRATEGY: Strictly check 'enabled' toggle
-    $is_enabled = isset($resolved_data['enabled']) ? (bool)$resolved_data['enabled'] : true;
+    $is_enabled = isset($resolved_data['feat_enabled']) ? (bool)$resolved_data['feat_enabled'] : (isset($resolved_data['enabled']) ? (bool)$resolved_data['enabled'] : true);
     if (!$is_enabled) {
       file_put_contents($log_file, $log . "Deactivated: Feature is explicitly disabled in UI.\n", FILE_APPEND);
       return; // Stop enforcement

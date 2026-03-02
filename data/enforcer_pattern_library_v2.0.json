@@ -96,6 +96,13 @@
         "wrapped_code": "# BEGIN VAPT RISK-002\n<Files \"xmlrpc.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-002",
         "begin_marker": "# BEGIN VAPT RISK-002",
         "end_marker": "# END VAPT RISK-002",
+        "driver": {
+          "write_mode": "top",
+          "target_file": ".htaccess",
+          "write_block": "# BEGIN VAPT RISK-002\n<Files \"xmlrpc.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-002",
+          "idempotency_check": "# BEGIN VAPT RISK-002",
+          "if_found": "skip"
+        },
         "note": "Apache 2.4+: use Require all denied",
         "verification": {
           "command": "apachectl -t",
@@ -103,12 +110,9 @@
         },
         "rollback": "Remove # BEGIN VAPT RISK-002 ... # END VAPT RISK-002 block from .htaccess",
         "driver": {
-          "write_mode": "prepend_to_file",
-          "target_file": "{ABSPATH}.htaccess",
+          "write_mode": "top",
+          "target_file": ".htaccess",
           "write_block": "# BEGIN VAPT RISK-002\n<Files \"xmlrpc.php\">\n    Order Deny,Allow\n    Deny from all\n</Files>\n# END VAPT RISK-002",
-          "anchor_string": null,
-          "anchor_position": "prepend",
-          "fallback": null,
           "idempotency_check": "# BEGIN VAPT RISK-002",
           "if_found": "skip"
         }

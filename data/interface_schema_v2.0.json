@@ -246,6 +246,13 @@
         "Cloudflare",
         "IIS"
       ],
+      "enforcement": {
+        "driver": "htaccess",
+        "target": "root",
+        "mappings": {
+          "feat_enabled": "enforcer_pattern_library_v2.0.patterns.RISK-002.htaccess"
+        }
+      },
       "platform_implementations": {
         ".htaccess": {
           "lib_key": "htaccess",

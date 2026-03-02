@@ -425,7 +425,7 @@ class VAPTSECURE_REST
         $feature['exists_in_multiple_files'] = false;
 
         // 🛡️ Technical Insights (v1.9.15)
-        $feature['technical_notes'] = self::resolve_technical_notes_from_catalogue($key);
+        $feature['technical_notes'] = VAPTSECURE_Enforcer::resolve_technical_notes_from_catalogue($key);
 
         $meta = VAPTSECURE_DB::get_feature_meta($key);
         if ($meta) {
@@ -439,21 +439,16 @@ class VAPTSECURE_REST
           $feature['wireframe_url'] = $meta['wireframe_url'];
           $feature['dev_instruct'] = isset($meta['dev_instruct']) ? $meta['dev_instruct'] : '';
 
-          $schema_data = array();
-          $use_override_schema = in_array($norm_status, ['test', 'release']) && !empty($meta['override_schema']);
-          $source_schema_json = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
-          if (!empty($source_schema_json)) {
-            $decoded = json_decode($source_schema_json, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-              $schema_data = $decoded;
-              // [v3.12.17] Translate URL placeholders when returning schema to UI
-              $schema_data = self::translate_url_placeholders($schema_data);
-              if ($use_override_schema) $feature['is_overridden'] = true;
-            }
-          }
+          // 🛡️ UNIFIED SCHEMA & DATA RESOLUTION (v4.2.0)
+          $schema_data = VAPTSECURE_Enforcer::resolve_schema($meta);
+          $schema_data = self::translate_url_placeholders($schema_data);
+
           $feature['generated_schema'] = $schema_data;
-          $source_impl_json = (in_array($norm_status, ['test', 'release']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
-          $feature['implementation_data'] = $source_impl_json ? json_decode($source_impl_json, true) : array();
+          $feature['implementation_data'] = VAPTSECURE_Enforcer::resolve_effective_data($meta, $schema_data);
+
+          if (in_array($norm_status, ['test', 'release']) && !empty($meta['override_schema'])) {
+            $feature['is_overridden'] = true;
+          }
 
           // [v3.12.17] Include manual_protocol and operational_notes in response
           if (!empty($meta['manual_protocol_content'])) {
@@ -1513,20 +1508,17 @@ class VAPTSECURE_REST
   }
 
   /**
-   * 🛡️ INTELLIGENT ENFORCEMENT STRATEGY (v3.3.9)
+   * 🛡️ INTELLIGENT ENFORCEMENT STRATEGY (v4.2.0)
    * Analyzes the schema and automatically corrects driver selection 
-   * if it detects physical file targets being handled by PHP hooks.
+   * now utilizing the centralized Enforcer Bridge.
    */
   private static function analyze_enforcement_strategy($schema, $feature_key)
   {
-    if (!isset($schema['enforcement'])) {
-      $schema['enforcement'] = [
-        'driver' => 'hook',
-        'mappings' => []
-      ];
+    // Use the unified Enforcer Bridge if enforcement is missing
+    if (empty($schema['enforcement']) || empty($schema['enforcement']['mappings'])) {
+      $meta = ['feature_key' => $feature_key, 'status' => 'implemented'];
+      $schema = VAPTSECURE_Enforcer::resolve_schema($meta);
     }
-    $driver = $schema['enforcement']['driver'] ?? 'hook';
-    $mappings = $schema['enforcement']['mappings'] ?? array();
 
     $physical_file_patterns = [
       'readme.html',
@@ -1635,206 +1627,12 @@ class VAPTSECURE_REST
 
     // 🛡️ SUB-DIRECTORY ENFORCEMENT (v1.1)
     if ($driver === 'htaccess' && !isset($schema['enforcement']['target_file'])) {
-      $target_file = self::resolve_target_file_from_catalogue($feature_key);
+      $target_file = VAPTSECURE_Enforcer::resolve_target_file_from_catalogue($feature_key);
       if ($target_file !== '.htaccess') {
         error_log("VAPT Intelligence: Setting custom target_file $target_file for $feature_key");
         $schema['enforcement']['target_file'] = $target_file;
       }
     }
-
-    // 🛡️ GLOBAL ENFORCEMENT BRIDGE (v1.1)
-    // If mappings are empty or incomplete, resolve them from the pattern library or catalogue
-    if ($driver === 'htaccess' || $driver === 'wp-config' || $driver === 'hook') {
-      if (empty($schema['enforcement']['mappings'])) {
-        // Try htaccess first if hook
-        $bridge_driver = ($driver === 'hook') ? 'htaccess' : $driver;
-        $code = self::resolve_enforcement_from_catalogue($feature_key, $bridge_driver);
-
-        if ($code) {
-          $mapping_key = 'feat_key'; // Default
-          if (isset($schema['components'])) {
-            foreach ($schema['components'] as $comp) {
-              if (isset($comp['type']) && $comp['type'] === 'toggle' && isset($comp['component_id'])) {
-                $mapping_key = $comp['component_id'];
-                break;
-              }
-            }
-          } elseif (isset($schema['controls'])) {
-            foreach ($schema['controls'] as $ctrl) {
-              if (isset($ctrl['type']) && $ctrl['type'] === 'toggle' && isset($ctrl['key'])) {
-                $mapping_key = $ctrl['key'];
-                break;
-              }
-            }
-          }
-          $schema['enforcement']['mappings'][$mapping_key] = $code;
-          $schema['enforcement']['driver'] = $bridge_driver;
-          error_log("VAPT Intelligence: Bridged missing enforcement code for $feature_key using $bridge_driver driver.");
-        }
-      }
-    }
-
-    // 🛡️ HTACCESS SYNTAX GUARD (v1.1)
-    if ($driver === 'htaccess' && !empty($schema['enforcement']['mappings'])) {
-      foreach ($schema['enforcement']['mappings'] as $key => &$code) {
-        if (!is_string($code)) continue;
-
-        // 1. Forbidden <Directory> replacement
-        if (stripos($code, '<Directory') !== false) {
-          error_log("VAPT Syntax Guard: Replacing forbidden <Directory> block in $feature_key");
-          $code = preg_replace('/<Directory\s+[^>]+>/i', '<FilesMatch ".*">', $code);
-          $code = str_ireplace('</Directory>', '</FilesMatch>', $code);
-        }
-
-        // 2. Forbidden Server-Level Directives
-        $forbidden = ['TraceEnable', 'ServerSignature', 'ServerTokens', 'UseCanonicalName'];
-        foreach ($forbidden as $directive) {
-          if (stripos($code, $directive) !== false) {
-            error_log("VAPT Syntax Guard: Stripping forbidden server directive $directive from $feature_key");
-            $code = preg_replace('/' . $directive . '\s+\w+/i', '# [REMOVED BY GUARD] ' . $directive, $code);
-          }
-        }
-
-        // 3. Ensure RewriteEngine On is present if RewriteRule/RewriteCond is used
-        if ((stripos($code, 'RewriteRule') !== false || stripos($code, 'RewriteCond') !== false) && stripos($code, 'RewriteEngine On') === false) {
-          $code = "RewriteEngine On\n" . $code;
-        }
-      }
-    }
-
-    return $schema;
-  }
-
-  /**
-   * 🛡️ RESOLVE ENFORCEMENT FROM CATALOGUE (v3.13.5)
-   */
-  private static function resolve_enforcement_from_catalogue($feature_key, $driver)
-  {
-    // 🛡️ v1.1 Pattern Library Priority
-    $pattern_lib_path = VAPTSECURE_PATH . 'data/' . (defined('VAPTSECURE_PATTERN_LIBRARY') ? VAPTSECURE_PATTERN_LIBRARY : 'enforcer_pattern_library_v1.1.json');
-    if (file_exists($pattern_lib_path)) {
-      $lib = json_decode(file_get_contents($pattern_lib_path), true);
-      if (isset($lib['patterns'][$feature_key])) {
-        $p = $lib['patterns'][$feature_key];
-
-        // Handle corrected htaccess
-        if ($driver === 'htaccess' && isset($p['htaccess_corrected']['code'])) {
-          return $p['htaccess_corrected']['code'];
-        }
-
-        // Handle wp-config enriched
-        if ($driver === 'wp-config' && isset($p['wp_config_enriched']['code'])) {
-          return $p['wp_config_enriched']['code'];
-        }
-
-        // Fallback to platform-specific keys if direct corrected not found
-        if (isset($p[$driver]['code'])) {
-          return $p[$driver]['code'];
-        }
-      }
-    }
-
-    // 🛡️ Legacy Fallback (v3.13.5)
-    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
-    if (!file_exists($catalog_path)) return null;
-
-    $catalog = json_decode(file_get_contents($catalog_path), true);
-    if (!isset($catalog['risk_catalog'])) return null;
-
-    foreach ($catalog['risk_catalog'] as $item) {
-      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
-      if ($id === $feature_key) {
-        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
-        foreach ($steps as $step) {
-          $enforcer = strtolower($step['enforcer'] ?? '');
-          if (($driver === 'htaccess' && strpos($enforcer, 'htaccess') !== false) ||
-            ($driver === 'wp-config' && strpos($enforcer, 'config') !== false)
-          ) {
-            if (!empty($step['code'])) return $step['code'];
-          }
-        }
-        $examples = $item['code_examples'] ?? [];
-        foreach ($examples as $ex) {
-          $desc = strtolower($ex['description'] ?? '');
-          if (($driver === 'htaccess' && (strpos($desc, 'htaccess') !== false || strpos($desc, 'apache') !== false)) ||
-            ($driver === 'wp-config' && strpos($desc, 'config') !== false)
-          ) {
-            $code = $ex['code'] ?? '';
-            if (preg_match('/```(?:apache|php|htaccess)?\s*(.*?)\s*```/is', $code, $m)) {
-              $code = $m[1];
-            }
-            return trim($code);
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * 🛡️ RESOLVE TARGET ENDPOINT (v3.13.5)
-   */
-  private static function resolve_target_endpoint_from_catalogue($feature_key)
-  {
-    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
-    if (!file_exists($catalog_path)) return null;
-
-    $catalog = json_decode(file_get_contents($catalog_path), true);
-    if (!isset($catalog['risk_catalog'])) return null;
-
-    foreach ($catalog['risk_catalog'] as $item) {
-      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
-      if ($id === $feature_key) {
-        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
-        foreach ($steps as $step) {
-          $path = !empty($step['target_pattern']) ? $step['target_pattern'] : (!empty($step['target']) ? $step['target'] : '');
-          if ($path) return trim(ltrim(rtrim($path, '$'), '^'));
-        }
-        $rollback = $item['protection']['rollback_steps'] ?? [];
-        foreach ($rollback as $rb) {
-          if (!empty($rb['target'])) return trim(ltrim(rtrim($rb['target'], '$'), '^'));
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * 🛡️ RESOLVE TECHNICAL NOTES (v1.9.15)
-   * Fetches actionable implementation notes from the pattern library.
-   */
-  private static function resolve_technical_notes_from_catalogue($feature_key)
-  {
-    $notes = [];
-    $pattern_lib_path = VAPTSECURE_PATH . 'data/enforcer_pattern_library_v2.0.json';
-    if (file_exists($pattern_lib_path)) {
-      $lib = json_decode(file_get_contents($pattern_lib_path), true);
-      if (isset($lib['patterns'][$feature_key])) {
-        $p = $lib['patterns'][$feature_key];
-        foreach (['htaccess', 'wp_config', 'wordpress', 'php_functions', 'fail2ban'] as $driver) {
-          if (isset($p[$driver]['note'])) {
-            $notes[$driver] = $p[$driver]['note'];
-          }
-        }
-      }
-    }
-    return $notes;
-  }
-
-  /**
-   * 🛡️ RESOLVE TARGET FILE (v1.1)
-   * Resolves the physical file target, supporting sub-directories (e.g. uploads/.htaccess)
-   */
-  private static function resolve_target_file_from_catalogue($feature_key)
-  {
-    $pattern_lib_path = VAPTSECURE_PATH . 'data/' . (defined('VAPTSECURE_PATTERN_LIBRARY') ? VAPTSECURE_PATTERN_LIBRARY : 'enforcer_pattern_library_v1.1.json');
-    if (file_exists($pattern_lib_path)) {
-      $lib = json_decode(file_get_contents($pattern_lib_path), true);
-      if (isset($lib['patterns'][$feature_key]['htaccess_corrected']['target_file'])) {
-        return $lib['patterns'][$feature_key]['htaccess_corrected']['target_file'];
-      }
-    }
-    return '.htaccess'; // Default
   }
 
   /**
