@@ -1132,13 +1132,33 @@ class VAPTSECURE_Hook_Driver
             $route_check = isset($_GET['rest_route']) ? $_GET['rest_route'] : '';
 
             // Allow explicit WP admin and standard REST routes (whitelist)
-            $whitelist_paths = ['^/wp-json/wp/v2', '^/wp-json/wp/v2/users/me', '^/wp-admin', '^/wp-login.php'];
-            foreach ($whitelist_paths as $p) {
-                if (preg_match('#' . $p . '#i', $uri)) {
+            $whitelist_uri_patterns = [
+                '#^/wp-json#i',
+                '#^/wp-admin#i',
+                '#/wp-login.php#i',
+                '#/admin-ajax.php#i',
+                '#/admin-post.php#i',
+                '#/wp-cron.php#i',
+                '#/xmlrpc.php#i',
+            ];
+
+            $whitelist_route_substrings = [
+                'wp/v2',
+                'vaptsecure/v1',
+                'oembed',
+            ];
+
+            foreach ($whitelist_uri_patterns as $pat) {
+                if (preg_match($pat, $uri)) {
                     return $result; // Trusted admin or core REST route — skip aggressive checks
                 }
-                if ($route_check && preg_match('#' . $p . '#i', $route_check)) {
-                    return $result;
+            }
+
+            if ($route_check) {
+                foreach ($whitelist_route_substrings as $sub) {
+                    if (stripos($route_check, $sub) !== false) {
+                        return $result;
+                    }
                 }
             }
 
