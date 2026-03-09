@@ -104,34 +104,45 @@ class VAPTSECURE_DB
       'include_verification_guidance' => '%d',
       'include_manual_protocol'       => '%d',
       'include_operational_notes'     => '%d',
-      'is_enforced'                   => '%d',
       'wireframe_url'                 => '%s',
       'generated_schema'              => '%s',
       'implementation_data'           => '%s',
-      'dev_instruct'                  => '%s'
+      'dev_instruct'                  => '%s',
+      'is_adaptive_deployment'        => '%d',
+      'override_schema'               => '%s',
+      'override_implementation_data'  => '%s',
+      'is_enabled'                    => '%d',
+      'is_enforced'                   => '%d'
     );
 
-    // 2. Fetch existing to merge
-    $existing = self::get_feature_meta($key);
-    $merged_data = $existing ? array_merge($existing, $data) : $data;
-
-    // Ensure key is set
-    $merged_data['feature_key'] = $key;
-
-    // 3. Construct Query Data explicitly in order
-    $final_data = array();
-    $formats = array();
+    // 2. Filter data against actual database columns (Self-Healing)
+    $existing_cols = $wpdb->get_col("DESCRIBE $table", 0);
+    $final_data = array('feature_key' => $key);
+    $formats = array('%s');
 
     foreach ($schema_map as $col => $fmt) {
-      if (array_key_exists($col, $merged_data)) {
-        $final_data[$col] = $merged_data[$col];
+      if ($col === 'feature_key') continue;
+      if (isset($data[$col]) && in_array($col, $existing_cols)) {
+        $final_data[$col] = $data[$col];
         $formats[] = $fmt;
-      } else {
-        // If missing in data/existing, set default based on type
-        // This handles fresh inserts where $existing is null
-        if ($col === 'feature_key') {
-          $final_data[$col] = $key;
-        } else {
+      }
+    }
+
+    // 3. Fetch existing to merge (but only for columns that exist)
+    $existing = self::get_feature_meta($key);
+    if ($existing) {
+      foreach ($existing as $k => $v) {
+        if (!isset($final_data[$k]) && in_array($k, $existing_cols)) {
+          $final_data[$k] = $v;
+          $formats[] = isset($schema_map[$k]) ? $schema_map[$k] : '%s';
+        }
+      }
+    } else {
+      // If no existing record, apply defaults for columns not provided in $data
+      foreach ($schema_map as $col => $fmt) {
+        if ($col === 'feature_key') continue; // Already handled
+        if (!isset($final_data[$col]) && in_array($col, $existing_cols)) {
+          // Set default based on type
           $final_data[$col] = ($fmt === '%d') ? 0 : null;
           // Special defaults
           if (in_array($col, ['include_verification_guidance', 'include_manual_protocol', 'include_operational_notes'])) {
@@ -302,5 +313,98 @@ class VAPTSECURE_DB
     $wpdb->query("DELETE FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id IN ($ids_string)");
 
     return true;
+  }
+  /**
+   * Log a security event
+   */
+  public static function log_security_event($feature_key, $event_type, $details = array())
+  {
+    global $wpdb;
+    $table = $wpdb->prefix . 'vaptsecure_security_events';
+
+    return $wpdb->insert(
+      $table,
+      array(
+        'feature_key' => $feature_key,
+        'event_type'  => $event_type,
+        'ip_address'  => self::get_real_ip(),
+        'request_uri' => $_SERVER['REQUEST_URI'],
+        'details'     => json_encode($details),
+        'created_at'  => current_time('mysql'),
+      ),
+      array('%s', '%s', '%s', '%s', '%s', '%s')
+    );
+  }
+
+  /**
+   * Get recent security events
+   */
+  public static function get_security_events($limit = 50, $offset = 0)
+  {
+    global $wpdb;
+    $table = $wpdb->prefix . 'vaptsecure_security_events';
+    return $wpdb->get_results($wpdb->prepare("SELECT * FROM $table ORDER BY created_at DESC LIMIT %d OFFSET %d", $limit, $offset), ARRAY_A);
+  }
+
+  /**
+   * Get a single security event by ID
+   */
+  public static function get_security_event($id)
+  {
+    global $wpdb;
+    $table = $wpdb->prefix . 'vaptsecure_security_events';
+    return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id), ARRAY_A);
+  }
+
+  /**
+   * Get security stats summary
+   */
+  public static function get_security_stats_summary()
+  {
+    global $wpdb;
+    $table = $wpdb->prefix . 'vaptsecure_security_events';
+
+    $total_blocks = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+    $blocks_24h = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+
+    $top_risk = $wpdb->get_row("SELECT feature_key, COUNT(*) as count FROM $table GROUP BY feature_key ORDER BY count DESC LIMIT 1", ARRAY_A);
+
+    $active_features = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}vaptsecure_feature_status WHERE status IN ('Release', 'Develop', 'Test')");
+
+    return array(
+      'total_blocks' => (int) $total_blocks,
+      'blocks_24h'   => (int) $blocks_24h,
+      'top_risk'     => $top_risk ? $top_risk['feature_key'] : __('None', 'vaptsecure'),
+      'active_enforcements' => (int) $active_features
+    );
+  }
+
+  /**
+   * Get global enforcement status
+   */
+  public static function get_global_enforcement()
+  {
+    return (bool) get_option('vaptsecure_global_protection', 1);
+  }
+
+  /**
+   * Update global enforcement status
+   */
+  public static function update_global_enforcement($enabled)
+  {
+    return update_option('vaptsecure_global_protection', (int) $enabled);
+  }
+
+  /**
+   * Helper to get real IP
+   */
+  private static function get_real_ip()
+  {
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) return $_SERVER['HTTP_CF_CONNECTING_IP'];
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+      return trim($ips[0]);
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
   }
 }
