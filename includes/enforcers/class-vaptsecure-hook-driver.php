@@ -405,6 +405,28 @@ class VAPTSECURE_Hook_Driver
     }
 
     /**
+     * Record an admin-notice-friendly event so the Admin UI can surface alerts.
+     */
+    private static function record_admin_notification($feature_key, $payload = [])
+    {
+        try {
+            $existing = get_transient('vaptsecure_block_events');
+            $events = is_array($existing) ? $existing : [];
+            $events[] = array_merge([
+                'feature' => $feature_key,
+                'time' => current_time('mysql'),
+            ], $payload);
+            // keep only last 10 events
+            if (count($events) > 10) {
+                $events = array_slice($events, -10);
+            }
+            set_transient('vaptsecure_block_events', $events, 300); // show for 5 minutes
+        } catch (Exception $e) {
+            // silent
+        }
+    }
+
+    /**
      * Detect Request Context (Engine Core)
      * Returns: ['is_login', 'is_admin', 'is_api', 'is_frontend']
      */
@@ -664,6 +686,14 @@ class VAPTSECURE_Hook_Driver
                                         "count" => $current,
                                     ],
                                 );
+                                // Admin notification
+                                try {
+                                    self::record_admin_notification($feature_key, [
+                                        'reason' => 'Rate Limit',
+                                        'limit' => $limit,
+                                        'count' => $current,
+                                    ]);
+                                } catch (Exception $e) {}
                                 flock($fp, LOCK_UN);
                                 fclose($fp);
                                 wp_die(
@@ -739,6 +769,7 @@ class VAPTSECURE_Hook_Driver
                         "type" => "Directory Browsing",
                         "uri" => $uri,
                     ]);
+                    try { self::record_admin_notification($key, ['reason' => 'Directory Browsing', 'uri' => $uri]); } catch (Exception $e) {}
                     wp_die("VAPT: Directory Browsing is Blocked for Security.");
                 }
             }
@@ -761,6 +792,7 @@ class VAPTSECURE_Hook_Driver
             VAPTSECURE_DB::log_security_event($key, "Block", [
                 "type" => "XML-RPC",
             ]);
+            try { self::record_admin_notification($key, ['reason' => 'XML-RPC']); } catch (Exception $e) {}
             wp_die("VAPT: XML-RPC Access is Blocked for Security.");
         }
     }
@@ -795,6 +827,7 @@ class VAPTSECURE_Hook_Driver
                     'query' => $query,
                     'uri' => $uri,
                 ]);
+                try { self::record_admin_notification($key, ['reason' => 'Null Byte Injection', 'query' => $query, 'uri' => $uri]); } catch (Exception $e) {}
                 wp_die('VAPT: Null Byte Injection Attempt Blocked.');
             }
         }, 1);
@@ -874,6 +907,7 @@ class VAPTSECURE_Hook_Driver
                     "type" => "Debug Log Exposure",
                     "uri" => $uri,
                 ]);
+                try { self::record_admin_notification($key, ['reason' => 'Debug Log Exposure', 'uri' => $uri]); } catch (Exception $e) {}
                 wp_die("VAPT: Access to debug.log is Blocked for Security.");
             }
         });
@@ -1043,6 +1077,7 @@ class VAPTSECURE_Hook_Driver
                         "type" => "Sensitive File Access",
                         "file" => $file,
                     ]);
+                    try { self::record_admin_notification($key, ['reason' => 'Sensitive File Access', 'file' => $file]); } catch (Exception $e) {}
                     wp_die(
                         "VAPT: Access to this file is Blocked for Security.",
                     );
@@ -1088,6 +1123,7 @@ class VAPTSECURE_Hook_Driver
                     VAPTSECURE_DB::log_security_event($key, "Block", [
                         "type" => "WP-Cron Access",
                     ]);
+                    try { self::record_admin_notification($key, ['reason' => 'WP-Cron Access']); } catch (Exception $e) {}
                     wp_die("VAPT: WP-Cron is Blocked for Security.");
                 }
             },
@@ -1169,6 +1205,7 @@ class VAPTSECURE_Hook_Driver
                     'uri' => $uri,
                     'query' => $query,
                 ]);
+                try { self::record_admin_notification($key, ['reason' => 'REST SQLi Fingerprint', 'uri' => $uri, 'query' => $query]); } catch (Exception $e) {}
                 return new WP_Error('rest_forbidden', 'Malicious payload detected.', array('status' => 403));
             }
 
@@ -1183,6 +1220,7 @@ class VAPTSECURE_Hook_Driver
             $current_route = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
             if (preg_match('#/wp/v2/users/me($|\?|/)#', $current_route)) {
                 if (!is_user_logged_in() && get_current_user_id() === 0) {
+                    try { self::record_admin_notification('rest-users-me', ['reason' => 'Unauthorized users/me access', 'route' => $current_route]); } catch (Exception $e) {}
                     return new WP_Error('rest_forbidden', 'Authentication required.', array('status' => 401));
                 }
             }

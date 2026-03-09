@@ -16,6 +16,40 @@ class VAPTSECURE_Admin
     add_action('admin_menu', array($this, 'add_admin_menu'));
     add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
     add_action('admin_notices', array($this, 'show_nginx_notice'));
+    add_action('admin_notices', array($this, 'show_block_notifications'));
+  }
+
+  /**
+   * Show recent block notifications recorded by the enforcement engine.
+   */
+  public function show_block_notifications()
+  {
+    if (!current_user_can('manage_options')) return;
+
+    $events = get_transient('vaptsecure_block_events');
+    if (empty($events) || !is_array($events)) {
+      return;
+    }
+
+    foreach ($events as $e) {
+      $time = isset($e['time']) ? esc_html($e['time']) : esc_html(current_time('mysql'));
+      $reason = isset($e['reason']) ? esc_html($e['reason']) : 'Protection Triggered';
+      $details = '';
+      if (isset($e['uri'])) $details .= ' URI: ' . esc_html($e['uri']);
+      if (isset($e['file'])) $details .= ' File: ' . esc_html($e['file']);
+      if (isset($e['query'])) $details .= ' Query: ' . esc_html($e['query']);
+
+?>
+      <div class="notice notice-warning is-dismissible">
+        <p><strong>VAPT Secure blocked: <?php echo $reason; ?></strong></p>
+        <p><?php echo $time; ?><?php if (!empty($details)) echo ' - ' . $details; ?></p>
+        <p><a href="<?php echo esc_url(admin_url('admin.php?page=vaptsecure-domain-admin')); ?>">Open VAPT Secure Dashboard</a></p>
+      </div>
+<?php
+    }
+
+    // Clear transient after displaying to avoid repeat notices
+    delete_transient('vaptsecure_block_events');
   }
 
   public function show_nginx_notice()
