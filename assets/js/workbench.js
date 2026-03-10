@@ -177,8 +177,8 @@
         const isPushed = f.is_pushed || false;
 
         if (active === 'all') {
-          // Show all that are either Released or explicitly Pushed
-          return s === 'release' || (['develop', 'test'].includes(s) && isPushed);
+          // Show all features except Draft (All Lifecycle = Develop + Release)
+          return s !== 'draft' && s !== 'available';
         }
 
         if (active === 'develop') return ['develop', 'in_progress'].includes(s) && isPushed;
@@ -464,31 +464,7 @@
           el('h2', { style: { margin: 0, fontSize: '18px', fontWeight: 700, color: '#111827', display: 'flex', alignItems: 'baseline', gap: '8px' } }, [
             __('VAPT Implementation Dashboard'),
             el('span', { style: { fontSize: '11px', color: '#9ca3af', fontWeight: '400' } }, `v${settings.pluginVersion}`)
-          ]),
-          isSuper && el('span', {
-            style: {
-              marginLeft: '10px',
-              fontSize: '10px',
-              color: '#fff',
-              background: '#1e3a8a',
-              padding: '4px 8px',
-              borderRadius: '5px',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              verticalAlign: 'middle',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-            }
-          }, 'SUPERADMIN'),
-          el(Button, {
-            icon: 'update',
-            isSmall: true,
-            isSecondary: true,
-            onClick: () => fetchData(true),
-            disabled: loading || isRefreshing,
-            isBusy: isRefreshing,
-            label: __('Refresh Data', 'vaptsecure')
-          })
+          ])
         ]),
         // Right side: Status Tabs
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '15px' } }, [
