@@ -32,12 +32,20 @@ class VAPTSECURE_Enforcer
     if (false === $enforced) {
       global $wpdb;
       $table = $wpdb->prefix . 'vaptsecure_feature_meta';
-      $enforced = $wpdb->get_results("
-        SELECT m.*, s.status 
-        FROM $table m
-        LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key
-        WHERE m.is_enforced = 1
-      ", ARRAY_A);
+      $is_global = VAPTSECURE_DB::get_global_enforcement();
+
+      if ($is_global) {
+        $enforced = $wpdb->get_results("
+          SELECT m.*, s.status 
+          FROM $table m
+          LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key
+          WHERE s.status IN ('develop', 'release', 'test')
+          AND m.is_enabled = 1
+        ", ARRAY_A);
+      } else {
+        // [v3.13.20] Global is OFF: Total Kill Switch (Return Nothing)
+        $enforced = array();
+      }
       set_transient($cache_key, $enforced, HOUR_IN_SECONDS);
     }
 
@@ -50,19 +58,20 @@ class VAPTSECURE_Enforcer
 
       // Override Logic
       $use_override_schema = in_array($status, ['test', 'release']) && !empty($meta['override_schema']);
-      $schema = self::resolve_schema($meta);
-      $impl_data = self::resolve_effective_data($meta, $schema);
+      $raw_schema = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
+      $schema = !empty($raw_schema) ? json_decode($raw_schema, true) : array();
+
+      $use_override_impl = in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data']);
+      $raw_impl = $use_override_impl ? $meta['override_implementation_data'] : $meta['implementation_data'];
+      $impl_data = !empty($raw_impl) ? json_decode($raw_impl, true) : array();
 
       $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
 
-      // 🛡️ UNIFIED COMPLIANCE LOGIC (v4.2.3)
-      // Hook driver is universally shared for PHP-based logic.
-      // Other drivers (Nginx, IIS, Htaccess) get a PHP marker safety net.
-      if (class_exists('VAPTSECURE_Hook_Driver')) {
-        if ($driver === 'hook' || $driver === 'universal') {
+      // Hook driver is universally shared for PHP-based fallback rules
+      // [v2.0.5] Include config/wp-config to ensure enforcement markers (headers) are registered
+      if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess' || $driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
+        if (class_exists('VAPTSECURE_Hook_Driver')) {
           VAPTSECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
-        } else {
-          VAPTSECURE_Hook_Driver::register_marker_only($meta['feature_key']);
         }
       }
     }
@@ -108,9 +117,12 @@ class VAPTSECURE_Enforcer
       require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-deployment-orchestrator.php';
       $orchestrator = new VAPTSECURE_Deployment_Orchestrator();
 
+      // Resolve implementation data for toggle intelligence
+      $impl_data = self::resolve_impl($meta);
+
       // Use profile from settings if available, else default to auto_detect
       $profile = get_option('vaptsecure_deployment_profile', 'auto_detect');
-      $results = $orchestrator->orchestrate($key, $schema, $profile);
+      $results = $orchestrator->orchestrate($key, $schema, $profile, $impl_data);
 
       error_log("VAPT: Adaptive Deployment for {$key} results: " . json_encode($results));
       return;
@@ -160,7 +172,7 @@ class VAPTSECURE_Enforcer
 
     foreach ($features as $meta) {
       $schema = self::resolve_schema($meta);
-      $impl = self::resolve_effective_data($meta, $schema);
+      $impl = self::resolve_impl($meta);
 
       if (($schema['enforcement']['driver'] ?? '') === 'htaccess') {
         $rules = VAPTSECURE_Nginx_Driver::generate_rules($impl, $schema);
@@ -184,7 +196,7 @@ class VAPTSECURE_Enforcer
 
     foreach ($features as $meta) {
       $schema = self::resolve_schema($meta);
-      $impl = self::resolve_effective_data($meta, $schema);
+      $impl = self::resolve_impl($meta);
       $driver = $schema['enforcement']['driver'] ?? '';
 
       if ($driver === 'iis' || $driver === 'htaccess') {
@@ -209,7 +221,7 @@ class VAPTSECURE_Enforcer
 
     foreach ($features as $meta) {
       $schema = self::resolve_schema($meta);
-      $impl = self::resolve_effective_data($meta, $schema);
+      $impl = self::resolve_impl($meta);
       $driver = $schema['enforcement']['driver'] ?? '';
 
       if ($driver === 'caddy' || $driver === 'htaccess') {
@@ -232,25 +244,31 @@ class VAPTSECURE_Enforcer
   }
 
   // Helper to fetch enforced features (DRY)
-  public static function get_enforced_features()
+  private static function get_enforced_features()
   {
     global $wpdb;
     $table = $wpdb->prefix . 'vaptsecure_feature_meta';
-    return $wpdb->get_results("
-      SELECT m.*, s.status 
-      FROM $table m 
-      LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key 
-      WHERE m.is_enforced = 1 
-      AND s.status IS NOT NULL 
-      AND LOWER(s.status) NOT IN ('draft', 'available')
-    ", ARRAY_A);
+    $is_global = VAPTSECURE_DB::get_global_enforcement();
+
+    if ($is_global) {
+      // Plus explicitly enforced ones (is_enforced = 1)
+      return $wpdb->get_results("
+        SELECT m.*, s.status 
+        FROM $table m 
+        LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key 
+        WHERE s.status IN ('develop', 'release', 'test')
+      ", ARRAY_A);
+    } else {
+      // [v3.13.20] Global is OFF: Total Kill Switch
+      return array();
+    }
   }
 
   // Helpers for Schema/Impl Resolution
-  public static function resolve_schema($meta)
+  private static function resolve_schema($meta)
   {
-    $status = strtolower($meta['status'] ?? 'draft');
-    $raw = (in_array($status, ['test', 'release', 'implemented']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
+    $status = $meta['status'] ?? 'draft';
+    $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
     $schema = $raw ? json_decode($raw, true) : [];
 
     // [v3.12.5] Inject feature key if missing
@@ -258,173 +276,14 @@ class VAPTSECURE_Enforcer
       $schema['feature_key'] = $meta['feature_key'];
     }
 
-    // 🛡️ GLOBAL ENFORCEMENT BRIDGE (v4.2.0)
-    // If enforcement node is missing, try to bridge it from catalogue
-    if (empty($schema['enforcement'])) {
-      $schema = self::bridge_missing_schema_data($schema);
-    }
-
     return $schema;
   }
 
-  /**
-   * 🛡️ BRIDGE MISSING SCHEMA DATA (v4.2.0)
-   * Dynamically repairs risks missing enforcement blocks by probing the pattern library.
-   */
-  public static function bridge_missing_schema_data($schema)
+  private static function resolve_impl($meta)
   {
-    $feature_key = $schema['feature_key'] ?? '';
-    if (empty($feature_key)) return $schema;
-
-    // Probing order for missing enforcement
-    $platforms = ['htaccess', 'wp-config', 'hook', 'nginx', 'iis'];
-    $bridge_driver = null;
-    $code = null;
-
-    foreach ($platforms as $platform) {
-      $code = self::resolve_enforcement_from_catalogue($feature_key, $platform);
-      if ($code) {
-        $bridge_driver = $platform;
-        break;
-      }
-    }
-
-    if ($code && $bridge_driver) {
-      $mapping_key = 'feat_enabled'; // Modern Standard
-
-      // Try to find a primary toggle in components/controls
-      $items = $schema['controls'] ?? ($schema['components'] ?? []);
-      foreach ($items as $item) {
-        $k = $item['key'] ?? ($item['component_id'] ?? ($item['settings_key'] ?? null));
-        if (isset($item['type']) && $item['type'] === 'toggle' && $k) {
-          $mapping_key = $k;
-          break;
-        }
-      }
-
-      $schema['enforcement'] = [
-        'driver'  => $bridge_driver,
-        'target'  => self::resolve_target_file_from_catalogue($feature_key) === '.htaccess' ? 'root' : 'root',
-        'mappings' => [
-          $mapping_key => $code
-        ]
-      ];
-
-      error_log("VAPT Enforcer: Bridged missing enforcement for $feature_key via $bridge_driver driver.");
-    } else {
-      error_log("VAPT Enforcer: Failed to bridge enforcement for $feature_key (No pattern found).");
-    }
-
-    return $schema;
-  }
-
-  /**
-   * 🛡️ RESOLVE ENFORCEMENT FROM CATALOGUE
-   */
-  public static function resolve_enforcement_from_catalogue($feature_key, $driver)
-  {
-    $lib_path = VAPTSECURE_PATH . 'data/' . VAPTSECURE_PATTERN_LIBRARY;
-    if (file_exists($lib_path)) {
-      $lib = json_decode(file_get_contents($lib_path), true);
-      if (isset($lib['patterns'][$feature_key])) {
-        $p = $lib['patterns'][$feature_key];
-
-        // Check corrected htaccess
-        if ($driver === 'htaccess' && isset($p['htaccess']['code'])) {
-          return $p['htaccess']['code'];
-        }
-
-        // Generic platform check
-        $platform = ($driver === 'wp-config') ? 'wp_config' : $driver;
-        if (isset($p[$platform]['code'])) {
-          return $p[$platform]['code'];
-        }
-      }
-    }
-
-    // Fallback to legacy catalog
-    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
-    if (file_exists($catalog_path)) {
-      $catalog = json_decode(file_get_contents($catalog_path), true);
-      foreach (($catalog['risk_catalog'] ?? []) as $item) {
-        $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
-        if ($id === $feature_key) {
-          $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
-          foreach ($steps as $step) {
-            $enforcer = strtolower($step['enforcer'] ?? '');
-            if ($driver === 'htaccess' && strpos($enforcer, 'htaccess') !== false) return $step['code'] ?? null;
-            if ($driver === 'wp-config' && strpos($enforcer, 'config') !== false) return $step['code'] ?? null;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * 🛡️ RESOLVE TARGET FILE FROM CATALOGUE
-   */
-  public static function resolve_target_file_from_catalogue($feature_key)
-  {
-    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
-    if (!file_exists($catalog_path)) return '.htaccess';
-
-    $catalog = json_decode(file_get_contents($catalog_path), true);
-    foreach (($catalog['risk_catalog'] ?? []) as $item) {
-      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
-      if ($id === $feature_key) {
-        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
-        foreach ($steps as $step) {
-          if (!empty($step['target'])) return $step['target'];
-        }
-      }
-    }
-    return '.htaccess';
-  }
-
-  public static function resolve_impl($meta)
-  {
-    $status = strtolower($meta['status'] ?? 'draft');
-    $raw = (in_array($status, ['test', 'release', 'implemented']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
+    $status = $meta['status'] ?? 'draft';
+    $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
     return $raw ? json_decode($raw, true) : [];
-  }
-
-  /**
-   * 🛡️ RESOLVE EFFECTIVE DATA (v4.1.0)
-   * Centrally bridges user settings with schema defaults.
-   */
-  public static function resolve_effective_data($meta, $schema)
-  {
-    $data = self::resolve_impl($meta);
-
-    // 1. Merge Controls Defaults
-    $controls = $schema['controls'] ?? [];
-    foreach ($controls as $control) {
-      if (isset($control['key'])) {
-        $k = $control['key'];
-        if (!isset($data[$k])) {
-          $data[$k] = $control['default'] ?? $control['default_value'] ?? null;
-        }
-      }
-    }
-
-    // 2. Merge Components Defaults
-    $components = $schema['components'] ?? [];
-    foreach ($components as $comp) {
-      if (isset($comp['settings_key'])) {
-        $k = $comp['settings_key'];
-        if (!isset($data[$k])) {
-          $data[$k] = $comp['default'] ?? $comp['default_value'] ?? null;
-        }
-      }
-    }
-
-    // 3. Robust Fix: Ensure 'enabled' maps to 'feat_enabled' if missing
-    if (!isset($data['feat_enabled']) && isset($data['enabled'])) {
-      $data['feat_enabled'] = $data['enabled'];
-    }
-
-    return $data;
   }
 
   /**
@@ -462,7 +321,7 @@ class VAPTSECURE_Enforcer
 
     foreach ($enforced_features as $meta) {
       $schema = self::resolve_schema($meta);
-      $impl_data = self::resolve_effective_data($meta, $schema);
+      $impl_data = self::resolve_impl($meta);
       $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
       $target = isset($schema['enforcement']['target']) ? $schema['enforcement']['target'] : 'root';
 
@@ -501,36 +360,27 @@ class VAPTSECURE_Enforcer
     // [FIX v1.4.0] Only apply key filter when we actually have active keys.
     $active_keys = self::get_active_file_keys();
     if (!empty($active_keys)) {
-      error_log('VAPT DEBUG rebuild_config - Filtering enforced features by active keys.');
       $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
         return in_array($feat['feature_key'], $active_keys);
       });
-    } else {
-      error_log('VAPT DEBUG rebuild_config - No active keys found, applying all enforced features.');
     }
 
     $all_rules = array();
 
     if (!empty($enforced_features)) {
-      error_log('VAPT DEBUG rebuild_config - Found ' . count($enforced_features) . ' enforced features after filtering.');
       foreach ($enforced_features as $meta) {
         $schema = self::resolve_schema($meta);
-        $impl_data = self::resolve_effective_data($meta, $schema);
+        $impl_data = self::resolve_impl($meta);
         $driver = $schema['enforcement']['driver'] ?? '';
 
         if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
           $feature_rules = VAPTSECURE_Config_Driver::generate_rules($impl_data, $schema);
           if (!empty($feature_rules)) {
-            error_log("VAPT DEBUG rebuild_config - Generated rules for " . $meta['feature_key']);
             $all_rules[] = "// Rule for: " . ($meta['feature_key']);
             $all_rules = array_merge($all_rules, $feature_rules);
-          } else {
-            error_log("VAPT DEBUG rebuild_config - No config rules generated for " . $meta['feature_key']);
           }
         }
       }
-    } else {
-      error_log('VAPT DEBUG rebuild_config - No enforced features found to process.');
     }
 
     return VAPTSECURE_Config_Driver::write_batch($all_rules);
@@ -610,13 +460,10 @@ class VAPTSECURE_Enforcer
     if (is_array($directive)) {
       // 1. Check for specific platform keys
       $platform_keys = [
-        $platform, // e.g. .htaccess or wp-config.php
+        $platform,
         '.' . ltrim($platform, '.'), // .htaccess
-        str_replace('-', '_', $platform), // wp_config.php
-        str_replace('_', '-', $platform), // wp-config.php
-        basename($platform, '.php'), // wp-config -> wp_config below
-        str_replace('-', '_', basename($platform, '.php')), // wp_config
-        ltrim(basename($platform, '.php'), '.'), // htaccess
+        str_replace('-', '_', $platform), // wp_config
+        str_replace('_', '-', $platform), // wp-config
       ];
 
       foreach ($platform_keys as $pK) {
@@ -648,27 +495,5 @@ class VAPTSECURE_Enforcer
     }
 
     return is_string($directive) ? $directive : '';
-  }
-
-  /**
-   * 🛡️ RESOLVE TECHNICAL NOTES (v1.9.15)
-   * Fetches actionable implementation notes from the pattern library.
-   */
-  public static function resolve_technical_notes_from_catalogue($feature_key)
-  {
-    $notes = [];
-    $pattern_lib_path = VAPTSECURE_PATH . 'data/enforcer_pattern_library_v2.0.json';
-    if (file_exists($pattern_lib_path)) {
-      $lib = json_decode(file_get_contents($pattern_lib_path), true);
-      if (isset($lib['patterns'][$feature_key])) {
-        $p = $lib['patterns'][$feature_key];
-        foreach (['htaccess', 'wp_config', 'wordpress', 'php_functions', 'fail2ban'] as $driver) {
-          if (isset($p[$driver]['note'])) {
-            $notes[$driver] = $p[$driver]['note'];
-          }
-        }
-      }
-    }
-    return $notes;
   }
 }

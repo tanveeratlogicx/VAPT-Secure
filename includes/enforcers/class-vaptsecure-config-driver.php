@@ -18,43 +18,16 @@ class VAPTSECURE_Config_Driver
    */
   public static function generate_rules($data, $schema)
   {
-    // 🛡️ TWO-WAY DEACTIVATION (v3.6.19)
-    $is_enabled = isset($data['feat_enabled']) ? (bool)$data['feat_enabled'] : (isset($data['enabled']) ? (bool)$data['enabled'] : true);
-    if (!$is_enabled) {
-      return array();
-    }
-
     $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();
     $rules = array();
     $mappings = isset($enf_config['mappings']) ? $enf_config['mappings'] : array();
 
-    foreach ($mappings as $key => $directive) {
-      $key_lower = strtolower($key);
-      $data_value = null;
-
-      // [v3.13.16] ENHANCED MAPPING RESOLUTION
-      // 1. Direct match (Component ID)
-      if (isset($data[$key_lower])) {
-        $data_value = $data[$key_lower];
-      } else {
-        // 2. Lookup settings_key from schema components if direct match fails
-        $components = $schema['components'] ?? array();
-        foreach ($components as $comp) {
-          if (isset($comp['component_id']) && strtolower($comp['component_id']) === $key_lower) {
-            $settings_key = strtolower($comp['settings_key'] ?? '');
-            if ($settings_key && isset($data[$settings_key])) {
-              $data_value = $data[$settings_key];
-              break;
-            }
-          }
-        }
-      }
-
-      if (!empty($data_value)) {
-        $value = $data_value;
+    foreach ($mappings as $key => $constant) {
+      if (isset($data[$key])) {
+        $value = $data[$key];
 
         // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
-        $constant = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'wp-config.php');
+        $constant = VAPTSECURE_Enforcer::extract_code_from_mapping($constant, 'wp-config.php');
 
         // [FIX v1.3.13] Skip if the value is falsey (for toggles)
         if ($value === false || $value === 0 || $value === '0' || $value === 'off') {
@@ -81,7 +54,7 @@ class VAPTSECURE_Config_Driver
       }
     }
 
-    return array_unique($rules);
+    return $rules;
   }
 
   /**

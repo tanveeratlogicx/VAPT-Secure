@@ -90,8 +90,7 @@ class VAPTSECURE_Workflow
         'generated_schema' => null,
         'implementation_data' => null,
         'override_schema' => null,
-        'override_implementation_data' => null,
-        'is_enforced' => 0
+        'override_implementation_data' => null
       ), array('feature_key' => $feature_key));
     }
 
@@ -124,9 +123,10 @@ class VAPTSECURE_Workflow
    * These indicate a feature was transitioned but history wasn't properly cleaned.
    * 
    * @param bool $include_broken Whether to include broken features in the preview
+   * @param bool $include_release Whether to include Release features in the preview
    * @return array Preview of affected features and data
    */
-  public static function preview_revert_to_draft($include_broken = false)
+  public static function preview_revert_to_draft($include_broken = false, $include_release = false)
   {
     global $wpdb;
 
@@ -150,10 +150,22 @@ class VAPTSECURE_Workflow
       ARRAY_A
     );
 
-    // 3. Merge based on include_broken flag
+    // 3. Get RELEASE features
+    $release_features = array();
+    if ($include_release) {
+      $release_features = $wpdb->get_results($wpdb->prepare(
+        "SELECT feature_key, implemented_at, assigned_to, 'release' as source FROM $table_status WHERE status = %s",
+        'Release'
+      ), ARRAY_A);
+    }
+
+    // 4. Merge based on flags
     $all_features = $develop_features ?: array();
     if ($include_broken && $broken_features) {
       $all_features = array_merge($all_features, $broken_features);
+    }
+    if ($include_release && $release_features) {
+      $all_features = array_merge($all_features, $release_features);
     }
 
     if (empty($all_features)) {
@@ -164,10 +176,12 @@ class VAPTSECURE_Workflow
         'total_history_records' => 0,
         'total_with_schema' => 0,
         'total_with_impl' => 0,
-        'total_enforced' => 0,
         'broken_count' => count($broken_features ?: array()),
         'develop_count' => count($develop_features ?: array()),
-        'message' => 'No features in Develop status to revert.'
+        'release_count' => count($release_features ?: array()),
+        'included_broken_count' => 0,
+        'included_release_count' => 0,
+        'message' => 'No features in Develop or Release status to revert.'
       );
     }
 
@@ -185,7 +199,7 @@ class VAPTSECURE_Workflow
 
     // 5. Check which features have implementation data
     $impl_data = $wpdb->get_results(
-      "SELECT feature_key, generated_schema IS NOT NULL as has_schema, implementation_data IS NOT NULL as has_impl, is_enforced 
+      "SELECT feature_key, generated_schema IS NOT NULL as has_schema, implementation_data IS NOT NULL as has_impl 
        FROM $table_meta WHERE feature_key IN ($prepared_in)",
       OBJECT_K
     );
@@ -193,10 +207,13 @@ class VAPTSECURE_Workflow
     // 6. Build preview response
     $preview = array();
     $broken_count = 0;
+    $release_count = 0;
     foreach ($all_features as $feature) {
       $key = $feature['feature_key'];
       $is_broken = isset($feature['source']) && $feature['source'] === 'broken';
+      $is_release = isset($feature['source']) && $feature['source'] === 'release';
       if ($is_broken) $broken_count++;
+      if ($is_release) $release_count++;
 
       $preview[] = array(
         'feature_key' => $key,
@@ -204,10 +221,10 @@ class VAPTSECURE_Workflow
         'assigned_to' => $feature['assigned_to'],
         'source' => isset($feature['source']) ? $feature['source'] : 'develop',
         'is_broken' => $is_broken,
+        'is_release' => $is_release,
         'history_records' => isset($history_counts[$key]) ? (int) $history_counts[$key]->count : 0,
         'has_generated_schema' => isset($impl_data[$key]) && (bool) $impl_data[$key]->has_schema,
         'has_implementation_data' => isset($impl_data[$key]) && (bool) $impl_data[$key]->has_impl,
-        'is_enforced' => isset($impl_data[$key]) && (bool) $impl_data[$key]->is_enforced,
       );
     }
 
@@ -216,7 +233,9 @@ class VAPTSECURE_Workflow
       'count' => count($preview),
       'broken_count' => count($broken_features ?: array()),
       'develop_count' => count($develop_features ?: array()),
+      'release_count' => count($release_features ?: array()),
       'included_broken_count' => $broken_count,
+      'included_release_count' => $release_count,
       'features' => $preview,
       'total_history_records' => array_sum(wp_list_pluck($preview, 'history_records')),
       'total_with_schema' => count(array_filter($preview, function ($f) {
@@ -225,21 +244,20 @@ class VAPTSECURE_Workflow
       'total_with_impl' => count(array_filter($preview, function ($f) {
         return $f['has_implementation_data'];
       })),
-      'total_enforced' => count(array_filter($preview, function ($f) {
-        return $f['is_enforced'];
-      })),
     );
   }
 
   /**
    * Batch revert all features in 'Develop' status to 'Draft'.
    * Optionally includes broken features (Draft status + has history records).
+   * Optionally includes Release features.
    * 
    * @param string $note Optional note for the operation
    * @param bool $include_broken Whether to include broken features
+   * @param bool $include_release Whether to include Release features
    * @return array Result with counts of affected features
    */
-  public static function batch_revert_to_draft($note = 'Batch revert to Draft', $include_broken = false)
+  public static function batch_revert_to_draft($note = 'Batch revert to Draft', $include_broken = false, $include_release = false)
   {
     global $wpdb;
 
@@ -260,10 +278,22 @@ class VAPTSECURE_Workflow
        WHERE s.status = 'Draft'"
     );
 
-    // 3. Merge based on include_broken flag
+    // 3. Get RELEASE features
+    $release_features = array();
+    if ($include_release) {
+      $release_features = $wpdb->get_col($wpdb->prepare(
+        "SELECT feature_key FROM $table_status WHERE status = %s",
+        'Release'
+      ));
+    }
+
+    // 4. Merge based on flags
     $all_features = $develop_features ?: array();
     if ($include_broken && $broken_features) {
       $all_features = array_unique(array_merge($all_features, $broken_features));
+    }
+    if ($include_release && $release_features) {
+      $all_features = array_unique(array_merge($all_features, $release_features));
     }
 
     if (empty($all_features)) {
@@ -272,7 +302,8 @@ class VAPTSECURE_Workflow
         'reverted_count' => 0,
         'broken_count' => count($broken_features ?: array()),
         'develop_count' => count($develop_features ?: array()),
-        'message' => 'No features in Develop status to revert.'
+        'release_count' => count($release_features ?: array()),
+        'message' => 'No features in Develop or Release status to revert.'
       );
     }
 
@@ -296,6 +327,7 @@ class VAPTSECURE_Workflow
       'reverted_count' => count($reverted),
       'broken_count' => count($broken_features ?: array()),
       'develop_count' => count($develop_features ?: array()),
+      'release_count' => count($release_features ?: array()),
       'error_count' => count($errors),
       'reverted' => $reverted,
       'errors' => $errors

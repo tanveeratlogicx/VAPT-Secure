@@ -2,26 +2,16 @@
   "controls": [
     {
       "type": "toggle",
-      "label": "Enable [Feature Name] Protection",
-      "key": "UI-RISK-XXX-YYY",
-      "default": true
-    },
-    {
-      "type": "test_action",
-      "label": "Verify Protection",
-      "key": "verify_risk_xxx",
-      "test_logic": "universal_probe",
-      "test_config": {
-        "method": "GET",
-        "path": "/target-path",
-        "expected_status": 403
-      }
+      "label": "{Descriptive Label}",
+      "key": "{component_id}",
+      "default": true,
+      "help": "Turns on {Descriptive Label}. This helps secure the site against {Risk Topic}."
     }
   ],
   "enforcement": {
-    "driver": "htaccess_or_wpconfig_or_hook",
+    "driver": "{mapped_driver}",
     "mappings": {
-      "UI-RISK-XXX-YYY": "MAPPED_DIRECTIVE_OR_HOOK"
+      "{component_id}": "{exact_code_from_pattern_library}"
     }
   }
 }

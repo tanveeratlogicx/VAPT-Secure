@@ -15,7 +15,7 @@ class VAPTSECURE_Caddy_Driver
   public static function generate_rules($data, $schema)
   {
     // 🛡️ TWO-WAY DEACTIVATION (v3.6.19)
-    $is_enabled = isset($data['feat_enabled']) ? (bool)$data['feat_enabled'] : (isset($data['enabled']) ? (bool)$data['enabled'] : true);
+    $is_enabled = isset($data['enabled']) ? (bool)$data['enabled'] : true;
     if (!$is_enabled) {
       return array();
     }

@@ -19,7 +19,7 @@ class VAPTSECURE_Nginx_Driver
   public static function generate_rules($data, $schema)
   {
     // 🛡️ TWO-WAY DEACTIVATION (v3.6.19)
-    $is_enabled = isset($data['feat_enabled']) ? (bool)$data['feat_enabled'] : (isset($data['enabled']) ? (bool)$data['enabled'] : true);
+    $is_enabled = isset($data['enabled']) ? (bool)$data['enabled'] : true;
     if (!$is_enabled) {
       return array();
     }
@@ -47,16 +47,11 @@ class VAPTSECURE_Nginx_Driver
       $title = isset($schema['title']) ? $schema['title'] : '';
 
       $wrapped_rules = array();
-      $wrapped_rules[] = "# BEGIN VAPT $feature_key" . ($title ? " — $title" : "");
-
-      // 🛡️ COMPLIANCE MARKER (v4.2.3)
-      // Ensure X-VAPT-Enforced is set for every feature to survive Nginx proxy stripping
-      $wrapped_rules[] = "add_header X-VAPT-Enforced \"nginx\" always;";
-      $wrapped_rules[] = "add_header X-VAPT-Feature \"$feature_key\" always;";
-
+      $wrapped_rules[] = "# BEGIN VAPT $feature_key" . ($title ? " \u2014 $title" : "");
       foreach ($rules as $rule) {
         $wrapped_rules[] = $rule;
       }
+      $wrapped_rules[] = "add_header X-VAPT-Feature \"$feature_key\" always; # Marker for verify";
       $wrapped_rules[] = "# END VAPT $feature_key";
 
       return $wrapped_rules;
@@ -86,46 +81,45 @@ class VAPTSECURE_Nginx_Driver
    */
   private static function translate_to_nginx($key, $directive)
   {
-    // 1. Headers (Support both 'set' and 'always set' from Apache)
-    // Apache: Header always set X-Frame-Options "SAMEORIGIN"
+    // 1. Headers
+    // Apache: Header set X-Frame-Options "SAMEORIGIN"
     // Nginx: add_header X-Frame-Options "SAMEORIGIN" always;
-    if (strpos($directive, 'Header') !== false && strpos($directive, 'set') !== false) {
-      $clean = str_replace(['Header always set ', 'Header set ', '"'], ['', '', ''], $directive);
-      $parts = explode(' ', trim($clean), 2);
+    if (strpos($directive, 'Header set') !== false) {
+      $clean = str_replace(['Header set ', '"'], ['', ''], $directive);
+      $parts = explode(' ', $clean, 2);
       if (count($parts) == 2) {
-        return 'add_header ' . $parts[0] . ' "' . trim($parts[1]) . '" always;';
+        return 'add_header ' . $parts[0] . ' "' . $parts[1] . '" always;';
       }
     }
 
     // 2. Directory Listing
     // Apache: Options -Indexes
-    if (strpos($directive, 'Options -Indexes') !== false || $key === 'disable_directory_browsing') {
-      return "autoindex off;";
+    // Nginx: autoindex off;
+    if (strpos($directive, 'Options -Indexes') !== false) {
+      return 'autoindex off;';
     }
 
     // 3. Block Files (xmlrpc, etc)
-    if ($key === 'block_xmlrpc' || strpos($directive, 'xmlrpc.php') !== false) {
-      return "location = /xmlrpc.php { deny all; return 403; }";
+    // Apache: <Files xmlrpc.php> ... </Files>
+    // Nginx: location = /xmlrpc.php { deny all; }
+    if ($key === 'block_xmlrpc') {
+      return 'location = /xmlrpc.php { deny all; return 403; }';
     }
 
-    // 4. Block Dot Files / Sensitive Files
-    if ($key === 'block_sensitive_files' || $key === 'block_dot_files') {
-      return "location ~ /\\.(?!well-known).* { deny all; return 403; }";
+    // 4. Block Dot Files
+    if ($key === 'block_sensitive_files') {
+      return 'location ~ /\. { deny all; return 403; }';
     }
 
-    // 5. Generic File Blocking (regex translation)
-    if (strpos($directive, '<FilesMatch') !== false) {
-      if (preg_match('/\"(.*?)\"/', $directive, $m)) {
-        $regex = $m[1];
-        return "location ~ {$regex} { deny all; return 403; }";
+    // 5. Generic File Blocking (regex)
+    // Apache: <FilesMatch ...>
+    // Nginx: location ~ ...
+    if (strpos($directive, '<Files') !== false) {
+      // Fallback: convert common file blocks manually if known
+      if (strpos($directive, 'debug.log') !== false) {
+        return 'location ~ /debug\.log$ { deny all; return 403; }';
       }
     }
-
-    // 6. Security Header Fallback (v4.2.3)
-    if ($key === 'hsts_header') return "add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\" always;";
-    if ($key === 'xss_protection') return "add_header X-XSS-Protection \"1; mode=block\" always;";
-    if ($key === 'content_type_nosniff') return "add_header X-Content-Type-Options \"nosniff\" always;";
-    if ($key === 'referrer_policy') return "add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;";
 
     return null;
   }

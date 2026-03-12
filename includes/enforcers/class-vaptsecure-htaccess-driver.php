@@ -55,12 +55,12 @@ class VAPTSECURE_Htaccess_Driver
   {
     $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();
 
-    // 🛡️ TWO-WAY DEACTIVATION (v3.12.3 - Intelligent Detection)
+    // 🛡️ TWO-WAY DEACTIVATION (v3.13.20 - Intelligent Detection)
     $is_enabled = true;
-    if (isset($data['feat_enabled'])) {
-      $is_enabled = (bool)$data['feat_enabled'];
-    } elseif (isset($data['enabled'])) {
+    if (isset($data['enabled'])) {
       $is_enabled = (bool)$data['enabled'];
+    } elseif (isset($data['feat_enabled'])) {
+      $is_enabled = (bool)$data['feat_enabled'];
     } else {
       // If 'enabled' is missing, check if any mapped toggle is set to false
       $mappings = $enf_config['mappings'] ?? array();
@@ -91,27 +91,7 @@ class VAPTSECURE_Htaccess_Driver
 
     foreach ($mappings as $key => $directive) {
       $key_lower = strtolower($key);
-      $data_value = null;
-
-      // [v3.13.16] ENHANCED MAPPING RESOLUTION
-      // 1. Direct match (Component ID)
-      if (isset($data_map[$key_lower])) {
-        $data_value = $data_map[$key_lower];
-      } else {
-        // 2. Lookup settings_key from schema components if direct match fails
-        $components = $schema['components'] ?? array();
-        foreach ($components as $comp) {
-          if (isset($comp['component_id']) && strtolower($comp['component_id']) === $key_lower) {
-            $settings_key = strtolower($comp['settings_key'] ?? '');
-            if ($settings_key && isset($data_map[$settings_key])) {
-              $data_value = $data_map[$settings_key];
-              break;
-            }
-          }
-        }
-      }
-
-      if (!empty($data_value)) {
+      if (!empty($data_map[$key_lower])) {
         // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
         $directive = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'htaccess');
         if (empty($directive)) continue;
@@ -149,7 +129,7 @@ class VAPTSECURE_Htaccess_Driver
     if (!empty($rules)) {
       $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
 
-      $header_block = "<IfModule mod_headers.c>\n  Header always set X-VAPT-Enforced \"htaccess\"\n</IfModule>";
+      $header_block = "<IfModule mod_headers.c>\n  Header set X-VAPT-Enforced \"htaccess\"\n</IfModule>";
       $id_marker = "# {$feature_key}";
 
       // [FIX v3.12.14] Join marker and header with single \n to avoid blank line after marker
@@ -162,7 +142,7 @@ class VAPTSECURE_Htaccess_Driver
       );
     }
 
-    return array_unique($rules);
+    return $rules;
   }
 
   /**
@@ -207,7 +187,14 @@ class VAPTSECURE_Htaccess_Driver
     $log = "[Htaccess Batch Write " . date('Y-m-d H:i:s') . "] Writing " . count($all_rules_array) . " rules.\n";
 
     $htaccess_path = ABSPATH . '.htaccess';
-    if ($target_key === 'uploads') {
+    if ($target_key === 'root') {
+      // [FIX v3.13.23] Use get_home_path if available for accurate Apache root detection
+      if (function_exists('get_home_path')) {
+        $htaccess_path = get_home_path() . '.htaccess';
+      } else {
+        $htaccess_path = ABSPATH . '.htaccess';
+      }
+    } elseif ($target_key === 'uploads') {
       $upload_dir = wp_upload_dir();
       $htaccess_path = $upload_dir['basedir'] . '/.htaccess';
     }
@@ -290,8 +277,13 @@ class VAPTSECURE_Htaccess_Driver
     $new_content = trim($new_content);
 
     // [v3.13.16] Restore WP block if it was lost during stripping (likely due to nested markers)
-    if ($had_wp_block && strpos($new_content, "# BEGIN WordPress") === false && $target_key === 'root') {
-      error_log("VAPT: detected accidental removal of WordPress block during .htaccess strip. Restoring default directives.");
+    // [ENHANCEMENT v3.13.23] Proactive Self-Healing: Always restore if missing from root .htaccess to prevent 403s
+    if ($target_key === 'root' && strpos($new_content, "# BEGIN WordPress") === false) {
+      if ($had_wp_block) {
+        error_log("VAPT: detected accidental removal of WordPress block during .htaccess strip. Restoring.");
+      } else {
+        error_log("VAPT: WordPress block missing from root .htaccess. Proactively restoring to prevent 403 Forbidden errors.");
+      }
       $wp_default = "\n# BEGIN WordPress\n# The directives (lines) between \"BEGIN WordPress\" and \"END WordPress\" are\n# dynamically generated, and should only be modified via WordPress filters.\n# Any changes to the directives between these markers will be overwritten.\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]\nRewriteBase /\nRewriteRule ^index\.php$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /index.php [L]\n</IfModule>\n# END WordPress\n";
       $new_content .= $wp_default;
     }
@@ -326,9 +318,11 @@ class VAPTSECURE_Htaccess_Driver
         $log .= "Write SUCCESS: " . strlen($new_content) . " bytes written to $htaccess_path. Backup created.\n";
         delete_transient('vaptsecure_active_enforcements');
       } else {
-        $log .= "Write FAILURE: Could not write to $htaccess_path. Check file permissions.\n";
-        error_log("VAPT: Failed to write .htaccess to $htaccess_path.");
-        set_transient('vaptsecure_htaccess_write_error_' . time(), "Failed to update .htaccess file. check perms.", 300);
+        $error = error_get_last();
+        $error_msg = isset($error['message']) ? $error['message'] : 'Unknown filesystem error';
+        $log .= "Write FAILURE: Could not write to $htaccess_path. Error: $error_msg. Check file permissions.\n";
+        error_log("VAPT: Failed to write .htaccess to $htaccess_path. Error: $error_msg");
+        set_transient('vaptsecure_htaccess_write_error_' . time(), "Failed to update .htaccess file: $error_msg", 300);
         return false;
       }
     } else {
