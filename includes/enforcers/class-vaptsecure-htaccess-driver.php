@@ -49,7 +49,7 @@ class VAPTSECURE_Htaccess_Driver
    *
    * @param array $data Implementation data (user inputs)
    * @param array $schema Feature schema containing enforcement mappings
-   * @return array List of valid .htaccess directives
+   * @return array List of .htaccess directives (or DISABLED markers)
    */
   public static function generate_rules($data, $schema)
   {
@@ -74,7 +74,14 @@ class VAPTSECURE_Htaccess_Driver
     }
 
     if (!$is_enabled) {
-      return array(); // Return empty set if disabled
+      // [FIX v2.4.11] Return DISABLED marker to trigger rule removal
+      // The write_batch method will strip existing active rules for this feature
+      $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
+      return array(
+        "# 🛑 DISABLED: {$feature_key}",
+        '# This protection has been deactivated by the user',
+        '# All active rules for this feature have been removed'
+      );
     }
 
     $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();

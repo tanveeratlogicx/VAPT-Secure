@@ -194,11 +194,57 @@
 
     suggestApacheRules: function (feature) {
       const title = feature.label || feature.title || 'Feature';
-      const ruleCode = (feature.remediation && feature.remediation.includes('RewriteRule')) 
-        ? feature.remediation 
-        : (feature.remediation || '# Protection logic should be provided via remediation field');
-
-      return `# VAPT Protection: ${title}\n<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteCond %{ENV:VAPT_WHITELIST} !1\n    ${ruleCode.trim()}\n</IfModule>`;
+      
+      // Extract the actual protection logic from multiple possible fields
+      let ruleCode = '';
+      
+      // Priority 1: Check remediation field (legacy/direct)
+      if (feature.remediation) {
+        ruleCode = feature.remediation
+          .replace(/#\s*BEGIN\s+VAPT.*?\n/gi, '')
+          .replace(/#\s*END\s+VAPT.*?\n/gi, '')
+          .replace(/^#.*$/gm, '')
+          .trim();
+      }
+      
+      // Priority 2: Check platform_implementations for .htaccess (interface_schema v2.0)
+      if (!ruleCode && feature.platform_implementations) {
+        const htaccessImpl = feature.platform_implementations['.htaccess'] || 
+                            feature.platform_implementations['htaccess'] || 
+                            feature.platform_implementations['apache_htaccess'];
+        if (htaccessImpl && htaccessImpl.code) {
+          ruleCode = htaccessImpl.code;
+        }
+      }
+      
+      // Priority 3: Check enforcement.mappings.feat_enabled (generated schema from workbench)
+      if (!ruleCode && feature.enforcement && feature.enforcement.mappings) {
+        const mappingCode = feature.enforcement.mappings.feat_enabled || 
+                           feature.enforcement.mappings.rules || 
+                           feature.enforcement.mappings.code;
+        if (mappingCode && typeof mappingCode === 'string' && mappingCode.includes('RewriteRule')) {
+          ruleCode = mappingCode;
+        }
+      }
+      
+      // If no valid rule code found after all checks, use placeholder
+      if (!ruleCode || ruleCode.length < 10) {
+        // Fallback: Try to construct from common patterns
+        if (feature.key && feature.key.includes('RISK-003')) {
+          ruleCode = '<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    RewriteCond %{REQUEST_URI} !/wp-json/wp/v2/users/me [NC]\n    RewriteRule ^wp-json/wp/v2/users - [F,L]\n</IfModule>';
+        } else if (feature.key && feature.key.includes('RISK-001')) {
+          ruleCode = "define('DISABLE_WP_CRON', true);";
+        } else if (feature.key && (feature.key.includes('xmlrpc') || feature.key.includes('xml-rpc'))) {
+          ruleCode = '<Files "xmlrpc.php">\n    Order Deny,Allow\n    Deny from all\n</Files>';
+        }
+      }
+      
+      // Final fallback
+      if (!ruleCode || ruleCode.length < 10) {
+        ruleCode = '# Protection logic should be provided via remediation field';
+      }
+      
+      return ruleCode;
     },
 
     suggestNginxRules: function (feature) {
@@ -214,14 +260,22 @@
       const tests = [];
       const featureKey = feature.key || feature.id || '';
 
-      // 1. Standard Header Check (Global for A+)
+      // 1. A+ Header Check - Verify VAPT enforcement headers
+      // [FIX v2.4.11] Add specific probe URL so it doesn't just check homepage
       tests.push({
         type: 'test_action',
         id: `vapt-test-headers-${riskId}`,
         label: 'A+ Header Verification',
         key: 'verify_aplus_headers',
         test_logic: 'check_headers',
-        help: 'Verifies that A+ Adaptive headers (x-vapt-enforced) are correctly injected.'
+        test_config: {
+          path: '/?vapt_header_check=1',
+          expected_headers: { 
+            'x-vapt-enforced': 'htaccess|nginx|php-headers',
+            'x-vapt-risk-id': riskId 
+          }
+        },
+        help: 'Verifies that A+ Adaptive headers (x-vapt-enforced, x-vapt-risk-id) are correctly injected.'
       });
 
       // 2. Specific Functional Probes

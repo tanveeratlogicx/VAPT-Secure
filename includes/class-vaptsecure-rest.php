@@ -392,6 +392,18 @@ class VAPTSECURE_REST
             $item['root_ai_agent_instructions']  = null;
             $item['root_global_settings']        = isset($raw_data['global_ui_config']) ? $raw_data['global_ui_config'] : null;
             $item['source_file']                 = $file;
+            
+            // [FIX v2.4.11] Extract remediation code from platform_implementations.htaccess
+            if (isset($item['platform_implementations'])) {
+              $htaccessImpl = $item['platform_implementations']['.htaccess'] ?? 
+                             $item['platform_implementations']['htaccess'] ?? 
+                             $item['platform_implementations']['apache_htaccess'] ?? 
+                             null;
+              if ($htaccessImpl && isset($htaccessImpl['code'])) {
+                $item['remediation'] = $htaccessImpl['code'];
+              }
+            }
+            
             $current_features[] = $item;
           }
           $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : array(

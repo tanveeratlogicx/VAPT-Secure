@@ -35,6 +35,15 @@
     let base = homeUrl;
     let sub = path || '';
 
+    // [FIX v2.4.11] Handle query strings properly - split path and query
+    // If path contains '?', separate the path portion from query parameters
+    let queryPart = '';
+    if (sub.includes('?')) {
+      const parts = sub.split('?');
+      sub = parts[0]; // Path portion (e.g., '/' or '/wp-json')
+      queryPart = '?' + parts.slice(1).join('?'); // Query string (e.g., '?vapt=1')
+    }
+
     // If path is root default but feature implies a specific target, nudge it (v3.13.8)
     if ((!path || path === '/') && !configUrl && featureKey) {
       if (featureKey.includes('cron') || featureKey === 'RISK-001') sub = 'wp-cron.php';
@@ -61,6 +70,11 @@
 
     const normalizedPath = sub.startsWith('/') ? sub : '/' + sub;
     let result = base + (normalizedPath === '/' ? '' : normalizedPath);
+    
+    // [FIX v2.4.11] Append query string if it was separated
+    if (queryPart) {
+      result += queryPart;
+    }
 
     // 🛡️ Trailing Slash Resilience (v3.3.53) - File-Aware Patch (v2.4.3)
     // Only append if result doesn't look like a file (e.g., ends in .php or .html)
@@ -120,7 +134,9 @@
   const PROBE_REGISTRY = {
     // 1. Header Probe: Verifies HTTP response headers
     check_headers: async (siteUrl, control, featureData, featureKey) => {
-      const url = resolveUrl('/', control.config?.url, featureKey);
+      // [FIX v2.4.11] Use test_config.path if available, otherwise default to root
+      const configPath = control.test_config?.path || '/';
+      const url = resolveUrl(configPath, control.config?.url, featureKey);
       const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vaptsecure_test_context=login' : '';
       const finalUrl = url + (url.includes('?') ? '&' : '?') + 'vaptsecure_header_check=' + Date.now() + contextParam;
       console.log(`[VAPT] Header Probe: Fetching ${finalUrl}`);
@@ -143,6 +159,24 @@
         }
       }
 
+      // [FIX v2.4.11] Check if test expects specific headers
+      const hasExpectedHeaders = control.test_config && control.test_config.expected_headers;
+      
+      if (hasExpectedHeaders) {
+        // This is a specific header validation test - must check if expected headers exist
+        if (!vaptEnforced || !enforcedFeature || !enforcedFeature.includes(featureKey)) {
+          // Expected VAPT headers are missing
+          return { 
+            success: false, 
+            message: `VAPT enforcement headers not found. Expected x-vapt-enforced and x-vapt-risk-id=${featureKey}.`, 
+            raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` 
+          };
+        }
+        // Headers found - verify they match expectations
+        return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
+      }
+      
+      // Legacy behavior for tests without expected_headers
       if (vaptEnforced === 'php-headers' || vaptEnforced === 'htaccess' || vaptEnforced?.includes('php')) {
         if (featureKey && enforcedFeature) {
           const activeFeatures = enforcedFeature.split(',').map(f => f.trim());
@@ -930,10 +964,32 @@
           ]),
 
           el('div', { style: { marginTop: '10px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' } }, [
-            (typeof result.raw === 'string' && result.raw.includes('URL: ')) && el('div', { style: { fontSize: '11px', marginBottom: '8px', color: '#64748b' } }, [
-              el('strong', { style: { color: '#475569' } }, 'Target: '),
-              el('pre', { style: { margin: '4px 0 0', padding: '8px', background: 'white', borderRadius: '4px', overflowX: 'auto', border: '1px solid #f1f5f9' } }, result.raw)
-            ]),
+            (typeof result.raw === 'string' && result.raw.includes('URL: ')) && (() => {
+              // Extract URL from raw result and make it clickable
+              const urlMatch = result.raw.match(/URL:\s*([^\s|]+)/i);
+              const targetUrl = urlMatch ? urlMatch[1].trim() : '';
+              const displayUrl = targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+              
+              return el('div', { style: { fontSize: '11px', marginBottom: '8px', color: '#64748b' } }, [
+                el('strong', { style: { color: '#475569' } }, 'Target: '),
+                el('a', {
+                  href: targetUrl,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                  style: {
+                    color: '#0284c7',
+                    textDecoration: 'underline',
+                    textDecorationColor: '#0ea5e9',
+                    textUnderlineOffset: '2px'
+                  },
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    window.open(targetUrl, '_blank');
+                  }
+                }, displayUrl),
+                el('pre', { style: { margin: '4px 0 0', padding: '8px', background: 'white', borderRadius: '4px', overflowX: 'auto', border: '1px solid #f1f5f9', fontSize: '10px' } }, result.raw)
+              ]);
+            })(),
 
             result.meta && el('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' } }, [
               el('div', { style: { color: '#059669', background: '#ecfdf5', padding: '4px 8px', borderRadius: '4px' } }, [__('Accepted: '), el('strong', null, result.meta.accepted)]),
