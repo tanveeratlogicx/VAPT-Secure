@@ -259,23 +259,19 @@ class VAPTSECURE_Htaccess_Driver
     // [v3.13.16] Safeguard: Detect if WordPress block is present before stripping
     $had_wp_block = (strpos($content, "# BEGIN WordPress") !== false);
 
-    // Check for new markers
-    $start_pos = strpos($new_content, $start_marker_full);
-    $end_pos = strpos($new_content, $end_marker_full);
-
-    if ($start_pos !== false && $end_pos !== false && $end_pos > $start_pos) {
-      // Remove the existing block
+    // Check for new markers (Recursive Removal v4.0.1)
+    while (($start_pos = strpos($new_content, $start_marker_full)) !== false && 
+           ($end_pos = strpos($new_content, $end_marker_full)) !== false && 
+           $end_pos > $start_pos) {
       $before = substr($new_content, 0, $start_pos);
       $after = substr($new_content, $end_pos + strlen($end_marker_full));
       $new_content = $before . $after;
     }
 
-    // Check for legacy markers
-    $l_start_pos = strpos($new_content, $legacy_start);
-    $l_end_pos = strpos($new_content, $legacy_end);
-
-    if ($l_start_pos !== false && $l_end_pos !== false && $l_end_pos > $l_start_pos) {
-      // Remove the existing legacy block
+    // Check for legacy markers (Recursive Removal v4.0.1)
+    while (($l_start_pos = strpos($new_content, $legacy_start)) !== false && 
+           ($l_end_pos = strpos($new_content, $legacy_end)) !== false && 
+           $l_end_pos > $l_start_pos) {
       $before = substr($new_content, 0, $l_start_pos);
       $after = substr($new_content, $l_end_pos + strlen($legacy_end));
       $new_content = $before . $after;

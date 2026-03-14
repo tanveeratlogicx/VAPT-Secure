@@ -26,7 +26,7 @@ class VAPTSECURE_Workflow
       'draft'   => array('develop'),
       'develop' => array('draft', 'test', 'release'),
       'test'    => array('develop', 'release'),
-      'release' => array('test', 'develop') // Allow downgrading if bug found
+      'release' => array('test', 'develop', 'draft') // Allow hard reset / "Wipe Data" from Release state
     );
 
     return isset($rules[$old]) && in_array($new, $rules[$old]);
@@ -92,6 +92,13 @@ class VAPTSECURE_Workflow
         'override_schema' => null,
         'override_implementation_data' => null
       ), array('feature_key' => $feature_key));
+
+      // 3. 🛡️ Trigger Complete Systemic Purge (v4.0.1)
+      // Since meta is now null, rebuild_all() will physically remove all rules from files
+      if (file_exists(VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php')) {
+        require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
+        VAPTSECURE_Enforcer::rebuild_all();
+      }
     }
 
     return true;

@@ -103,17 +103,67 @@ class VAPTSECURE_Config_Driver
     // 2. Filter existing content: remove old VAPT blocks and any existing definitions of our constants
     $new_lines = [];
     $in_vaptsecure_block = false;
+
+    // Standardized Multi-Marker Support (v4.0.1)
+    $start_markers = [
+      "// BEGIN VAPT CONFIG RULES",
+      "/* BEGIN VAPT CONFIG RULES",
+      "/* BEGIN VAPT SECURITY RULES",
+      "# BEGIN VAPT SECURITY RULES"
+    ];
+    $end_markers = [
+      "// END VAPT CONFIG RULES",
+      "/* END VAPT CONFIG RULES",
+      "/* END VAPT SECURITY RULES",
+      "# END VAPT SECURITY RULES"
+    ];
+
     foreach ($lines as $line) {
       $trimmed = trim($line);
 
-      if ($trimmed === $start_marker) {
+      $found_start = false;
+      foreach ($start_markers as $sm) {
+          if (strpos($trimmed, $sm) !== false) {
+              $found_start = true;
+              break;
+          }
+      }
+
+      if ($found_start) {
         $in_vaptsecure_block = true;
+        // If the marker is appended to code, keep the part BEFORE the marker
+        foreach ($start_markers as $sm) {
+            $pos = strpos($line, $sm);
+            if ($pos !== false && $pos > 0) {
+                $new_lines[] = substr($line, 0, $pos);
+            }
+        }
         continue;
       }
-      if ($trimmed === $end_marker) {
+
+      $found_end = false;
+      foreach ($end_markers as $em) {
+          if (strpos($trimmed, $em) !== false) {
+              $found_end = true;
+              break;
+          }
+      }
+
+      if ($found_end) {
         $in_vaptsecure_block = false;
+        // If code follows the marker on the same line (rare but possible), keep the part AFTER the marker
+        foreach ($end_markers as $em) {
+            $pos = strpos($line, $em);
+            if ($pos !== false) {
+                $after = substr($line, $pos + strlen($em));
+                if (trim($after) !== "") {
+                   $new_lines[] = $after; 
+                }
+            }
+        }
         continue;
       }
+      
       if ($in_vaptsecure_block) continue;
 
       // Clean up legacy single-line markers

@@ -432,12 +432,89 @@ class VAPTSECURE_Enforcer
    */
   public static function rebuild_all()
   {
+    // [v4.0.1] Always purge the enforcement cache FIRST so get_enforced_features()
+    // reads fresh DB data — especially critical when called from transition_feature on reset.
+    delete_transient('vaptsecure_active_enforcements');
+
     self::rebuild_htaccess();
     self::rebuild_config();
     self::rebuild_nginx();
     self::rebuild_iis();
     self::rebuild_caddy();
+    self::rebuild_php_functions();
     delete_transient('vaptsecure_active_enforcements');
+  }
+
+  /**
+   * [v4.0.1] Rebuilds vapt-functions.php by aggregating rules from all enabled features.
+   */
+  public static function rebuild_php_functions()
+  {
+    $enforced_features = self::get_enforced_features();
+    $active_keys = self::get_active_file_keys();
+    
+    if (!empty($active_keys)) {
+      $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
+        return in_array($feat['feature_key'], $active_keys);
+      });
+    }
+
+    $all_php_code = [];
+    foreach ($enforced_features as $meta) {
+      $schema = self::resolve_schema($meta);
+      $impl_data = self::resolve_impl($meta);
+      $driver = $schema['enforcement']['driver'] ?? '';
+
+      if ($driver === 'php_functions' || $driver === 'hook') {
+        // Only include if it explicitly targets the functions file or has multi-platform mapping
+        $code = self::extract_code_from_mapping($schema['enforcement']['mappings'] ?? [], 'php_functions');
+        if (empty($code)) {
+            // Fallback for universal hooks that might opt-in to persistence
+            $code = self::extract_code_from_mapping($schema['enforcement']['mappings'] ?? [], 'hook');
+        }
+
+        if (!empty($code)) {
+            $feature_key = $meta['feature_key'];
+            $all_php_code[] = "// BEGIN VAPT $feature_key\n$code\n// END VAPT $feature_key";
+        }
+      }
+    }
+
+    $paths = [
+        ABSPATH . 'wp-content/plugins/vapt-protection-suite/vapt-functions.php',
+        VAPTSECURE_PATH . 'vapt-functions.php'
+    ];
+
+    foreach ($paths as $path) {
+      if (!file_exists($path)) {
+          // If it doesn't exist, we only create it if we have rules to write
+          if (empty($all_php_code)) continue;
+          $dir = dirname($path);
+          if (!is_dir($dir)) wp_mkdir_p($dir);
+          file_put_contents($path, "<?php\n\n// VAPT Secure: Protection Functions\n\n");
+      }
+
+      $content = file_get_contents($path);
+      $start_marker = "// BEGIN VAPT SECURITY RULES";
+      $end_marker = "// END VAPT SECURITY RULES";
+
+      $new_vapt_block = "";
+      if (!empty($all_php_code)) {
+          $new_vapt_block = $start_marker . "\n" . implode("\n\n", $all_php_code) . "\n" . $end_marker;
+      }
+
+      // Replace old block or append
+      if (strpos($content, $start_marker) !== false && strpos($content, $end_marker) !== false) {
+          $pattern = "/" . preg_quote($start_marker, '/') . ".*?" . preg_quote($end_marker, '/') . "/is";
+          $content = preg_replace($pattern, $new_vapt_block, $content);
+      } else {
+          $content = rtrim($content) . "\n\n" . $new_vapt_block . "\n";
+      }
+
+      // Cleanup: remove excess blank lines and trailing whitespace
+      $content = preg_replace("/(\r?\n){3,}/", "$1$1", $content);
+      file_put_contents($path, $content);
+    }
   }
 
   /**
