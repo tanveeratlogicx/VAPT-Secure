@@ -26,10 +26,12 @@ Your primary role is to:
 **Architecture**: Plugin-based with REST API integration
 
 ### Key Directories:
+
 - `/includes/` - Core plugin functionality
 - `/assets/` - Frontend assets (CSS, JS)
 - `/data/` - Vulnerability catalog and JSON configs
 - `/deployment/` - Client deployment configurations
+- `/plans/` - **DEDICATED FOLDER for all Plans & Documentation** (No clutter in root)
 - `/.agent/` - Legacy AI agent configuration
 - `/.ai/` - **Universal AI configuration (NEW STANDARD)**
 
@@ -204,6 +206,27 @@ RewriteEngine On  # Wrong position
 - [Interface Schema](../../data/interface_schema_v2.0.json)
 - [Enforcer Pattern Library](../../data/enforcer_pattern_library_v2.0.json)
 - [VAPTSchema Builder Skill](skills/vapt-expert/SKILL.md)
+
+---
+
+## 📓 Implementation Plan Standards (VAPT-IPS)
+
+Every `implementation_plan.md` MUST follow this changelog-centric structure:
+
+1. **Dedicated Storage**: All plans and documentation MUST be created in the `/plans/` folder.
+2. **Root Cleanliness**: The plugin root folder MUST be kept strictly clean. It SHOULD only contain `README.md` and `User Guide`. All other developmental files, reports, patches, and logs MUST be relocated to `/plans/` or other appropriate subdirectories.
+3. **Top-Level Status Banner**: A Table of Contents (TOC) listing all revisions from **Latest to Oldest**.
+3.  **Revision Metadata**: Each entry MUST have a `YYYYMMDD_@HHMM [Status]` stamp.
+4.  **Traffic Signal Statuses**:
+    - 🔴 `[Need Review]` - Blocking/Attention required.
+    - 🟡 `[Implementing]` - Active work in progress.
+    - 🟢 `[Complete]` - Finished and verified.
+    - ⚪ `[Pending]` - Queued for later.
+5. **Persistent Goals**: The "Goal Description" and "Proposed Changes" should remain updated but the document's flow is driven by the changelog.
+6.  **Revision Hierarchy**: Organize entries by status first, then by date (Latest to Oldest):
+    - 🔴 `[Need Review]` entries MUST be moved to the very top.
+    - 🟡 `[Implementing]` entries follow.
+    - 🟢 `[Complete]` / ⚪ `[Pending]` entries follow.
 
 ---
 

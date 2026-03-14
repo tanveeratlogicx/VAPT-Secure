@@ -156,6 +156,26 @@
             html: (() => {
               const baseDesc = feature.summary || feature.description || `protection against ${title} based on your primary environment configuration`;
               const cleanedDesc = baseDesc.replace(/\.$/, '') + '.'; // Ensure it ends with exactly one period
+              
+              let codePreview = '';
+              if (feature.platform_implementations) {
+                const implEntries = Object.entries(feature.platform_implementations);
+                if (implEntries.length > 0) {
+                  const [implTarget, implDetails] = implEntries[0];
+                  if (implDetails && (implDetails.code || implDetails.code_ref)) {
+                    let previewTarget = implDetails.target_file || implTarget;
+                    let previewCode = implDetails.code || 'Code snippet reference is loading...';
+                    
+                    codePreview = `
+                      <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+                        <div style="font-weight: 600; color: #334155; margin-bottom: 6px;">Injecting into: <span style="font-family: monospace; color: #0ea5e9;">${previewTarget}</span></div>
+                        <pre style="margin: 0; padding: 0; color: #475569; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; white-space: pre-wrap;">${previewCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                      </div>
+                    `;
+                  }
+                }
+              }
+
               return `
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                   <div style="display: flex; alignItems: center; gap: 8px; color: #0ea5e9; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -164,6 +184,7 @@
                   <div style="color: #475569; margin-top: 4px;">
                     <strong>Protection Applied:</strong> Activating this control mitigates the following security risk: <em>"${cleanedDesc}"</em>. This ensures that the system is properly hardened and enforces verified security protocols.
                   </div>
+                  ${codePreview}
                 </div>
               `;
             })()
@@ -241,7 +262,7 @@
       
       // Final fallback
       if (!ruleCode || ruleCode.length < 10) {
-        ruleCode = '# Protection logic should be provided via remediation field';
+        ruleCode = '';
       }
       
       return ruleCode;
@@ -251,8 +272,10 @@
       const title = feature.label || feature.title || 'Feature';
       const ruleCode = (feature.remediation && feature.remediation.includes('return 403')) 
         ? feature.remediation 
-        : (feature.remediation || '# Protection logic should be provided via remediation field');
+        : (feature.remediation || '');
 
+      if (!ruleCode || ruleCode.length < 10) return '';
+      
       return `# VAPT Nginx Protection: ${title}\nif ($vapt_whitelist = 1) { set $vapt_block 0; }\n${ruleCode.trim()}\nif ($vapt_block = 1) {\n    return 403;\n}`;
     },
 

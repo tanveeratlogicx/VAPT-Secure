@@ -1212,12 +1212,27 @@
               label: el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px' } }, [
                 el('strong', { style: { fontSize: '12px', color: '#334155' } }, safeRender(label)),
                 el(Tooltip, {
-                  text: el('div', { style: { padding: '8px', maxWidth: '300px' } }, [
-                    el('div', { style: { fontWeight: '700', marginBottom: '4px', fontSize: '11px' } }, __('Technical Preview', 'vaptsecure')),
-                    el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
-                      sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
-                    ),
-                    mapping ? el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping) : el('em', null, __('No code mapping defined.', 'vaptsecure'))
+                  text: el('div', { style: { padding: '8px', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto' } }, [
+                    el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Technical Implementation Confirmation', 'vaptsecure')),
+                    feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
+                      Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
+                        const code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
+                        if (!code) return null;
+                        const target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                        return el('div', { key: idx, style: { marginBottom: '15px' } }, [
+                          el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
+                            el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, name),
+                            el('span', { style: { fontFamily: 'monospace' } }, target)
+                          ]),
+                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155' } }, code)
+                        ]);
+                      }) : 
+                      (mapping ? el('div', [
+                        el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
+                          sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+                        ),
+                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
+                      ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
                   ])
                 }, el(Icon, { icon: 'info-outline', size: 14, style: { color: '#94a3b8', cursor: 'help' } }))
               ]),
@@ -1278,10 +1293,28 @@
               statusMap[key].message
             ])),
             // 🛡️ Visual Indicator for Code Addition (v3.13.15 Enhanced)
-            toBool(value) && (mapping && typeof mapping === 'string') && el(Tooltip, {
-              text: el('div', { style: { padding: '5px', maxHeight: '300px', overflow: 'auto' } }, [
-                el('div', { style: { fontWeight: '700', marginBottom: '5px', fontSize: '10px', textTransform: 'uppercase' } }, __('Injected Protections', 'vaptsecure')),
-                el('pre', { style: { margin: 0, fontSize: '10px', background: '#1e293b', color: '#f8fafc', padding: '8px', borderRadius: '4px' } }, mapping)
+            toBool(value) && el(Tooltip, {
+              text: el('div', { style: { padding: '8px', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto' } }, [
+                el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Confirming Applied Protections', 'vaptsecure')),
+                feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
+                  Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
+                    const code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
+                    if (!code) return null;
+                    const target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                    return el('div', { key: idx, style: { marginBottom: '15px' } }, [
+                      el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
+                        el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, name),
+                        el('span', { style: { fontFamily: 'monospace' } }, target)
+                      ]),
+                      el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155' } }, code)
+                    ]);
+                  }) : 
+                  (mapping ? el('div', [
+                    el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
+                      sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+                    ),
+                    el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
+                  ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
               ])
             }, el('div', {
               style: {
@@ -1303,7 +1336,7 @@
               }
             }, [
               el(Icon, { icon: 'editor-code', size: 12 }),
-              sprintf(__('Code Injected to %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+              __('Active Protection Confirmed', 'vaptsecure')
             ])),
           ]);
 

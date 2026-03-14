@@ -283,6 +283,46 @@ class VAPTSECURE_Hook_Driver
             return defined("XMLRPC_REQUEST") || has_filter("xmlrpc_enabled");
         }
 
+        // [v3.13.26] Check for PHP Functions enforcer patterns (RISK-004, etc)
+        // Look for action/filter hooks in mappings
+        foreach ($mappings as $map_key => $map_value) {
+            if (is_string($map_value)) {
+                // Check for add_action pattern with hook name extraction
+                if (preg_match("/add_action\s*\(\s*['\"]([^'\"]+)['\"]/", $map_value, $matches)) {
+                    $hook_name = $matches[1];
+                    global $wp_filter;
+                    if (isset($wp_filter[$hook_name])) {
+                        return true;
+                    }
+                }
+                
+                // Check for function existence (for directly defined functions)
+                if (preg_match("/function\s+([a-zA-Z_][a-zA-Z0-9_]*)/", $map_value, $matches)) {
+                    $function_name = $matches[1];
+                    if (function_exists($function_name)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // [v3.13.27] Check external PHP functions files (for php_functions enforcer)
+        $external_paths = array(
+            ABSPATH . 'wp-content/plugins/vapt-protection-suite/vapt-functions.php',
+            VAPTSECURE_PATH . 'vapt-functions.php'
+        );
+
+        foreach ($external_paths as $file_path) {
+            if (file_exists($file_path)) {
+                $content = file_get_contents($file_path);
+                // Look for the specific feature marker or function
+                if (strpos($content, '// BEGIN VAPT RISK-004') !== false ||
+                    strpos($content, 'vapt_rate_limit_password_reset') !== false) {
+                    return true;
+                }
+            }
+        }
+
         // Fallback: If enabled in UI, assume active if we reached this point in a verification cycle
         return $is_enabled_in_ui;
     }

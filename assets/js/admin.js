@@ -1315,7 +1315,7 @@ window.vaptScriptLoaded = true;
                 style: { background: '#10b981', borderColor: '#059669', fontWeight: 'bold' }
               }, __('Deploy', 'vaptsecure')),
               el(Button, { isSecondary: true, isSmall: true, onClick: onClose }, __('Cancel', 'vaptsecure')),
-              el(Button, { isSecondary: true, isSmall: true, onClick: handleSave, isBusy: isSaving }, __('Save Status', 'vaptsecure'))
+              el(Button, { isSecondary: true, isSmall: true, onClick: handleSave, isBusy: isSaving }, isAdaptiveDeployment ? __('Deploy', 'vaptsecure') : __('Implement', 'vaptsecure'))
             ])
           ]),
           el('div', { className: 'vapt-design-modal-preview-body' }, [

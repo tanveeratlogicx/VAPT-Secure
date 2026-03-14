@@ -53,6 +53,9 @@ class VAPTSECURE_Enforcer
 
     require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php';
 
+    // [v3.13.27] Load external PHP functions files for php_functions enforcer
+    self::load_php_functions_file();
+
     foreach ($enforced as $meta) {
       $status = isset($meta['status']) ? strtolower($meta['status']) : 'draft';
 
@@ -67,6 +70,22 @@ class VAPTSECURE_Enforcer
 
       $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
 
+      // [v3.13.27] Skip htaccess for PHP Functions features (use hook instead)
+      if ($driver === 'htaccess' && !empty($schema['enforcement']['mappings'])) {
+        $mappings = $schema['enforcement']['mappings'];
+        foreach ($mappings as $key => $value) {
+          $val_to_test = is_string($value) ? $value : '';
+          if (strpos($val_to_test, 'add_action(') !== false ||
+              strpos($val_to_test, 'add_filter(') !== false ||
+              strpos($val_to_test, 'function ') !== false) {
+            error_log("VAPT: Skipping htaccess for $feature_key - using hook driver instead");
+            $driver = 'hook';
+            $schema['enforcement']['driver'] = 'hook';
+            break;
+          }
+        }
+      }
+
       // Hook driver is universally shared for PHP-based fallback rules
       // [v2.0.5] Include config/wp-config to ensure enforcement markers (headers) are registered
       if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess' || $driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
@@ -74,6 +93,28 @@ class VAPTSECURE_Enforcer
           VAPTSECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
         }
       }
+    }
+  }
+
+  /**
+   * [v3.13.27] Load external PHP functions file if it exists
+   * Handles php_functions enforcer which writes to external files
+   */
+  private static function load_php_functions_file()
+  {
+    // Check for external vapt-protection-suite plugin
+    $external_path = ABSPATH . 'wp-content/plugins/vapt-protection-suite/vapt-functions.php';
+    
+    if (file_exists($external_path)) {
+        require_once $external_path;
+        error_log("VAPT: Loaded external vapt-functions.php");
+    }
+    
+    // Also check for local bundled version
+    $bundled_path = VAPTSECURE_PATH . 'vapt-functions.php';
+    if (file_exists($bundled_path)) {
+        require_once $bundled_path;
+        error_log("VAPT: Loaded bundled vapt-functions.php");
     }
   }
 

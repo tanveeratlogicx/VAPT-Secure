@@ -10,6 +10,19 @@ if (! defined('ABSPATH')) {
 
 class VAPTSECURE_REST
 {
+  private static $cached_pattern_library = null;
+
+  private static function get_cached_pattern_library() {
+    if (self::$cached_pattern_library === null) {
+      $pattern_lib_path = VAPTSECURE_PATH . 'data/enforcer_pattern_library_v2.0.json';
+      if (file_exists($pattern_lib_path)) {
+        self::$cached_pattern_library = json_decode(file_get_contents($pattern_lib_path), true);
+      } else {
+        self::$cached_pattern_library = array();
+      }
+    }
+    return self::$cached_pattern_library;
+  }
 
   public function __construct()
   {
@@ -395,6 +408,33 @@ class VAPTSECURE_REST
             
             // [FIX v2.4.11] Extract remediation code from platform_implementations.htaccess
             if (isset($item['platform_implementations'])) {
+              $pattern_lib = self::get_cached_pattern_library();
+              foreach ($item['platform_implementations'] as $plat_key => &$plat_data) {
+                if (isset($plat_data['code_ref'])) {
+                  $code_ref_clean = preg_replace('/^.*?\.patterns\./', 'patterns.', $plat_data['code_ref']);
+                  $ref_path = explode('.', $code_ref_clean);
+                  $current_node = $pattern_lib;
+                  foreach ($ref_path as $node) {
+                    if (is_array($current_node) && isset($current_node[$node])) {
+                      $current_node = $current_node[$node];
+                    } else {
+                      $current_node = null;
+                      break;
+                    }
+                  }
+                  
+                  if (is_string($current_node)) {
+                    $plat_data['code'] = $current_node;
+                  } elseif (is_array($current_node) && isset($current_node['code'])) {
+                    $plat_data['code'] = $current_node['code'];
+                    if (isset($current_node['wrapped_code'])) {
+                      $plat_data['wrapped_code'] = $current_node['wrapped_code'];
+                    }
+                  }
+                }
+              }
+              unset($plat_data);
+
               $htaccessImpl = $item['platform_implementations']['.htaccess'] ?? 
                              $item['platform_implementations']['htaccess'] ?? 
                              $item['platform_implementations']['apache_htaccess'] ?? 
@@ -1637,6 +1677,37 @@ class VAPTSECURE_REST
       error_log("VAPT Intelligence: Auto-switching driver to 'wp-config' for feature $feature_key based on define constant.");
       $schema['enforcement']['driver'] = 'wp-config';
       $driver = 'wp-config'; // Update local
+    }
+
+    // [v3.13.26] Auto-Correct for PHP Functions enforcer (RISK-004, etc)
+    // Check if mappings contain action hook patterns or function definitions
+    $needs_php_functions = false;
+    foreach ($mappings as $key => $value) {
+      $val_to_test = is_string($value) ? $value : '';
+      
+      // Detect action/filter hooks
+      if ($val_to_test && (
+          strpos($val_to_test, 'add_action(') !== false ||
+          strpos($val_to_test, 'add_filter(') !== false ||
+          strpos($val_to_test, 'function ') !== false
+      )) {
+        $needs_php_functions = true;
+        break;
+      }
+    }
+
+    if ($needs_php_functions && $driver === 'hook') {
+      error_log("VAPT Intelligence: Confirmed 'hook' driver for feature $feature_key based on action/filter pattern.");
+      // Keep as 'hook' - this is correct for PHP Functions enforcer
+      // The hook driver will verify runtime hook registration
+    }
+
+    // [v3.13.27] CRITICAL: Force hook driver for PHP Functions features
+    // If schema says htaccess but mappings contain PHP code, switch to hook
+    if ($needs_php_functions && ($driver === 'htaccess' || $driver === '')) {
+      error_log("VAPT Intelligence: AUTO-CORRECTING driver from '$driver' to 'hook' for feature $feature_key (PHP Functions detected).");
+      $schema['enforcement']['driver'] = 'hook';
+      $driver = 'hook';
     }
 
     // Auto-Correct Mapping Key Mismatch (feat_key vs feat_enabled)
