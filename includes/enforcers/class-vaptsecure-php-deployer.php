@@ -14,7 +14,7 @@ class VAPTSECURE_PHP_Deployer
     return true; // Universal fallback
   }
 
-  public function deploy($risk_id, $implementation)
+  public function deploy($risk_id, $implementation, $is_enabled = true)
   {
     // PHP implementations are typically handled by VAPTSECURE_Enforcer::runtime_enforcement
     // This deployer just validates that the implementation exists.
@@ -25,10 +25,21 @@ class VAPTSECURE_PHP_Deployer
       return new WP_Error('vapt_no_code', 'No PHP protection code found in implementation.');
     }
 
+    // Neutralize code if disabled for consistency across platforms
+    if (!$is_enabled) {
+        $lines = explode("\n", trim($code));
+        $code = implode("\n", array_map(function($l) {
+            $l = trim($l);
+            if ($l === '') return '';
+            return '// ' . ltrim($l, '/ ');
+        }, $lines));
+    }
+
     return [
       'status' => 'deployed',
       'platform' => 'php_functions',
-      'note' => 'Active via runtime hooks.'
+      'note' => 'Active via runtime hooks.',
+      'code' => $code
     ];
   }
 

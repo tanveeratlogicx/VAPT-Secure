@@ -10,6 +10,19 @@ if (! defined('ABSPATH')) {
 
 class VAPTSECURE_REST
 {
+  private static $cached_pattern_library = null;
+
+  private static function get_cached_pattern_library() {
+    if (self::$cached_pattern_library === null) {
+      $pattern_lib_path = VAPTSECURE_PATH . 'data/enforcer_pattern_library_v2.0.json';
+      if (file_exists($pattern_lib_path)) {
+        self::$cached_pattern_library = json_decode(file_get_contents($pattern_lib_path), true);
+      } else {
+        self::$cached_pattern_library = array();
+      }
+    }
+    return self::$cached_pattern_library;
+  }
 
   public function __construct()
   {
@@ -21,7 +34,7 @@ class VAPTSECURE_REST
     register_rest_route('vaptsecure/v1', '/features', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_features'),
-      'permission_callback' => array($this, 'check_permission'),
+      'permission_callback' => array($this, 'check_read_permission'),
     ));
 
     register_rest_route('vaptsecure/v1', '/data-files/all', array(
@@ -58,7 +71,7 @@ class VAPTSECURE_REST
     register_rest_route('vaptsecure/v1', '/features/update', array(
       'methods'  => 'POST',
       'callback' => array($this, 'update_feature'),
-      'permission_callback' => array($this, 'check_permission'),
+      'permission_callback' => array($this, 'check_read_permission'),
     ));
 
     register_rest_route('vaptsecure/v1', '/features/transition', array(
@@ -82,7 +95,7 @@ class VAPTSECURE_REST
     register_rest_route('vaptsecure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/verify', array(
       'methods'             => 'POST',
       'callback'            => array($this, 'verify_implementation'),
-      'permission_callback' => array($this, 'check_permission'),
+      'permission_callback' => array($this, 'check_read_permission'),
     ));
 
     register_rest_route('vaptsecure/v1', '/features/(?P<key>[a-zA-Z0-9_-]+)/reset', array(
@@ -109,28 +122,6 @@ class VAPTSECURE_REST
       'permission_callback' => array($this, 'check_permission'),
     ));
 
-    // Security Stats & Logs (v2.1.0)
-    register_rest_route('vaptsecure/v1', '/stats/summary', array(
-      'methods'             => 'GET',
-      'callback'            => array($this, 'get_stats_summary'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
-    register_rest_route('vaptsecure/v1', '/stats/logs', array(
-      'methods'             => 'GET',
-      'callback'            => array($this, 'get_stats_logs'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
-    register_rest_route('vaptsecure/v1', '/stats/purge', array(
-      'methods'             => 'POST',
-      'callback'            => array($this, 'purge_stats_logs'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
-    register_rest_route('vaptsecure/v1', '/stats/settings', array(
-      'methods'             => 'POST',
-      'callback'            => array($this, 'update_stats_settings'),
-      'permission_callback' => array($this, 'check_permission'),
-    ));
-
     register_rest_route('vaptsecure/v1', '/domains', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_domains'),
@@ -147,12 +138,6 @@ class VAPTSECURE_REST
       'methods'  => 'POST',
       'callback' => array($this, 'update_domain_features'),
       'permission_callback' => array($this, 'check_permission'),
-    ));
-
-    register_rest_route('vaptsecure/v1', '/license/verify', array(
-      'methods'  => 'POST',
-      'callback' => array($this, 'verify_license'),
-      'permission_callback' => '__return_true', // Public for client plugins
     ));
 
     register_rest_route('vaptsecure/v1', '/domains/delete', array(
@@ -177,6 +162,18 @@ class VAPTSECURE_REST
       'methods'  => 'POST',
       'callback' => array($this, 'save_config_to_root'),
       'permission_callback' => array($this, 'check_permission'),
+    ));
+
+    register_rest_route('vaptsecure/v1', '/settings/enforcement', array(
+      'methods'  => 'GET',
+      'callback' => array($this, 'get_global_enforcement'),
+      'permission_callback' => array($this, 'check_read_permission'),
+    ));
+
+    register_rest_route('vaptsecure/v1', '/settings/enforcement', array(
+      'methods'  => 'POST',
+      'callback' => array($this, 'update_global_enforcement'),
+      'permission_callback' => array($this, 'check_read_permission'),
     ));
 
     register_rest_route('vaptsecure/v1', '/upload-media', array(
@@ -224,308 +221,383 @@ class VAPTSECURE_REST
       'callback'            => array($this, 'batch_revert_to_draft'),
       'permission_callback' => array($this, 'check_permission'),
     ));
+
+    register_rest_route('vaptsecure/v1', '/security/stats', array(
+      'methods'  => 'GET',
+      'callback' => array($this, 'get_security_stats'),
+      'permission_callback' => array($this, 'check_read_permission'),
+    ));
+
+    register_rest_route('vaptsecure/v1', '/security/logs', array(
+      'methods'  => 'GET',
+      'callback' => array($this, 'get_security_logs'),
+      'permission_callback' => array($this, 'check_read_permission'),
+    ));
   }
 
   public function check_permission()
   {
-    // Allow all logged-in users to access GET endpoints (for client dashboard)
-    // Superadmin-only for POST/DELETE/PUT operations
-    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-      return is_user_logged_in();
+    $is_super = is_vaptsecure_superadmin();
+    if (!$is_super) {
+      $uid = get_current_user_id();
+      $user = get_userdata($uid);
+      $login = $user ? $user->user_login : 'unknown';
+      error_log("VAPTSECURE_REST: check_permission FAILED for user ID $uid ($login). Superadmin status required.");
     }
-    // Write operations still require superadmin
-    return is_vaptsecure_superadmin();
+    return $is_super;
+  }
+
+  public function check_read_permission()
+  {
+    $is_super = is_vaptsecure_superadmin();
+    $can_manage = current_user_can('manage_options');
+    $uid = get_current_user_id();
+    $user = get_userdata($uid);
+    $login = $user ? $user->user_login : 'unknown';
+
+    // Debug logging
+    error_log("VAPTSECURE_REST: check_read_permission - User ID: $uid ($login), is_super: " . ($is_super ? 'true' : 'false') . ", can_manage: " . ($can_manage ? 'true' : 'false'));
+
+    if (!$is_super && !$can_manage) {
+      error_log("VAPTSECURE_REST: check_read_permission FAILED for user ID $uid ($login). 'manage_options' capability required.");
+    }
+    return $is_super || $can_manage;
   }
 
   public function get_features($request)
   {
-    $default_file = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : 'interface_schema_v2.0.json';
-    $requested_file = $request->get_param('file') ?: $default_file;
+    try {
+      $default_file = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : 'interface_schema_v2.0.json';
+      $requested_file = $request->get_param('file') ?: $default_file;
 
-    // 1. Resolve which files to load
-    $files_to_load = [];
-    if ($requested_file === '__all__') {
-      $data_dir = VAPTSECURE_PATH . 'data';
-      if (is_dir($data_dir)) {
-        $all_json = array_filter(scandir($data_dir), function ($f) {
-          return strtolower(pathinfo($f, PATHINFO_EXTENSION)) === 'json';
-        });
-        $hidden_files = get_option('vaptsecure_hidden_json_files', array());
-        $removed_files = get_option('vaptsecure_removed_json_files', array());
-        $hidden_normalized = array_map('sanitize_file_name', $hidden_files);
-        $removed_normalized = array_map('sanitize_file_name', $removed_files);
+      // 1. Resolve which files to load
+      $files_to_load = [];
+      if ($requested_file === '__all__') {
+        $data_dir = VAPTSECURE_PATH . 'data';
+        if (is_dir($data_dir)) {
+          $all_json = array_filter(scandir($data_dir), function ($f) {
+            return strtolower(pathinfo($f, PATHINFO_EXTENSION)) === 'json';
+          });
+          $hidden_files = get_option('vaptsecure_hidden_json_files', array());
+          $removed_files = get_option('vaptsecure_removed_json_files', array());
+          $hidden_normalized = array_map('sanitize_file_name', $hidden_files);
+          $removed_normalized = array_map('sanitize_file_name', $removed_files);
 
-        foreach ($all_json as $f) {
-          $normalized = sanitize_file_name($f);
-          if (!in_array($normalized, $hidden_normalized) && !in_array($normalized, $removed_normalized)) {
-            $files_to_load[] = $f;
+          foreach ($all_json as $f) {
+            $normalized = sanitize_file_name($f);
+            if (!in_array($normalized, $hidden_normalized) && !in_array($normalized, $removed_normalized)) {
+              $files_to_load[] = $f;
+            }
           }
         }
+      } else {
+        $files_to_load = array_filter(explode(',', $requested_file));
       }
-    } else {
-      $files_to_load = array_filter(explode(',', $requested_file));
-    }
 
-    // v3.12.1: Final filter against existence to prevent stale entries
-    $files_to_load = array_filter($files_to_load, function ($f) {
-      return file_exists(VAPTSECURE_PATH . 'data/' . sanitize_file_name($f));
-    });
+      // v3.12.1: Final filter against existence to prevent stale entries
+      $files_to_load = array_filter($files_to_load, function ($f) {
+        return file_exists(VAPTSECURE_PATH . 'data/' . sanitize_file_name($f));
+      });
 
-    // 2. Pre-fetch global state (Status map and History counts)
-    $statuses = VAPTSECURE_DB::get_feature_statuses_full();
-    $status_map = [];
-    foreach ($statuses as $row) {
-      $status_map[$row['feature_key']] = array(
-        'status' => $row['status'],
-        'implemented_at' => $row['implemented_at'],
-        'assigned_to' => $row['assigned_to']
-      );
-    }
+      // 2. Pre-fetch global state (Status map and History counts)
+      $statuses = VAPTSECURE_DB::get_feature_statuses_full();
+      $status_map = [];
+      foreach ($statuses as $row) {
+        $status_map[$row['feature_key']] = array(
+          'status' => $row['status'],
+          'implemented_at' => $row['implemented_at'],
+          'assigned_to' => $row['assigned_to']
+        );
+      }
 
-    global $wpdb;
-    $history_table = $wpdb->prefix . 'vaptsecure_feature_history';
-    $history_counts = $wpdb->get_results("SELECT feature_key, COUNT(*) as count FROM $history_table GROUP BY feature_key", OBJECT_K);
+      global $wpdb;
+      $history_table = $wpdb->prefix . 'vaptsecure_feature_history';
+      $history_counts = $wpdb->get_results("SELECT feature_key, COUNT(*) as count FROM $history_table GROUP BY feature_key", OBJECT_K);
 
-    $is_superadmin = is_vaptsecure_superadmin();
-    $scope = $request->get_param('scope');
+      $is_superadmin = is_vaptsecure_superadmin();
+      $scope = $request->get_param('scope');
 
-    $features = [];
-    $schema = [];
-    $merged_features = []; // Track by normalized label
-    $design_prompt = null;
-    $ai_agent_instructions = null;
-    $global_settings = null;
+      $features = [];
+      $schema = [];
+      $merged_features = []; // Track by normalized label
+      $design_prompt = null;
+      $ai_agent_instructions = null;
+      $global_settings = null;
 
-    // 3. Load and process each file
-    foreach ($files_to_load as $file) {
-      $json_path = VAPTSECURE_PATH . 'data/' . sanitize_file_name($file);
-      if (! file_exists($json_path)) continue;
+      // [v1.4.2] Detected Environment Profile for dynamic enforcer mapping
+      require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-environment-detector.php';
+      $detector = new VAPTSECURE_Environment_Detector();
+      $environment_profile = $detector->detect();
 
-      $content = file_get_contents($json_path);
-      $raw_data = json_decode($content, true);
-      if (! is_array($raw_data)) continue;
+      // 3. Load and process each file
+      foreach ($files_to_load as $file) {
+        $json_path = VAPTSECURE_PATH . 'data/' . sanitize_file_name($file);
+        if (! file_exists($json_path)) continue;
 
-      if (!$design_prompt && isset($raw_data['design_prompt'])) $design_prompt = $raw_data['design_prompt'];
-      if (!$ai_agent_instructions && isset($raw_data['ai_agent_instructions'])) $ai_agent_instructions = $raw_data['ai_agent_instructions'];
-      if (!$global_settings && isset($raw_data['global_settings'])) $global_settings = $raw_data['global_settings'];
+        $content = file_get_contents($json_path);
+        $raw_data = json_decode($content, true);
+        if (! is_array($raw_data)) continue;
 
-      $current_features = [];
-      $current_schema = [];
+        if (!$design_prompt && isset($raw_data['design_prompt'])) $design_prompt = $raw_data['design_prompt'];
+        if (!$ai_agent_instructions && isset($raw_data['ai_agent_instructions'])) $ai_agent_instructions = $raw_data['ai_agent_instructions'];
+        if (!$global_settings && isset($raw_data['global_settings'])) $global_settings = $raw_data['global_settings'];
 
-      if (isset($raw_data['wordpress_vapt']) && is_array($raw_data['wordpress_vapt'])) {
-        $current_features = $raw_data['wordpress_vapt'];
-        $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
-      } elseif (isset($raw_data['features']) && is_array($raw_data['features'])) {
-        $current_features = $raw_data['features'];
-        $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
-      } elseif (isset($raw_data['risk_catalog']) && is_array($raw_data['risk_catalog'])) {
-        foreach ($raw_data['risk_catalog'] as $item) {
-          if (isset($item['risk_id']) && empty($item['id'])) $item['id'] = $item['risk_id'];
-          if (isset($item['risk_id']) && empty($item['key'])) $item['key'] = $item['risk_id'];
-          if (isset($item['description']) && is_array($item['description'])) {
-            $item['original_description'] = $item['description'];
-            $item['description'] = isset($item['description']['summary']) ? $item['description']['summary'] : '';
+        $current_features = [];
+        $current_schema = [];
+
+        if (isset($raw_data['wordpress_vapt']) && is_array($raw_data['wordpress_vapt'])) {
+          $current_features = $raw_data['wordpress_vapt'];
+          $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
+        } elseif (isset($raw_data['features']) && is_array($raw_data['features'])) {
+          $current_features = $raw_data['features'];
+          $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
+        } elseif (isset($raw_data['risk_catalog']) && is_array($raw_data['risk_catalog'])) {
+          foreach ($raw_data['risk_catalog'] as $item) {
+            if (isset($item['risk_id']) && empty($item['id'])) $item['id'] = $item['risk_id'];
+            if (isset($item['risk_id']) && empty($item['key'])) $item['key'] = $item['risk_id'];
+            if (isset($item['description']) && is_array($item['description'])) {
+              $item['original_description'] = $item['description'];
+              $item['description'] = isset($item['description']['summary']) ? $item['description']['summary'] : '';
+            }
+            if (isset($item['severity']) && is_array($item['severity'])) {
+              $item['original_severity'] = $item['severity'];
+              $item['severity'] = isset($item['severity']['level']) ? $item['severity']['level'] : 'medium';
+            }
+            if (empty($item['test_method']) && isset($item['testing']['test_method'])) $item['test_method'] = $item['testing']['test_method'];
+
+            // Hyper-Personalization: Attach source-specific root nodes to each feature (v3.13.1)
+            $item['root_design_prompt'] = isset($raw_data['design_prompt']) ? $raw_data['design_prompt'] : null;
+            $item['root_ai_agent_instructions'] = isset($raw_data['ai_agent_instructions']) ? $raw_data['ai_agent_instructions'] : null;
+            $item['root_global_settings'] = isset($raw_data['global_settings']) ? $raw_data['global_settings'] : null;
+            $item['source_file'] = $file;
+
+            if (empty($item['verification_engine']) && isset($item['protection']['automated_protection'])) $item['verification_engine'] = $item['protection']['automated_protection'];
+            if (isset($item['testing']) && isset($item['testing']['verification_steps']) && is_array($item['testing']['verification_steps'])) {
+              $steps = [];
+              foreach ($item['testing']['verification_steps'] as $step) {
+                if (is_array($step) && isset($step['action'])) $steps[] = $step['action'];
+                elseif (is_string($step)) $steps[] = $step;
+              }
+              $item['verification_steps'] = $steps;
+            }
+            if (isset($item['protection']) && is_array($item['protection'])) {
+              if (isset($item['protection']['automated_protection']['implementation_steps'][0]['code'])) {
+                $item['remediation'] = $item['protection']['automated_protection']['implementation_steps'][0]['code'];
+              }
+            }
+            if (isset($item['owasp_mapping']) && isset($item['owasp_mapping']['owasp_top_10_2021'])) $item['owasp'] = $item['owasp_mapping']['owasp_top_10_2021'];
+            $current_features[] = $item;
           }
-          if (isset($item['severity']) && is_array($item['severity'])) {
-            $item['original_severity'] = $item['severity'];
-            $item['severity'] = isset($item['severity']['level']) ? $item['severity']['level'] : 'medium';
+          $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
+        } elseif (isset($raw_data['risk_interfaces']) && is_array($raw_data['risk_interfaces'])) {
+          // 🛡️ INTERFACE SCHEMA FORMAT (risk_interfaces node — e.g. interface_schema_full125.json)
+          // Converts the keyed RISK-NNN dictionary into the standard flat feature array.
+          foreach ($raw_data['risk_interfaces'] as $risk_key => $item) {
+            $item['id']          = isset($item['risk_id'])  ? $item['risk_id']  : $risk_key;
+            $item['key']         = $item['id'];
+            $item['name']        = isset($item['title'])    ? $item['title']    : $risk_key;
+            $item['label']       = $item['name'];
+            // Map summary → description so the Feature List "Description" column is populated
+            if (!isset($item['description']) && isset($item['summary'])) {
+              $item['description'] = $item['summary'];
+            }
+            // Flatten severity if it is an object (guard for mixed catalogues)
+            if (isset($item['severity']) && is_array($item['severity'])) {
+              $item['severity'] = isset($item['severity']['level']) ? $item['severity']['level'] : 'medium';
+            }
+            // Attach root-level metadata for Hyper-Personalization compatibility
+            $item['root_design_prompt']          = null;
+            $item['root_ai_agent_instructions']  = null;
+            $item['root_global_settings']        = isset($raw_data['global_ui_config']) ? $raw_data['global_ui_config'] : null;
+            $item['source_file']                 = $file;
+            
+            // [FIX v2.4.11] Extract remediation code from platform_implementations.htaccess
+            if (isset($item['platform_implementations'])) {
+              $pattern_lib = self::get_cached_pattern_library();
+              foreach ($item['platform_implementations'] as $plat_key => &$plat_data) {
+                if (isset($plat_data['code_ref'])) {
+                  $code_ref_clean = preg_replace('/^.*?\.patterns\./', 'patterns.', $plat_data['code_ref']);
+                  $ref_path = explode('.', $code_ref_clean);
+                  $current_node = $pattern_lib;
+                  foreach ($ref_path as $node) {
+                    if (is_array($current_node) && isset($current_node[$node])) {
+                      $current_node = $current_node[$node];
+                    } else {
+                      $current_node = null;
+                      break;
+                    }
+                  }
+                  
+                  if (is_string($current_node)) {
+                    $plat_data['code'] = $current_node;
+                  } elseif (is_array($current_node) && isset($current_node['code'])) {
+                    $plat_data['code'] = $current_node['code'];
+                    if (isset($current_node['wrapped_code'])) {
+                      $plat_data['wrapped_code'] = $current_node['wrapped_code'];
+                    }
+                  }
+                }
+              }
+              unset($plat_data);
+
+              $htaccessImpl = $item['platform_implementations']['.htaccess'] ?? 
+                             $item['platform_implementations']['htaccess'] ?? 
+                             $item['platform_implementations']['apache_htaccess'] ?? 
+                             null;
+              if ($htaccessImpl && isset($htaccessImpl['code'])) {
+                $item['remediation'] = $htaccessImpl['code'];
+              }
+            }
+            
+            $current_features[] = $item;
           }
-          if (empty($item['test_method']) && isset($item['testing']['test_method'])) $item['test_method'] = $item['testing']['test_method'];
+          $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : array(
+            'item_fields' => array('id', 'category', 'title', 'severity', 'description')
+          );
+        } else {
+          $current_features = $raw_data;
+        }
+
+        if (empty($schema) && !empty($current_schema)) $schema = $current_schema;
+
+        foreach ($current_features as &$feature) {
+          $label = isset($feature['name']) ? $feature['name'] : (isset($feature['title']) ? $feature['title'] : (isset($feature['label']) ? $feature['label'] : __('Unnamed Feature', 'vaptsecure')));
+          $feature['label'] = $label;
 
           // Hyper-Personalization: Attach source-specific root nodes to each feature (v3.13.1)
-          $item['root_design_prompt'] = isset($raw_data['design_prompt']) ? $raw_data['design_prompt'] : null;
-          $item['root_ai_agent_instructions'] = isset($raw_data['ai_agent_instructions']) ? $raw_data['ai_agent_instructions'] : null;
-          $item['root_global_settings'] = isset($raw_data['global_settings']) ? $raw_data['global_settings'] : null;
-          $item['source_file'] = $file;
+          $feature['root_design_prompt'] = isset($raw_data['design_prompt']) ? $raw_data['design_prompt'] : null;
+          $feature['root_ai_agent_instructions'] = isset($raw_data['ai_agent_instructions']) ? $raw_data['ai_agent_instructions'] : null;
+          $feature['root_global_settings'] = isset($raw_data['global_settings']) ? $raw_data['global_settings'] : null;
+          // The source_file is already set below, but for consistency with the risk_catalog block, we can add it here too.
+          // However, the existing line `feature['source_file'] = $file;` is sufficient.
 
-          if (empty($item['verification_engine']) && isset($item['protection']['automated_protection'])) $item['verification_engine'] = $item['protection']['automated_protection'];
-          if (isset($item['testing']) && isset($item['testing']['verification_steps']) && is_array($item['testing']['verification_steps'])) {
-            $steps = [];
-            foreach ($item['testing']['verification_steps'] as $step) {
-              if (is_array($step) && isset($step['action'])) $steps[] = $step['action'];
-              elseif (is_string($step)) $steps[] = $step;
+          $key = isset($feature['id']) ? $feature['id'] : (isset($feature['key']) ? $feature['key'] : sanitize_title($label));
+          $feature['key'] = $key;
+
+          $dedupe_key = strtolower(trim($label));
+
+          if (isset($merged_features[$dedupe_key])) {
+            $merged_features[$dedupe_key]['exists_in_multiple_files'] = true;
+            continue;
+          }
+
+          $st = isset($status_map[$key]) ? $status_map[$key] : array('status' => 'Draft', 'implemented_at' => null, 'assigned_to' => null);
+          $norm_status = strtolower($st['status']);
+          if ($norm_status === 'implemented') $norm_status = 'release';
+          if ($norm_status === 'in_progress') $norm_status = 'develop';
+          if ($norm_status === 'testing')     $norm_status = 'test';
+          if ($norm_status === 'available')   $norm_status = 'draft';
+          $feature['normalized_status'] = $norm_status;
+          $feature['status'] = ucfirst($norm_status);
+          $feature['implemented_at'] = $st['implemented_at'];
+          $feature['assigned_to'] = $st['assigned_to'];
+          $feature['has_history'] = isset($history_counts[$key]) && $history_counts[$key]->count > 0;
+          $feature['source_file'] = $file;
+          $feature['exists_in_multiple_files'] = false;
+
+          $meta = VAPTSECURE_DB::get_feature_meta($key);
+          if ($meta) {
+            $feature['include_test_method'] = (bool) $meta['include_test_method'];
+            $feature['include_verification'] = (bool) $meta['include_verification'];
+            $feature['include_verification_engine'] = isset($meta['include_verification_engine']) ? (bool) $meta['include_verification_engine'] : false;
+            $feature['include_verification_guidance'] = isset($meta['include_verification_guidance']) ? (bool) $meta['include_verification_guidance'] : true;
+            $feature['is_enforced'] = (bool) $meta['is_enforced'];
+            $feature['is_adaptive_deployment'] = isset($meta['is_adaptive_deployment']) ? (bool) $meta['is_adaptive_deployment'] : false;
+            $feature['wireframe_url'] = $meta['wireframe_url'];
+            $feature['dev_instruct'] = isset($meta['dev_instruct']) ? $meta['dev_instruct'] : '';
+
+            $schema_data = array();
+            $use_override_schema = in_array($norm_status, ['test', 'release']) && !empty($meta['override_schema']);
+            $source_schema_json = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
+            if (!empty($source_schema_json)) {
+              $decoded = json_decode($source_schema_json, true);
+              if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $schema_data = $decoded;
+                // [v3.12.17] Translate URL placeholders when returning schema to UI
+                $schema_data = self::translate_url_placeholders($schema_data);
+                if ($use_override_schema) $feature['is_overridden'] = true;
+              }
             }
-            $item['verification_steps'] = $steps;
-          }
-          if (isset($item['protection']) && is_array($item['protection'])) {
-            if (isset($item['protection']['automated_protection']['implementation_steps'][0]['code'])) {
-              $item['remediation'] = $item['protection']['automated_protection']['implementation_steps'][0]['code'];
+            $feature['generated_schema'] = $schema_data;
+            $source_impl_json = (in_array($norm_status, ['test', 'release']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
+            $feature['implementation_data'] = $source_impl_json ? json_decode($source_impl_json, true) : array();
+
+            // [v3.12.17] Include manual_protocol and operational_notes in response
+            if (!empty($meta['manual_protocol_content'])) {
+              $feature['manual_protocol'] = $meta['manual_protocol_content'];
             }
+            if (!empty($meta['operational_notes_content'])) {
+              $feature['operational_notes'] = $meta['operational_notes_content'];
+            }
+            $feature['is_enabled'] = isset($meta['is_enabled']) ? (bool)$meta['is_enabled'] : false;
+            $feature['is_enforced'] = isset($meta['is_enforced']) ? (bool)$meta['is_enforced'] : false;
           }
-          if (isset($item['owasp_mapping']) && isset($item['owasp_mapping']['owasp_top_10_2021'])) $item['owasp'] = $item['owasp_mapping']['owasp_top_10_2021'];
-          $current_features[] = $item;
+
+          $merged_features[$dedupe_key] = $feature;
         }
-        $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : [];
-      } elseif (isset($raw_data['risk_interfaces']) && is_array($raw_data['risk_interfaces'])) {
-        // 🛡️ INTERFACE SCHEMA FORMAT (risk_interfaces node — e.g. interface_schema_full125.json)
-        // Converts the keyed RISK-NNN dictionary into the standard flat feature array.
-        foreach ($raw_data['risk_interfaces'] as $risk_key => $item) {
-          $item['id']          = isset($item['risk_id'])  ? $item['risk_id']  : $risk_key;
-          $item['key']         = $item['id'];
-          $item['name']        = isset($item['title'])    ? $item['title']    : $risk_key;
-          $item['label']       = $item['name'];
-          // Map summary → description so the Feature List "Description" column is populated
-          if (!isset($item['description']) && isset($item['summary'])) {
-            $item['description'] = $item['summary'];
-          }
-          // Flatten severity if it is an object (guard for mixed catalogues)
-          if (isset($item['severity']) && is_array($item['severity'])) {
-            $item['severity'] = isset($item['severity']['level']) ? $item['severity']['level'] : 'medium';
-          }
-          // Attach root-level metadata for Hyper-Personalization compatibility
-          $item['root_design_prompt']          = null;
-          $item['root_ai_agent_instructions']  = null;
-          $item['root_global_settings']        = isset($raw_data['global_ui_config']) ? $raw_data['global_ui_config'] : null;
-          $item['source_file']                 = $file;
-          $current_features[] = $item;
-        }
-        $current_schema = isset($raw_data['schema']) ? $raw_data['schema'] : array(
-          'item_fields' => array('id', 'category', 'title', 'severity', 'description')
-        );
-      } else {
-        $current_features = $raw_data;
       }
 
-      if (empty($schema) && !empty($current_schema)) $schema = $current_schema;
+      $features = array_values($merged_features);
 
-      foreach ($current_features as &$feature) {
-        $label = isset($feature['name']) ? $feature['name'] : (isset($feature['title']) ? $feature['title'] : (isset($feature['label']) ? $feature['label'] : __('Unnamed Feature', 'vaptsecure')));
-        $feature['label'] = $label;
+      if (empty($schema)) $schema = array('item_fields' => array('id', 'category', 'title', 'severity', 'description'));
 
-        // Hyper-Personalization: Attach source-specific root nodes to each feature (v3.13.1)
-        $feature['root_design_prompt'] = isset($raw_data['design_prompt']) ? $raw_data['design_prompt'] : null;
-        $feature['root_ai_agent_instructions'] = isset($raw_data['ai_agent_instructions']) ? $raw_data['ai_agent_instructions'] : null;
-        $feature['root_global_settings'] = isset($raw_data['global_settings']) ? $raw_data['global_settings'] : null;
-        // The source_file is already set below, but for consistency with the risk_catalog block, we can add it here too.
-        // However, the existing line `feature['source_file'] = $file;` is sufficient.
-
-        $key = isset($feature['id']) ? $feature['id'] : (isset($feature['key']) ? $feature['key'] : sanitize_title($label));
-        $feature['key'] = $key;
-
-        $dedupe_key = strtolower(trim($label));
-
-        if (isset($merged_features[$dedupe_key])) {
-          $merged_features[$dedupe_key]['exists_in_multiple_files'] = true;
-          continue;
-        }
-
-        $st = isset($status_map[$key]) ? $status_map[$key] : array('status' => 'Draft', 'implemented_at' => null, 'assigned_to' => null);
-        $norm_status = strtolower($st['status']);
-        if ($norm_status === 'implemented') $norm_status = 'release';
-        if ($norm_status === 'in_progress') $norm_status = 'develop';
-        if ($norm_status === 'testing')     $norm_status = 'test';
-        if ($norm_status === 'available')   $norm_status = 'draft';
-        $feature['normalized_status'] = $norm_status;
-        $feature['status'] = ucfirst($norm_status);
-        $feature['lifecycle_status'] = ucfirst($norm_status);
-        $feature['implemented_at'] = $st['implemented_at'];
-        $feature['assigned_to'] = $st['assigned_to'];
-        $feature['has_history'] = isset($history_counts[$key]) && $history_counts[$key]->count > 0;
-        $feature['source_file'] = $file;
-        $feature['exists_in_multiple_files'] = false;
-
-        // 🛡️ Technical Insights (v1.9.15)
-        $feature['technical_notes'] = VAPTSECURE_Enforcer::resolve_technical_notes_from_catalogue($key);
-
-        $meta = VAPTSECURE_DB::get_feature_meta($key);
-        if ($meta) {
-          $feature['include_test_method'] = (bool) $meta['include_test_method'];
-          $feature['include_verification'] = (bool) $meta['include_verification'];
-          $feature['include_verification_engine'] = isset($meta['include_verification_engine']) ? (bool) $meta['include_verification_engine'] : false;
-          $feature['include_verification_guidance'] = isset($meta['include_verification_guidance']) ? (bool) $meta['include_verification_guidance'] : true;
-          $feature['is_enforced'] = (bool) $meta['is_enforced'];
-          $feature['is_pushed'] = isset($meta['is_pushed']) ? (bool) $meta['is_pushed'] : false;
-          $feature['is_adaptive_deployment'] = isset($meta['is_adaptive_deployment']) ? (bool) $meta['is_adaptive_deployment'] : false;
-          $feature['wireframe_url'] = $meta['wireframe_url'];
-          $feature['dev_instruct'] = isset($meta['dev_instruct']) ? $meta['dev_instruct'] : '';
-
-          // 🛡️ UNIFIED SCHEMA & DATA RESOLUTION (v4.2.0)
-          $schema_data = VAPTSECURE_Enforcer::resolve_schema($meta);
-          $schema_data = self::translate_url_placeholders($schema_data);
-
-          $feature['generated_schema'] = $schema_data;
-          $feature['implementation_data'] = VAPTSECURE_Enforcer::resolve_effective_data($meta, $schema_data);
-
-          if (in_array($norm_status, ['test', 'release']) && !empty($meta['override_schema'])) {
-            $feature['is_overridden'] = true;
+      if ($scope === 'client') {
+        $domain = $request->get_param('domain');
+        $enabled_features = [];
+        if ($domain) {
+          $dom_row = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}vaptsecure_domains WHERE domain = %s", $domain));
+          if (!$dom_row && strpos($domain, '.') !== false) {
+            $domain_base = explode('.', $domain)[0];
+            $dom_row = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}vaptsecure_domains WHERE domain = %s", $domain_base));
           }
-
-          // [v3.12.17] Include manual_protocol and operational_notes in response
-          if (!empty($meta['manual_protocol_content'])) {
-            $feature['manual_protocol'] = $meta['manual_protocol_content'];
-          }
-          if (!empty($meta['operational_notes_content'])) {
-            $feature['operational_notes'] = $meta['operational_notes_content'];
+          if ($dom_row) {
+            $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $dom_row->id), ARRAY_N);
+            $enabled_features = array_column($feat_rows, 0);
           }
         }
-
-        $merged_features[$dedupe_key] = $feature;
+        $features = array_filter($features, function ($f) use ($enabled_features, $is_superadmin) {
+          $s = $f['normalized_status'];
+          if ($s === 'release') return in_array($f['key'], $enabled_features);
+          return $is_superadmin && in_array($s, ['draft', 'develop', 'test']);
+        });
+        $features = array_values($features);
       }
-    }
 
-    $features = array_values($merged_features);
-
-    if (empty($schema)) $schema = array('item_fields' => array('id', 'category', 'title', 'severity', 'description'));
-
-    if ($scope === 'client') {
-      $domain = $request->get_param('domain');
-      $enabled_features = [];
-      if ($domain) {
-        $dom_row = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}vaptsecure_domains WHERE domain = %s", $domain));
-        if ($dom_row) {
-          $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $dom_row->id), ARRAY_N);
-          $enabled_features = array_column($feat_rows, 0);
+      // 🛡️ v1.1 FALLBACK: Ensure AI Agent Instructions and Global Settings are loaded (v3.13.8)
+      if (!$ai_agent_instructions && defined('VAPTSECURE_AI_INSTRUCTIONS')) {
+        $instr_path = VAPTSECURE_PATH . 'data/' . VAPTSECURE_AI_INSTRUCTIONS;
+        if (file_exists($instr_path)) {
+          $instr_data = json_decode(file_get_contents($instr_path), true);
+          if (isset($instr_data['ai_agent_instructions'])) {
+            $ai_agent_instructions = $instr_data['ai_agent_instructions'];
+          }
         }
       }
-      // Client scope: Show ALL Released features by default.
-      // Domain feature table acts as an optional override (opt-out), not a required gate.
-      // Superadmins additionally see Draft/Develop features.
-      $features = array_filter($features, function ($f) use ($enabled_features, $is_superadmin) {
-        $s = $f['normalized_status'];
-        $is_pushed = isset($f['is_pushed']) && $f['is_pushed'];
 
-        if ($s === 'release') return true; // Released features always visible to all
-
-        // v3.13.11: Superadmins see 'develop' or 'test' ONLY if they have been pushed (Deployed Step 2)
-        if ($is_superadmin && in_array($s, ['develop', 'test'])) {
-          return $is_pushed;
-        }
-
-        return false;
-      });
-      $features = array_values($features);
-    }
-
-    // 🛡️ v1.1 FALLBACK: Ensure AI Agent Instructions and Global Settings are loaded (v3.13.8)
-    if (!$ai_agent_instructions && defined('VAPTSECURE_AI_INSTRUCTIONS')) {
-      $instr_path = VAPTSECURE_PATH . 'data/' . VAPTSECURE_AI_INSTRUCTIONS;
-      if (file_exists($instr_path)) {
-        $instr_data = json_decode(file_get_contents($instr_path), true);
-        if (isset($instr_data['ai_agent_instructions'])) {
-          $ai_agent_instructions = $instr_data['ai_agent_instructions'];
+      if (!$global_settings) {
+        // Try to find global_ui_config in the same file as instructions or active file
+        if (isset($instr_data['global_ui_config'])) {
+          $global_settings = $instr_data['global_ui_config'];
         }
       }
-    }
 
-    if (!$global_settings) {
-      // Try to find global_ui_config in the same file as instructions or active file
-      if (isset($instr_data['global_ui_config'])) {
-        $global_settings = $instr_data['global_ui_config'];
+      $response_data = array(
+        'features' => $features,
+        'schema' => $schema,
+        'design_prompt' => $design_prompt,
+        'ai_agent_instructions' => $ai_agent_instructions,
+        'global_settings' => $global_settings,
+        'environment_profile' => $environment_profile
+      );
+      if ($is_superadmin) {
+        $response_data['active_catalog'] = $requested_file;
+        $response_data['total_features'] = count($features);
       }
+      return new WP_REST_Response($response_data, 200);
+    } catch (\Throwable $e) {
+      error_log('[VAPT REST Error] get_features: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+      return new WP_REST_Response(['error' => $e->getMessage()], 500);
     }
-
-    $response_data = array(
-      'features' => $features,
-      'schema' => $schema,
-      'design_prompt' => $design_prompt,
-      'ai_agent_instructions' => $ai_agent_instructions,
-      'global_settings' => $global_settings
-    );
-    if ($is_superadmin) {
-      $response_data['active_catalog'] = $requested_file;
-      $response_data['total_features'] = count($features);
-    }
-    return new WP_REST_Response($response_data, 200);
   }
 
   public function get_data_files()
@@ -611,11 +683,9 @@ class VAPTSECURE_REST
     $status = $request->get_param('status');
     $include_test = $request->get_param('include_test_method');
     $include_verification = $request->get_param('include_verification');
-    $is_enforced = $request->get_param('is_enforced');
     $wireframe_url = $request->get_param('wireframe_url');
     $generated_schema = $request->get_param('generated_schema');
     $implementation_data = $request->get_param('implementation_data');
-    $is_pushed = $request->get_param('is_pushed');
     $reset_history = $request->get_param('reset_history');
 
     // FIX: Lifecycle race condition. Capture initial status before transition runs.
@@ -640,18 +710,17 @@ class VAPTSECURE_REST
     $include_verification_guidance = $request->get_param('include_verification_guidance');
     if ($include_verification_guidance !== null) $meta_updates['include_verification_guidance'] = $include_verification_guidance ? 1 : 0;
 
-    $include_manual_protocol = $request->get_param('include_manual_protocol');
-    if ($include_manual_protocol !== null) $meta_updates['include_manual_protocol'] = $include_manual_protocol ? 1 : 0;
-
     $include_operational_notes = $request->get_param('include_operational_notes');
     if ($include_operational_notes !== null) $meta_updates['include_operational_notes'] = $include_operational_notes ? 1 : 0;
 
-    if ($is_enforced !== null) $meta_updates['is_enforced'] = $is_enforced ? 1 : 0;
+    $is_enabled_param = $request->get_param('is_enabled');
+    if ($is_enabled_param !== null) $meta_updates['is_enabled'] = $is_enabled_param ? 1 : 0;
+
+    $is_enforced_param = $request->get_param('is_enforced');
+    if ($is_enforced_param !== null) $meta_updates['is_enforced'] = $is_enforced_param ? 1 : 0;
 
     $is_adaptive = $request->get_param('is_adaptive_deployment');
     if ($is_adaptive !== null) $meta_updates['is_adaptive_deployment'] = $is_adaptive ? 1 : 0;
-
-    if ($is_pushed !== null) $meta_updates['is_pushed'] = $is_pushed ? 1 : 0;
 
     if ($wireframe_url !== null) $meta_updates['wireframe_url'] = $wireframe_url;
 
@@ -785,7 +854,11 @@ class VAPTSECURE_REST
     }
 
     if (! empty($meta_updates)) {
+      global $wpdb;
       VAPTSECURE_DB::update_feature_meta($key, $meta_updates);
+      if ($wpdb->last_error) {
+        error_log("[VAPT Error] DB Update Failed for $key: " . $wpdb->last_error);
+      }
       do_action('vaptsecure_feature_saved', $key, $meta_updates);
     }
 
@@ -808,7 +881,8 @@ class VAPTSECURE_REST
   public function preview_revert_to_draft($request)
   {
     $include_broken = (bool) $request->get_param('include_broken');
-    $result = VAPTSECURE_Workflow::preview_revert_to_draft($include_broken);
+    $include_release = (bool) $request->get_param('include_release');
+    $result = VAPTSECURE_Workflow::preview_revert_to_draft($include_broken, $include_release);
     return new WP_REST_Response($result, 200);
   }
 
@@ -820,8 +894,9 @@ class VAPTSECURE_REST
   {
     $note = $request->get_param('note') ?: 'Batch revert to Draft via Workbench';
     $include_broken = (bool) $request->get_param('include_broken');
+    $include_release = (bool) $request->get_param('include_release');
 
-    $result = VAPTSECURE_Workflow::batch_revert_to_draft($note, $include_broken);
+    $result = VAPTSECURE_Workflow::batch_revert_to_draft($note, $include_broken, $include_release);
 
     if (!$result['success']) {
       return new WP_REST_Response($result, 207); // Multi-status (partial success)
@@ -1052,6 +1127,57 @@ class VAPTSECURE_REST
     return new WP_REST_Response(array('error' => 'Hook driver not found'), 500);
   }
 
+  /**
+   * Clear the enforcement cache transient.
+   * POST /vaptsecure/v1/clear-cache
+   */
+  public function clear_enforcement_cache($request)
+  {
+    delete_transient('vaptsecure_active_enforcements');
+
+    // Also clear any other VAPT transients
+    global $wpdb;
+    $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_vaptsecure_%' OR option_name LIKE '_site_transient_vaptsecure_%'");
+
+    return new WP_REST_Response(array(
+      'success' => true,
+      'message' => 'Enforcement cache cleared successfully. Refresh the page to see updated features.'
+    ), 200);
+  }
+
+  /**
+   * Debug enforcement state - shows what's in the database and cache.
+   * GET /vaptsecure/v1/debug-enforcement
+   */
+  public function debug_enforcement_state($request)
+  {
+    global $wpdb;
+
+    // Check transient cache
+    $cached = get_transient('vaptsecure_active_enforcements');
+
+    // Check database directly
+    $table = $wpdb->prefix . 'vaptsecure_feature_meta';
+    $db_results = $wpdb->get_results("
+      SELECT m.feature_key, m.implementation_data, s.status
+      FROM $table m
+      LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key
+      WHERE m.implementation_data IS NOT NULL 
+        AND m.implementation_data != '' 
+        AND m.implementation_data != '{}'
+        AND m.implementation_data != 'null'
+    ", ARRAY_A);
+
+    return new WP_REST_Response(array(
+      'cache_exists' => $cached !== false,
+      'cache_count' => is_array($cached) ? count($cached) : 0,
+      'cache_keys' => is_array($cached) ? array_column($cached, 'feature_key') : [],
+      'db_count' => count($db_results),
+      'db_keys' => array_column($db_results, 'feature_key'),
+      'db_results' => $db_results,
+    ), 200);
+  }
+
   public function get_all_data_files()
   {
     $data_dir = VAPTSECURE_PATH . 'data';
@@ -1094,7 +1220,6 @@ class VAPTSECURE_REST
       $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $domain_id), ARRAY_N);
       $domain['features'] = array_column($feat_rows, 0);
       $domain['imported_at'] = get_option('vaptsecure_imported_at_' . $domain['domain'], null);
-      $domain['version'] = get_option('vaptsecure_imported_version_' . $domain['domain'], '1.0.0');
     }
 
     return new WP_REST_Response($domains, 200);
@@ -1240,39 +1365,6 @@ class VAPTSECURE_REST
     return new WP_REST_Response(array('success' => true, 'domain' => $fresh), 200);
   }
 
-  public function verify_license($request)
-  {
-    global $wpdb;
-    $data = $request->get_json_params();
-    if (!$data || !isset($data['license_id']) || !isset($data['domain'])) {
-      return new WP_REST_Response(array('status' => 'error', 'message' => 'Invalid payload'), 400);
-    }
-
-    $license_id = sanitize_text_field($data['license_id']);
-    $domain = sanitize_text_field($data['domain']);
-
-    $table_name = $wpdb->prefix . 'vaptsecure_domains';
-    $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE license_id = %s", $license_id), ARRAY_A);
-
-    if (!$record) {
-      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'License not found'), 200);
-    }
-
-    if ((int)$record['is_enabled'] !== 1) {
-      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'License revoked'), 200);
-    }
-
-    if (!empty($record['manual_expiry_date']) && strtotime($record['manual_expiry_date']) < time()) {
-      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'License expired'), 200);
-    }
-
-    if ($record['license_scope'] === 'single' && $record['domain'] !== $domain) {
-      return new WP_REST_Response(array('status' => 'blocked', 'reason' => 'Domain mismatch'), 200);
-    }
-
-    return new WP_REST_Response(array('status' => 'valid'), 200);
-  }
-
   public function delete_domain($request)
   {
     $domain_id = $request->get_param('id');
@@ -1337,9 +1429,6 @@ class VAPTSECURE_REST
     require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
     try {
       $download_url = VAPTSECURE_Build::generate($data);
-      if (!empty($data['domain']) && !empty($data['version'])) {
-        update_option('vaptsecure_imported_version_' . $data['domain'], $data['version']);
-      }
       return new WP_REST_Response(array('success' => true, 'download_url' => $download_url), 200);
     } catch (Exception $e) {
       return new WP_REST_Response(array('success' => false, 'message' => $e->getMessage()), 500);
@@ -1366,7 +1455,6 @@ class VAPTSECURE_REST
     $saved = file_put_contents($filepath, $config_content);
 
     if ($saved !== false) {
-      update_option('vaptsecure_imported_version_' . $domain, $version);
       return new WP_REST_Response(array('success' => true, 'path' => $filepath, 'filename' => $filename), 200);
     } else {
       return new WP_REST_Response(array('error' => 'Failed to write config file to plugin root'), 500);
@@ -1458,10 +1546,6 @@ class VAPTSECURE_REST
     require_once(ABSPATH . 'wp-admin/includes/media.php');
     require_once(ABSPATH . 'wp-admin/includes/image.php');
 
-    require_once(ABSPATH . 'wp-admin/includes/file.php');
-    require_once(ABSPATH . 'wp-admin/includes/media.php');
-    require_once(ABSPATH . 'wp-admin/includes/image.php');
-
     $upload_dir_filter = function ($uploads) {
       $subdir = '/vapt-wireframes';
       $uploads['subdir'] = $subdir;
@@ -1508,17 +1592,20 @@ class VAPTSECURE_REST
   }
 
   /**
-   * 🛡️ INTELLIGENT ENFORCEMENT STRATEGY (v4.2.0)
+   * 🛡️ INTELLIGENT ENFORCEMENT STRATEGY (v3.3.9)
    * Analyzes the schema and automatically corrects driver selection 
-   * now utilizing the centralized Enforcer Bridge.
+   * if it detects physical file targets being handled by PHP hooks.
    */
   private static function analyze_enforcement_strategy($schema, $feature_key)
   {
-    // Use the unified Enforcer Bridge if enforcement is missing
-    if (empty($schema['enforcement']) || empty($schema['enforcement']['mappings'])) {
-      $meta = ['feature_key' => $feature_key, 'status' => 'implemented'];
-      $schema = VAPTSECURE_Enforcer::resolve_schema($meta);
+    if (!isset($schema['enforcement'])) {
+      $schema['enforcement'] = [
+        'driver' => 'hook',
+        'mappings' => []
+      ];
     }
+    $driver = $schema['enforcement']['driver'] ?? 'hook';
+    $mappings = $schema['enforcement']['mappings'] ?? array();
 
     $physical_file_patterns = [
       'readme.html',
@@ -1598,6 +1685,37 @@ class VAPTSECURE_REST
       $driver = 'wp-config'; // Update local
     }
 
+    // [v3.13.26] Auto-Correct for PHP Functions enforcer (RISK-004, etc)
+    // Check if mappings contain action hook patterns or function definitions
+    $needs_php_functions = false;
+    foreach ($mappings as $key => $value) {
+      $val_to_test = is_string($value) ? $value : '';
+      
+      // Detect action/filter hooks
+      if ($val_to_test && (
+          strpos($val_to_test, 'add_action(') !== false ||
+          strpos($val_to_test, 'add_filter(') !== false ||
+          strpos($val_to_test, 'function ') !== false
+      )) {
+        $needs_php_functions = true;
+        break;
+      }
+    }
+
+    if ($needs_php_functions && $driver === 'hook') {
+      error_log("VAPT Intelligence: Confirmed 'hook' driver for feature $feature_key based on action/filter pattern.");
+      // Keep as 'hook' - this is correct for PHP Functions enforcer
+      // The hook driver will verify runtime hook registration
+    }
+
+    // [v3.13.27] CRITICAL: Force hook driver for PHP Functions features
+    // If schema says htaccess but mappings contain PHP code, switch to hook
+    if ($needs_php_functions && ($driver === 'htaccess' || $driver === '')) {
+      error_log("VAPT Intelligence: AUTO-CORRECTING driver from '$driver' to 'hook' for feature $feature_key (PHP Functions detected).");
+      $schema['enforcement']['driver'] = 'hook';
+      $driver = 'hook';
+    }
+
     // Auto-Correct Mapping Key Mismatch (feat_key vs feat_enabled)
     if (isset($mappings['feat_key'])) {
       $has_feat_key = false;
@@ -1627,12 +1745,184 @@ class VAPTSECURE_REST
 
     // 🛡️ SUB-DIRECTORY ENFORCEMENT (v1.1)
     if ($driver === 'htaccess' && !isset($schema['enforcement']['target_file'])) {
-      $target_file = VAPTSECURE_Enforcer::resolve_target_file_from_catalogue($feature_key);
+      $target_file = self::resolve_target_file_from_catalogue($feature_key);
       if ($target_file !== '.htaccess') {
         error_log("VAPT Intelligence: Setting custom target_file $target_file for $feature_key");
         $schema['enforcement']['target_file'] = $target_file;
       }
     }
+
+    // 🛡️ GLOBAL ENFORCEMENT BRIDGE (v1.1)
+    // If mappings are empty or incomplete, resolve them from the pattern library or catalogue
+    if ($driver === 'htaccess' || $driver === 'wp-config' || $driver === 'hook') {
+      if (empty($schema['enforcement']['mappings'])) {
+        // Try htaccess first if hook
+        $bridge_driver = ($driver === 'hook') ? 'htaccess' : $driver;
+        $code = self::resolve_enforcement_from_catalogue($feature_key, $bridge_driver);
+
+        if ($code) {
+          $mapping_key = 'feat_key'; // Default
+          if (isset($schema['components'])) {
+            foreach ($schema['components'] as $comp) {
+              if (isset($comp['type']) && $comp['type'] === 'toggle' && isset($comp['component_id'])) {
+                $mapping_key = $comp['component_id'];
+                break;
+              }
+            }
+          } elseif (isset($schema['controls'])) {
+            foreach ($schema['controls'] as $ctrl) {
+              if (isset($ctrl['type']) && $ctrl['type'] === 'toggle' && isset($ctrl['key'])) {
+                $mapping_key = $ctrl['key'];
+                break;
+              }
+            }
+          }
+          $schema['enforcement']['mappings'][$mapping_key] = $code;
+          $schema['enforcement']['driver'] = $bridge_driver;
+          error_log("VAPT Intelligence: Bridged missing enforcement code for $feature_key using $bridge_driver driver.");
+        }
+      }
+    }
+
+    // 🛡️ HTACCESS SYNTAX GUARD (v1.1)
+    if ($driver === 'htaccess' && !empty($schema['enforcement']['mappings'])) {
+      foreach ($schema['enforcement']['mappings'] as $key => &$code) {
+        if (!is_string($code)) continue;
+
+        // 1. Forbidden <Directory> replacement
+        if (stripos($code, '<Directory') !== false) {
+          error_log("VAPT Syntax Guard: Replacing forbidden <Directory> block in $feature_key");
+          $code = preg_replace('/<Directory\s+[^>]+>/i', '<FilesMatch ".*">', $code);
+          $code = str_ireplace('</Directory>', '</FilesMatch>', $code);
+        }
+
+        // 2. Forbidden Server-Level Directives
+        $forbidden = ['TraceEnable', 'ServerSignature', 'ServerTokens', 'UseCanonicalName'];
+        foreach ($forbidden as $directive) {
+          if (stripos($code, $directive) !== false) {
+            error_log("VAPT Syntax Guard: Stripping forbidden server directive $directive from $feature_key");
+            $code = preg_replace('/' . $directive . '\s+\w+/i', '# [REMOVED BY GUARD] ' . $directive, $code);
+          }
+        }
+
+        // 3. Ensure RewriteEngine On is present if RewriteRule/RewriteCond is used
+        if ((stripos($code, 'RewriteRule') !== false || stripos($code, 'RewriteCond') !== false) && stripos($code, 'RewriteEngine On') === false) {
+          $code = "RewriteEngine On\n" . $code;
+        }
+      }
+    }
+
+    return $schema;
+  }
+
+  /**
+   * 🛡️ RESOLVE ENFORCEMENT FROM CATALOGUE (v3.13.5)
+   */
+  private static function resolve_enforcement_from_catalogue($feature_key, $driver)
+  {
+    // 🛡️ v1.1 Pattern Library Priority
+    $pattern_lib_path = VAPTSECURE_PATH . 'data/' . (defined('VAPTSECURE_PATTERN_LIBRARY') ? VAPTSECURE_PATTERN_LIBRARY : 'enforcer_pattern_library_v1.1.json');
+    if (file_exists($pattern_lib_path)) {
+      $lib = json_decode(file_get_contents($pattern_lib_path), true);
+      if (isset($lib['patterns'][$feature_key])) {
+        $p = $lib['patterns'][$feature_key];
+
+        // Handle corrected htaccess
+        if ($driver === 'htaccess' && isset($p['htaccess_corrected']['code'])) {
+          return $p['htaccess_corrected']['code'];
+        }
+
+        // Handle wp-config enriched
+        if ($driver === 'wp-config' && isset($p['wp_config_enriched']['code'])) {
+          return $p['wp_config_enriched']['code'];
+        }
+
+        // Fallback to platform-specific keys if direct corrected not found
+        if (isset($p[$driver]['code'])) {
+          return $p[$driver]['code'];
+        }
+      }
+    }
+
+    // 🛡️ Legacy Fallback (v3.13.5)
+    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
+    if (!file_exists($catalog_path)) return null;
+
+    $catalog = json_decode(file_get_contents($catalog_path), true);
+    if (!isset($catalog['risk_catalog'])) return null;
+
+    foreach ($catalog['risk_catalog'] as $item) {
+      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
+      if ($id === $feature_key) {
+        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
+        foreach ($steps as $step) {
+          $enforcer = strtolower($step['enforcer'] ?? '');
+          if (($driver === 'htaccess' && strpos($enforcer, 'htaccess') !== false) ||
+            ($driver === 'wp-config' && strpos($enforcer, 'config') !== false)
+          ) {
+            if (!empty($step['code'])) return $step['code'];
+          }
+        }
+        $examples = $item['code_examples'] ?? [];
+        foreach ($examples as $ex) {
+          $desc = strtolower($ex['description'] ?? '');
+          if (($driver === 'htaccess' && (strpos($desc, 'htaccess') !== false || strpos($desc, 'apache') !== false)) ||
+            ($driver === 'wp-config' && strpos($desc, 'config') !== false)
+          ) {
+            $code = $ex['code'] ?? '';
+            if (preg_match('/```(?:apache|php|htaccess)?\s*(.*?)\s*```/is', $code, $m)) {
+              $code = $m[1];
+            }
+            return trim($code);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 🛡️ RESOLVE TARGET ENDPOINT (v3.13.5)
+   */
+  private static function resolve_target_endpoint_from_catalogue($feature_key)
+  {
+    $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
+    if (!file_exists($catalog_path)) return null;
+
+    $catalog = json_decode(file_get_contents($catalog_path), true);
+    if (!isset($catalog['risk_catalog'])) return null;
+
+    foreach ($catalog['risk_catalog'] as $item) {
+      $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
+      if ($id === $feature_key) {
+        $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
+        foreach ($steps as $step) {
+          $path = !empty($step['target_pattern']) ? $step['target_pattern'] : (!empty($step['target']) ? $step['target'] : '');
+          if ($path) return trim(ltrim(rtrim($path, '$'), '^'));
+        }
+        $rollback = $item['protection']['rollback_steps'] ?? [];
+        foreach ($rollback as $rb) {
+          if (!empty($rb['target'])) return trim(ltrim(rtrim($rb['target'], '$'), '^'));
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 🛡️ RESOLVE TARGET FILE (v1.1)
+   * Resolves the physical file target, supporting sub-directories (e.g. uploads/.htaccess)
+   */
+  private static function resolve_target_file_from_catalogue($feature_key)
+  {
+    $pattern_lib_path = VAPTSECURE_PATH . 'data/' . (defined('VAPTSECURE_PATTERN_LIBRARY') ? VAPTSECURE_PATTERN_LIBRARY : 'enforcer_pattern_library_v1.1.json');
+    if (file_exists($pattern_lib_path)) {
+      $lib = json_decode(file_get_contents($pattern_lib_path), true);
+      if (isset($lib['patterns'][$feature_key]['htaccess_corrected']['target_file'])) {
+        return $lib['patterns'][$feature_key]['htaccess_corrected']['target_file'];
+      }
+    }
+    return '.htaccess'; // Default
   }
 
   /**
@@ -2010,42 +2300,54 @@ class VAPTSECURE_REST
 
     return $schema;
   }
-
-  public function get_stats_summary()
+  /**
+   * GET /vaptsecure/v1/security/stats
+   */
+  public function get_security_stats()
   {
-    if (class_exists('VAPTSECURE_Logger')) {
-      $summary = VAPTSECURE_Logger::get_stats_summary();
-      $summary['retention'] = get_option('vaptsecure_log_retention', 30);
-      return new WP_REST_Response($summary, 200);
-    }
-    return new WP_REST_Response(['error' => 'Logger not available'], 500);
+    return new WP_REST_Response(VAPTSECURE_DB::get_security_stats_summary(), 200);
   }
 
-  public function get_stats_logs()
+  /**
+   * GET /vaptsecure/v1/security/logs
+   */
+  public function get_security_logs($request)
   {
-    if (class_exists('VAPTSECURE_Logger')) {
-      $logs = VAPTSECURE_Logger::get_recent_logs(200);
-      return new WP_REST_Response($logs, 200);
-    }
-    return new WP_REST_Response(['error' => 'Logger not available'], 500);
+    $limit = $request->get_param('limit') ?: 50;
+    $offset = $request->get_param('offset') ?: 0;
+    return new WP_REST_Response(VAPTSECURE_DB::get_security_events($limit, $offset), 200);
   }
 
-  public function purge_stats_logs()
+  /**
+   * Get Global Enforcement
+   * @v3.13.20
+   */
+  public function get_global_enforcement($request)
   {
-    if (class_exists('VAPTSECURE_Logger')) {
-      VAPTSECURE_Logger::clear_all();
-      return new WP_REST_Response(['success' => true], 200);
-    }
-    return new WP_REST_Response(['error' => 'Logger not available'], 500);
+    return new WP_REST_Response(array(
+      'enabled' => VAPTSECURE_DB::get_global_enforcement()
+    ), 200);
   }
 
-  public function update_stats_settings($request)
+  /**
+   * Update Global Enforcement
+   * @v3.13.20
+   */
+  public function update_global_enforcement($request)
   {
-    $retention = (int) $request->get_param('retention');
-    if (in_array($retention, [30, 60, 90])) {
-      update_option('vaptsecure_log_retention', $retention);
-      return new WP_REST_Response(['success' => true], 200);
-    }
-    return new WP_REST_Response(['error' => 'Invalid retention value'], 400);
+    $params = $request->get_json_params();
+    $enabled = isset($params['enabled']) ? (bool)$params['enabled'] : true;
+
+    VAPTSECURE_DB::update_global_enforcement($enabled);
+
+    // [v3.13.20] Trigger immediate rebuild of all config files
+    require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
+    VAPTSECURE_Enforcer::rebuild_all();
+
+    return new WP_REST_Response(array(
+      'success' => true,
+      'enabled' => $enabled
+    ), 200);
   }
 }
+

@@ -18,43 +18,16 @@ class VAPTSECURE_Config_Driver
    */
   public static function generate_rules($data, $schema)
   {
-    // 🛡️ TWO-WAY DEACTIVATION (v3.6.19)
-    $is_enabled = isset($data['feat_enabled']) ? (bool)$data['feat_enabled'] : (isset($data['enabled']) ? (bool)$data['enabled'] : true);
-    if (!$is_enabled) {
-      return array();
-    }
-
     $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();
     $rules = array();
     $mappings = isset($enf_config['mappings']) ? $enf_config['mappings'] : array();
 
-    foreach ($mappings as $key => $directive) {
-      $key_lower = strtolower($key);
-      $data_value = null;
-
-      // [v3.13.16] ENHANCED MAPPING RESOLUTION
-      // 1. Direct match (Component ID)
-      if (isset($data[$key_lower])) {
-        $data_value = $data[$key_lower];
-      } else {
-        // 2. Lookup settings_key from schema components if direct match fails
-        $components = $schema['components'] ?? array();
-        foreach ($components as $comp) {
-          if (isset($comp['component_id']) && strtolower($comp['component_id']) === $key_lower) {
-            $settings_key = strtolower($comp['settings_key'] ?? '');
-            if ($settings_key && isset($data[$settings_key])) {
-              $data_value = $data[$settings_key];
-              break;
-            }
-          }
-        }
-      }
-
-      if (!empty($data_value)) {
-        $value = $data_value;
+    foreach ($mappings as $key => $constant) {
+      if (isset($data[$key])) {
+        $value = $data[$key];
 
         // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
-        $constant = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'wp-config.php');
+        $constant = VAPTSECURE_Enforcer::extract_code_from_mapping($constant, 'wp-config.php');
 
         // [FIX v1.3.13] Skip if the value is falsey (for toggles)
         if ($value === false || $value === 0 || $value === '0' || $value === 'off') {
@@ -81,7 +54,7 @@ class VAPTSECURE_Config_Driver
       }
     }
 
-    return array_unique($rules);
+    return $rules;
   }
 
   /**
@@ -130,17 +103,67 @@ class VAPTSECURE_Config_Driver
     // 2. Filter existing content: remove old VAPT blocks and any existing definitions of our constants
     $new_lines = [];
     $in_vaptsecure_block = false;
+
+    // Standardized Multi-Marker Support (v4.0.1)
+    $start_markers = [
+      "// BEGIN VAPT CONFIG RULES",
+      "/* BEGIN VAPT CONFIG RULES",
+      "/* BEGIN VAPT SECURITY RULES",
+      "# BEGIN VAPT SECURITY RULES"
+    ];
+    $end_markers = [
+      "// END VAPT CONFIG RULES",
+      "/* END VAPT CONFIG RULES",
+      "/* END VAPT SECURITY RULES",
+      "# END VAPT SECURITY RULES"
+    ];
+
     foreach ($lines as $line) {
       $trimmed = trim($line);
 
-      if ($trimmed === $start_marker) {
+      $found_start = false;
+      foreach ($start_markers as $sm) {
+          if (strpos($trimmed, $sm) !== false) {
+              $found_start = true;
+              break;
+          }
+      }
+
+      if ($found_start) {
         $in_vaptsecure_block = true;
+        // If the marker is appended to code, keep the part BEFORE the marker
+        foreach ($start_markers as $sm) {
+            $pos = strpos($line, $sm);
+            if ($pos !== false && $pos > 0) {
+                $new_lines[] = substr($line, 0, $pos);
+            }
+        }
         continue;
       }
-      if ($trimmed === $end_marker) {
+
+      $found_end = false;
+      foreach ($end_markers as $em) {
+          if (strpos($trimmed, $em) !== false) {
+              $found_end = true;
+              break;
+          }
+      }
+
+      if ($found_end) {
         $in_vaptsecure_block = false;
+        // If code follows the marker on the same line (rare but possible), keep the part AFTER the marker
+        foreach ($end_markers as $em) {
+            $pos = strpos($line, $em);
+            if ($pos !== false) {
+                $after = substr($line, $pos + strlen($em));
+                if (trim($after) !== "") {
+                   $new_lines[] = $after; 
+                }
+            }
+        }
         continue;
       }
+      
       if ($in_vaptsecure_block) continue;
 
       // Clean up legacy single-line markers

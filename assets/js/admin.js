@@ -8,12 +8,36 @@ window.vaptScriptLoaded = true;
   }
 
   const { render, useState, useEffect, useMemo, Fragment, createElement: el } = wp.element || {};
+  const components = wp.components || {};
   const {
     TabPanel, Panel, PanelBody, PanelRow, Button, Dashicon,
     ToggleControl, SelectControl, Modal, TextControl, Spinner,
     Notice, Placeholder, Dropdown, CheckboxControl, BaseControl, Icon,
     TextareaControl, Card, CardHeader, CardBody, Tooltip
-  } = wp.components || {};
+  } = {
+    TabPanel: components.TabPanel || components.__experimentalTabPanel,
+    Panel: components.Panel,
+    PanelBody: components.PanelBody,
+    PanelRow: components.PanelRow,
+    Button: components.Button,
+    Dashicon: components.Dashicon,
+    ToggleControl: components.ToggleControl,
+    SelectControl: components.SelectControl,
+    Modal: components.Modal,
+    TextControl: components.TextControl,
+    Spinner: components.Spinner,
+    Notice: components.Notice,
+    Placeholder: components.Placeholder,
+    Dropdown: components.Dropdown,
+    CheckboxControl: components.CheckboxControl,
+    BaseControl: components.BaseControl,
+    Icon: components.Icon,
+    TextareaControl: components.TextareaControl,
+    Card: components.Card,
+    CardHeader: components.CardHeader,
+    CardBody: components.CardBody,
+    Tooltip: components.Tooltip || components.__experimentalTooltip
+  };
   // Global Settings from wp_localize_script (MOVED TO TOP v3.8.11)
   const settings = window.vaptSecureSettings || {};
   const isSuper = settings.isSuper || false;
@@ -25,6 +49,11 @@ window.vaptScriptLoaded = true;
     const originalApiFetch = wp.apiFetch;
 
     const patchedApiFetch = (args) => {
+      // 🛡️ AUTH PERI-FIX: Ensure Nonce is present for non-GET requests
+      if (settings.nonce && args.method && args.method !== 'GET') {
+        args.headers = Object.assign({}, args.headers || {}, { 'X-WP-Nonce': settings.nonce });
+      }
+
       const getFallbackUrl = (pathOrUrl) => {
         if (!pathOrUrl) return null;
         const path = typeof pathOrUrl === 'string' && pathOrUrl.includes('/wp-json/')
@@ -33,7 +62,8 @@ window.vaptScriptLoaded = true;
         const cleanHome = settings.homeUrl.replace(/\/$/, '');
         const cleanPath = path.replace(/^\//, '').split('?')[0];
         const queryParams = path.includes('?') ? '&' + path.split('?')[1] : '';
-        return cleanHome + '/?rest_route=/' + cleanPath + queryParams;
+        const nonceParam = settings.nonce ? '&_wpnonce=' + settings.nonce : '';
+        return cleanHome + '/?rest_route=/' + cleanPath + queryParams + nonceParam;
       };
 
       // 🛡️ Pre-emptive Fallback if we already know REST is broken
@@ -48,8 +78,8 @@ window.vaptScriptLoaded = true;
 
       return originalApiFetch(args).catch(err => {
         const status = err.status || (err.data && err.data.status);
-        // 🛡️ Trigger fallback on 404 OR invalid_json (common when server returns HTML for 404)
-        const isFallbackTrigger = status === 404 || err.code === 'rest_no_route' || err.code === 'invalid_json';
+        // 🛡️ Trigger fallback on 403/404 OR invalid_json (common when server returns HTML for error)
+        const isFallbackTrigger = status === 404 || status === 403 || err.code === 'rest_no_route' || err.code === 'invalid_json';
 
         if (isFallbackTrigger && (args.path || args.url) && settings.homeUrl) {
           const fallbackUrl = getFallbackUrl(args.path || args.url);
@@ -398,25 +428,6 @@ window.vaptScriptLoaded = true;
       }
     };
 
-    const handleUpdateSchema = () => {
-      if (!window.VAPTSECURE_APlusGenerator) {
-        setAlertState({ message: __('A+ Generator is not loaded.', 'vaptsecure') });
-        return;
-      }
-
-      // v3.13.0 - Synthesize feature data for generation
-      const f = {
-        ...feature,
-        include_manual_protocol: includeProtocol ? 1 : 0,
-        include_operational_notes: includeNotes ? 1 : 0
-      };
-
-      const newSchema = window.VAPTSECURE_APlusGenerator.generate(f, customizationText);
-      onJsonChange(JSON.stringify(newSchema, null, 2));
-      setSaveStatus({ message: __('Schema Updated from A+ Logic!', 'vaptsecure'), type: 'success' });
-      setTimeout(() => setSaveStatus(null), 3000);
-    };
-
     const handleSave = () => {
       try {
         // Attempt to clean common paste artifacts (Markdown code blocks & invisible chars)
@@ -440,23 +451,7 @@ window.vaptScriptLoaded = true;
         const payload = {
           generated_schema: JSON.stringify(parsed),
           implementation_data: JSON.stringify(localImplData),
-          is_enforced: (() => {
-            // v2.3.7 Fix: Deploying via A+ Adaptive Deploy always implies enforcement (button turns green)
-            if (isAdaptiveDeployment) return 1;
-            // 1. Check explicit user interaction first (v3.13.21 Fix)
-            if (localImplData && localImplData.feat_enabled !== undefined) {
-              const val = localImplData.feat_enabled;
-              return (val === true || val === 1 || val === '1' || val === 'true') ? 1 : 0;
-            }
-            // 2. Fallback to schema default if no interaction has occurred (A+ Workbench Auto-Sync)
-            const featEnabledControl = (parsed.controls || []).find(c => c.key === 'feat_enabled');
-            if (featEnabledControl && featEnabledControl.default !== undefined) {
-              const def = featEnabledControl.default;
-              return (def === true || def === 1 || def === '1' || def === 'true') ? 1 : 0;
-            }
-            return 0;
-          })(),
-          is_pushed: 1,
+          is_enforced: 1, // Force activation on Save & Deploy (v3.12.3)
           is_adaptive_deployment: isAdaptiveDeployment ? 1 : 0,
           include_verification_engine: hasTestActions ? 1 : 0,
           include_verification_guidance: 1,
@@ -494,6 +489,7 @@ window.vaptScriptLoaded = true;
         status: 'Draft',
         generated_schema: null,
         implementation_data: null,
+        is_enforced: 0,          // v1.9.5: clear enforcement state on schema removal
         include_verification_engine: 0,
         include_verification_guidance: 0,
         reset_history: true,
@@ -1170,17 +1166,34 @@ window.vaptScriptLoaded = true;
           (() => {
             const isAPlus = (parsedSchema?.metadata?.schema_grade === 'A+' || parsedSchema?.schema_grade === 'A+');
             return el('div', { id: 'vapt-design-modal-toggles', className: 'vapt-flex-col' }, [
-              el('div', { className: 'vapt-flex-row', style: { gap: '20px' } }, [
-                el(ToggleControl, {
-                  label: __('Include Manual Verification Protocol', 'vaptsecure'),
-                  checked: includeProtocol,
-                  onChange: setIncludeProtocol
-                }),
-                el(ToggleControl, {
-                  label: __('Include Operational Notes Section', 'vaptsecure'),
-                  checked: includeNotes,
-                  onChange: setIncludeNotes
-                })
+              el('div', { className: 'vapt-flex-row', style: { width: '100%', gap: '20px', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0px' } }, [
+                el('div', { className: 'vapt-flex-col' }, [
+                  el(ToggleControl, {
+                    label: __('Add Operational Notes', 'vaptsecure'),
+                    checked: includeNotes,
+                    onChange: setIncludeNotes
+                  }),
+                  el(ToggleControl, {
+                    label: __('Add Manual Verification Notes', 'vaptsecure'),
+                    checked: includeProtocol,
+                    onChange: setIncludeProtocol
+                  })
+                ]),
+                el('div', { style: { paddingTop: '2px' } }, [
+                  el(Button, {
+                    isSecondary: true,
+                    icon: 'update',
+                    onClick: () => {
+                      if (window.VAPTSECURE_APlusGenerator) {
+                        const tempFeature = { ...feature, include_manual_protocol: includeProtocol, include_operational_notes: includeNotes };
+                        const updatedSchema = window.VAPTSECURE_APlusGenerator.generate(tempFeature, customizationText);
+                        onJsonChange(JSON.stringify(updatedSchema, null, 2));
+                        setSaveStatus({ message: __('Schema Updated!', 'vaptsecure'), type: 'success' });
+                        setTimeout(() => setSaveStatus(null), 2000);
+                      }
+                    }
+                  }, __('Update Schema', 'vaptsecure'))
+                ])
               ]),
               !isAPlus && el('div', { className: 'vapt-flex-row', style: { gap: '20px' } }, [
                 el(ToggleControl, {
@@ -1292,33 +1305,17 @@ window.vaptScriptLoaded = true;
               el(Icon, { icon: 'visibility', size: 16 }),
               el('strong', { className: 'vapt-preview-title' }, __('Preview Panel: Effective Protections', 'vaptsecure'))
             ]),
-            el('div', { className: 'vapt-preview-actions-row', style: { display: 'flex', gap: '10px', alignItems: 'center' } }, [
+            el('div', { className: 'vapt-flex-row', style: { gap: '10px' } }, [
               el(Button, {
-                isSecondary: true,
-                isSmall: true,
-                onClick: handleUpdateSchema,
-                icon: 'update',
-                style: { fontWeight: '600' }
-              }, __('Update Schema', 'vaptsecure')),
-
-              // Intelligently show only the most suitable action (v3.13.1)
-              isAdaptiveDeployment ? el(Button, {
                 isPrimary: true,
                 className: 'vapt-btn-deploy-aplus',
                 onClick: handleSave,
                 isBusy: isSaving,
                 icon: 'cloud-upload',
                 style: { background: '#10b981', borderColor: '#059669', fontWeight: 'bold' }
-              }, __('Deploy', 'vaptsecure')) : el(Button, {
-                isPrimary: true,
-                isSmall: true,
-                onClick: handleSave,
-                isBusy: isSaving,
-                icon: 'admin-settings',
-                style: { background: '#3b82f6', borderColor: '#2563eb', fontWeight: 'bold' }
-              }, __('Implement', 'vaptsecure')),
-
-              el(Button, { isSecondary: true, isSmall: true, onClick: onClose }, __('Cancel', 'vaptsecure'))
+              }, __('Deploy', 'vaptsecure')),
+              el(Button, { isSecondary: true, isSmall: true, onClick: onClose }, __('Cancel', 'vaptsecure')),
+              el(Button, { isSecondary: true, isSmall: true, onClick: handleSave, isBusy: isSaving }, isAdaptiveDeployment ? __('Deploy', 'vaptsecure') : __('Implement', 'vaptsecure'))
             ])
           ]),
           el('div', { className: 'vapt-design-modal-preview-body' }, [
@@ -1329,7 +1326,7 @@ window.vaptScriptLoaded = true;
                   el('h4', { className: 'vapt-card-title' }, __('Functional Implementation')),
                   GeneratedInterface
                     ? el(GeneratedInterface, {
-                      feature: { ...feature, generated_schema: schema, implementation_data: localImplData, include_manual_protocol: includeProtocol ? 1 : 0, include_operational_notes: includeNotes ? 1 : 0 },
+                      feature: { ...feature, generated_schema: schema, implementation_data: localImplData },
                       onUpdate: (newData) => setLocalImplData(newData)
                     })
                     : el('p', null, __('Loading Preview Interface...', 'vaptsecure'))
@@ -1408,6 +1405,7 @@ window.vaptScriptLoaded = true;
     // Helper to generate SelectControl for a mapping field
     const renderMappingSelect = (label, key) => {
       return el(SelectControl, {
+        id: `vapt-mapping-select-${key}`,
         label: label,
         value: fieldMapping[key] || '',
         options: [{ label: __('--- Select Source Field ---', 'vaptsecure'), value: '' }, ...allKeys.map(k => ({ label: k, value: k }))],
@@ -1448,6 +1446,21 @@ window.vaptScriptLoaded = true;
       // interface_schema_v2.0 fields
       autoMapField('available_platforms', ['available_platforms', 'platforms', 'platform_list']);
       autoMapField('platform_implementations', ['platform_implementations', 'implementations', 'enforcer_map']);
+
+      // Additional Context fields
+      autoMapField('operational_notes', ['operational_notes', 'notes', 'operation_notes', 'operation_details']);
+      autoMapField('verification_steps', ['verification_steps', 'manual_verification', 'steps', 'test_method', 'verification']);
+
+      // NEW: Additional fields for Design Implementation Modal
+      autoMapField('risk_id', ['risk_id', 'id', 'risk identifier', 'risk id']);
+      autoMapField('title', ['title', 'name', 'risk title', 'risk name']);
+      autoMapField('category', ['category', 'type', 'risk category']);
+      autoMapField('owasp_cwe', ['owasp.cwe', 'cwe', 'cwe id', 'cwe identifier']);
+      autoMapField('owasp_top_10_2025', ['owasp.owasp_top_10_2025', 'owasp top 10', 'owasp 2025', 'owasp']);
+
+      // NEW: Verification fields from enforcer_pattern_library_v2.0.json
+      autoMapField('verification_command', ['verification.command', 'verification command', 'test command']);
+      autoMapField('verification_expected', ['verification.expected', 'expected output', 'test result']);
 
       setFieldMapping(newMapping);
       if (mappedCount === 0) {
@@ -1514,6 +1527,7 @@ window.vaptScriptLoaded = true;
 
       // Container
       el('div', {
+        id: 'vapt-mapping-modal-container',
         style: {
           display: 'flex',
           flexDirection: 'column',
@@ -1527,6 +1541,7 @@ window.vaptScriptLoaded = true;
 
         // Final Sticky Header (Actions + Title)
         el('div', {
+          id: 'vapt-mapping-modal-header',
           style: {
             padding: '18px 25px',
             borderBottom: '1px solid #dcdcde',
@@ -1544,16 +1559,17 @@ window.vaptScriptLoaded = true;
               __('Map JSON fields for context-aware prompts.', 'vaptsecure')
             )
           ]),
-          el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 } }, [
-            el(Button, { isSecondary: true, onClick: handleAutoMap, style: { height: '32px' } }, __('Auto Map', 'vaptsecure')),
-            el(Button, { isDestructive: true, isSecondary: true, onClick: handleReset, style: { height: '32px' } }, __('Reset', 'vaptsecure')),
-            el(Button, { isTertiary: true, onClick: onClose, style: { height: '32px' } }, __('Cancel', 'vaptsecure')),
-            el(Button, { isPrimary: true, onClick: onClose, style: { height: '32px' } }, __('Done', 'vaptsecure'))
+          el('div', { id: 'vapt-mapping-modal-actions', style: { display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 } }, [
+            el(Button, { id: 'vapt-button-automap', isSecondary: true, onClick: handleAutoMap, style: { height: '32px' } }, __('Auto Map', 'vaptsecure')),
+            el(Button, { id: 'vapt-button-reset', isDestructive: true, isSecondary: true, onClick: handleReset, style: { height: '32px' } }, __('Reset', 'vaptsecure')),
+            el(Button, { id: 'vapt-button-cancel', isTertiary: true, onClick: onClose, style: { height: '32px' } }, __('Cancel', 'vaptsecure')),
+            el(Button, { id: 'vapt-button-done', isPrimary: true, onClick: onClose, style: { height: '32px' } }, __('Done', 'vaptsecure'))
           ])
         ]),
 
         // Content - Fixed scrolling with min-height constraint
         el('div', {
+          id: 'vapt-mapping-modal-body',
           className: 'vapt-mapping-scroll-body',
           style: {
             flex: '1 1 auto',
@@ -1568,12 +1584,12 @@ window.vaptScriptLoaded = true;
           el('div', { style: { display: 'flex', flexDirection: 'column', gap: '0' } }, [
 
             // ── SECTION 1: Core Context ──────────────────────────────────────
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
+            el('h3', { id: 'vapt-mapping-section-core', style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '0', letterSpacing: '0.5px' } }, __('Core Context Fields')),
             renderMappingSelect(__('Description / Summary', 'vaptsecure'), 'description'),
             renderMappingSelect(__('Severity Level', 'vaptsecure'), 'severity'),
 
             // ── SECTION 2: UI Schema Fields ──────────────────────────────────
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('UI Schema Parameters')),
+            el('h3', { id: 'vapt-mapping-section-ui', style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('UI Schema Parameters')),
             el('p', { style: { margin: '0 0 12px 0', fontSize: '12px', color: '#646970', lineHeight: '1.5' } },
               __('Fields required for generating >95% accurate interactive UI schema.', 'vaptsecure')
             ),
@@ -1582,12 +1598,33 @@ window.vaptScriptLoaded = true;
             renderMappingSelect(__('Actions Array', 'vaptsecure'), 'actions'),
 
             // ── SECTION 3: Platform & Enforcement ────────────────────────────
-            el('h3', { style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Platform & Enforcement')),
+            el('h3', { id: 'vapt-mapping-section-platform', style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Platform & Enforcement')),
             el('p', { style: { margin: '0 0 12px 0', fontSize: '12px', color: '#646970', lineHeight: '1.5' } },
               __('Controls which platform list and implementations are injected into the AI prompt.', 'vaptsecure')
             ),
             renderMappingSelect(__('Available Platforms (array)', 'vaptsecure'), 'available_platforms'),
             renderMappingSelect(__('Platform Implementations (object)', 'vaptsecure'), 'platform_implementations'),
+
+            // ── SECTION 4: Additional Context ────────────────────────────────
+            el('h3', { id: 'vapt-mapping-section-additional', style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Additional Context')),
+            el('p', { style: { margin: '0 0 12px 0', fontSize: '12px', color: '#646970', lineHeight: '1.5' } },
+              __('Map specific fields for operational notes and manual verification steps.', 'vaptsecure')
+            ),
+            renderMappingSelect(__('Operational Context', 'vaptsecure'), 'operational_notes'),
+            renderMappingSelect(__('Verification Steps', 'vaptsecure'), 'verification_steps'),
+            renderMappingSelect(__('Verification Command', 'vaptsecure'), 'verification_command'),
+            renderMappingSelect(__('Verification Expected', 'vaptsecure'), 'verification_expected'),
+
+            // ── SECTION 5: Risk Identification & Compliance ────────────────────
+            el('h3', { id: 'vapt-mapping-section-identification', style: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#8c8f94', borderBottom: '1px solid #dcdcde', paddingBottom: '8px', marginBottom: '15px', marginTop: '20px', letterSpacing: '0.5px' } }, __('Risk Identification & Compliance')),
+            el('p', { style: { margin: '0 0 12px 0', fontSize: '12px', color: '#646970', lineHeight: '1.5' } },
+              __('Map risk identification and OWASP compliance fields for enhanced Design Implementation modal.', 'vaptsecure')
+            ),
+            renderMappingSelect(__('Risk ID', 'vaptsecure'), 'risk_id'),
+            renderMappingSelect(__('Title', 'vaptsecure'), 'title'),
+            renderMappingSelect(__('Category', 'vaptsecure'), 'category'),
+            renderMappingSelect(__('OWASP CWE', 'vaptsecure'), 'owasp_cwe'),
+            renderMappingSelect(__('OWASP Top 10 2025', 'vaptsecure'), 'owasp_top_10_2025'),
           ])
         ])
       ])
@@ -1685,13 +1722,15 @@ window.vaptScriptLoaded = true;
   };
 
   // Batch Revert Modal Component (v1.9.2)
-  const BatchRevertModal = ({ isOpen, previewData, isLoading, isExecuting, includeBroken, onToggleIncludeBroken, onRefresh, onConfirm, onCancel }) => {
+  const BatchRevertModal = ({ isOpen, previewData, isLoading, isExecuting, includeBroken, onToggleIncludeBroken, includeRelease, onToggleIncludeRelease, onRefresh, onConfirm, onCancel }) => {
     if (!isOpen) return null;
 
     const count = previewData?.count || 0;
     const brokenCount = previewData?.broken_count || 0;
     const developCount = previewData?.develop_count || 0;
+    const releaseCount = previewData?.release_count || 0;
     const includedBrokenCount = previewData?.included_broken_count || 0;
+    const includedReleaseCount = previewData?.included_release_count || 0;
     const features = previewData?.features || [];
     const totalHistory = previewData?.total_history_records || 0;
     const totalSchema = previewData?.total_with_schema || 0;
@@ -1726,6 +1765,22 @@ window.vaptScriptLoaded = true;
             }, __('Broken features are in Draft status but have leftover history records from incomplete transitions.', 'vaptsecure'))
           ]),
 
+          // Toggle for including Release features
+          releaseCount > 0 && el('div', {
+            key: 'toggle-release',
+            style: { background: '#f0f9f0', padding: '12px', borderRadius: '4px', marginBottom: '15px', border: '1px solid #00a32a' }
+          }, [
+            el(ToggleControl, {
+              label: sprintf(__('Include %d Release feature(s)', 'vaptsecure'), releaseCount),
+              checked: includeRelease,
+              onChange: (val) => { onToggleIncludeRelease(val); onRefresh(); },
+              disabled: isExecuting
+            }),
+            el('p', {
+              style: { margin: '5px 0 0 0', fontSize: '11px', color: '#646970', fontStyle: 'italic' }
+            }, __('Release features are currently active in production. Reverting them will disable enforcement.', 'vaptsecure'))
+          ]),
+
           count === 0 ?
             el('div', { key: 'no-features', style: { padding: '20px', textAlign: 'center' } }, [
               el('p', { style: { fontSize: '16px', color: '#646970' } },
@@ -1746,7 +1801,8 @@ window.vaptScriptLoaded = true;
                   el('div', null, [
                     el('strong', null, developCount),
                     __(' Develop features', 'vaptsecure'),
-                    includeBroken && includedBrokenCount > 0 && el('span', { style: { color: '#856404' } }, sprintf(__(' + %d broken', 'vaptsecure'), includedBrokenCount))
+                    includeBroken && includedBrokenCount > 0 && el('span', { style: { color: '#856404' } }, sprintf(__(' + %d broken', 'vaptsecure'), includedBrokenCount)),
+                    includeRelease && includedReleaseCount > 0 && el('span', { style: { color: '#d63638' } }, sprintf(__(' + %d release', 'vaptsecure'), includedReleaseCount))
                   ]),
                   el('div', null, [el('strong', { style: { color: '#d63638' } }, totalHistory), __(' history records will be deleted', 'vaptsecure')]),
                   el('div', null, [el('strong', { style: { color: '#d63638' } }, totalSchema), __(' generated schemas will be cleared', 'vaptsecure')]),
@@ -1987,11 +2043,11 @@ window.vaptScriptLoaded = true;
     ]);
   };
 
-  const DomainFeatures = ({ domains = [], features = [], isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains = [], setSelectedDomains, dataFiles = [], selectedFile, onSelectFile, deletingId }) => {
+  const DomainFeatures = ({ domains = [], features = [], isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains = [], setSelectedDomains, dataFiles = [], selectedFile, onSelectFile }) => {
     const [newDomain, setNewDomain] = useState('');
     const [isWildcardNew, setIsWildcardNew] = useState(false);
     const [activeCategory, setActiveCategory] = useState('all');
-    const [statusFilters, setStatusFilters] = useState(['release']);
+    const [statusFilters, setStatusFilters] = useState(['draft', 'develop', 'test', 'release']);
     const [sortConfig, setSortConfig] = useState({ key: 'domain', direction: 'asc' });
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editDomainData, setEditDomainData] = useState({ id: '', domain: '', is_wildcard: false, is_enabled: true });
@@ -2047,12 +2103,17 @@ window.vaptScriptLoaded = true;
 
     const filteredByStatus = useMemo(() => {
       return (features || []).filter(f => {
-        // Only show Release features in Manage Features Modal
+        // 1. Inactive File Visibility Check (Superadmin)
+        if (isSuper && !f.is_from_active_file) {
+          const s = f.status ? f.status.toLowerCase() : 'draft';
+          if (s === 'draft' || s === 'default' || !s) return false;
+        }
+
         const s = f.status ? f.status.toLowerCase() : 'draft';
         const normalized = (s === 'implemented') ? 'release' : s;
-        return normalized === 'release';
+        return (statusFilters || []).includes(normalized);
       });
-    }, [features]);
+    }, [features, statusFilters]);
 
     const categories = useMemo(() => {
       const cats = [...new Set(filteredByStatus.map(f => f.category || 'Uncategorized'))].sort();
@@ -2091,7 +2152,18 @@ window.vaptScriptLoaded = true;
     }, [domains]);
 
     return el(Fragment, null, [
-      el(PanelBody, { className: 'vapt-feature-panel', title: __('Domain Specific Features', 'vaptsecure'), initialOpen: true }, [
+      el('div', {
+        className: 'vapt-domain-features-header',
+        style: {
+          padding: '8px 16px',
+          background: '#fff',
+          borderBottom: '1px solid #dcdcde',
+          marginBottom: '0'
+        }
+      }, el('h2', {
+        style: { margin: 0, fontSize: '14px', fontWeight: 600, color: '#1e1e1e' }
+      }, __('Domain Specific Features', 'vaptsecure'))),
+      el('div', { className: 'vapt-domain-features-body', style: { padding: '12px 0' } }, [
         // Summary Pill Row (Synced with Feature List)
         el('div', {
           style: {
@@ -2112,74 +2184,9 @@ window.vaptScriptLoaded = true;
           el('span', { style: { color: '#46b450', fontWeight: '700' } }, sprintf(__('Active: %d', 'vaptsecure'), domainStats.active)),
           el('span', { style: { color: '#d63638', fontWeight: '600' } }, sprintf(__('Disabled: %d', 'vaptsecure'), domainStats.disabled)),
 
-          el('div', {
-            style: {
-              marginLeft: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '2px 0'
-            }
-          }, [
-            el('span', { style: { fontWeight: '700', textTransform: 'uppercase', fontSize: '9px', color: '#64748b' } }, __('Data Sources:', 'vaptsecure')),
-            el('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } }, [
-              // "All Data Files" Option (Only show for 3+ files)
-              dataFiles.length >= 3 && el('label', {
-                key: 'all-files',
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer',
-                  fontSize: '10px',
-                  fontWeight: (selectedFile || '').split(',').includes('__all__') ? '700' : '500',
-                  color: (selectedFile || '').split(',').includes('__all__') ? '#1e3a8a' : '#64748b'
-                }
-              }, [
-                el('input', {
-                  type: 'checkbox',
-                  checked: (selectedFile || '').split(',').includes('__all__'),
-                  onChange: () => onSelectFile('__all__'),
-                  style: { margin: 0, width: '12px', height: '12px' }
-                }),
-                __('All Data Files', 'vaptsecure')
-              ]),
-              // Individual Files
-              ...dataFiles.map(file => {
-                const BASELINE_FILE = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
-                const isBaseline = file.value === BASELINE_FILE;
-                const isAllSelected = (selectedFile || '').split(',').includes('__all__');
-                const isChecked = isAllSelected || (selectedFile || '').split(',').includes(file.value) || isBaseline;
+        ]),
 
-                return el('label', {
-                  key: file.value,
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    cursor: isBaseline ? 'default' : 'pointer',
-                    fontSize: '10px',
-                    fontWeight: isChecked ? '700' : '500',
-                    color: isChecked ? '#1e3a8a' : '#64748b',
-                    opacity: (isBaseline && !isAllSelected) ? 0.7 : 1
-                  }
-                }, [
-                  el('input', {
-                    type: 'checkbox',
-                    checked: isChecked,
-                    disabled: isAllSelected || isBaseline,
-                    onChange: () => onSelectFile(file.value),
-                    style: { margin: 0, width: '12px', height: '12px' }
-                  }),
-                  file.label
-                ]);
-              })
-            ])
-          ])
-        ])
-      ]),
 
-      el('div', { key: 'domain-table-wrap', style: { marginTop: '10px' } }, [
         el('table', { key: 'table', className: 'wp-list-table widefat fixed striped' }, [
           el('thead', null, el('tr', null, [
             el('th', { style: { width: '40px' } }, el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
@@ -2264,19 +2271,7 @@ window.vaptScriptLoaded = true;
                 setViewFeaturesModalDomain(d);
                 setViewFeaturesModalOpen(true);
               }
-            }, `${(() => {
-              const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
-                const feature = features.find(f => f.key === featureKey);
-                return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
-              });
-              return releaseFeatures.length;
-            })()} ${__('Features', 'vaptsecure')} `) : `${(() => {
-              const releaseFeatures = (Array.isArray(d.features) ? d.features : []).filter(featureKey => {
-                const feature = features.find(f => f.key === featureKey);
-                return feature && (feature.status === 'Release' || feature.status === 'release' || feature.status === 'implemented');
-              });
-              return releaseFeatures.length;
-            })()} ${__('Features', 'vaptsecure')} `),
+            }, `${d.features.length} ${__('Features', 'vaptsecure')} `) : `${(Array.isArray(d.features) ? d.features.length : 0)} ${__('Features', 'vaptsecure')} `),
             el('td', null, el('span', { style: { fontSize: '12px', color: (d.license_type !== 'developer' && d.manual_expiry_date && new Date(d.manual_expiry_date) < new Date()) ? '#dc2626' : 'inherit' } },
               d.license_type === 'developer'
                 ? __('Never', 'vaptsecure')
@@ -2304,8 +2299,6 @@ window.vaptScriptLoaded = true;
               el(Button, {
                 isDestructive: true,
                 isSmall: true,
-                isBusy: deletingId === d.id,
-                disabled: deletingId === d.id,
                 onClick: () => {
                   setConfirmState({
                     message: sprintf(__('Are you sure you want to delete the domain "%s"? This action cannot be undone.', 'vaptsecure'), d.domain),
@@ -2316,278 +2309,331 @@ window.vaptScriptLoaded = true;
                     isDestructive: true
                   });
                 }
-              }, deletingId === d.id ? __('Deleting...', 'vaptsecure') : __('Delete', 'vaptsecure'))
+              }, __('Delete', 'vaptsecure'))
             ]))
           ])))
-        ])
-      ]),
+        ]),
 
-      // Edit Domain Modal
-      isEditModalOpen && el(Modal, {
-        title: __('Edit Domain Settings', 'vaptsecure'),
-        onRequestClose: () => setEditModalOpen(false),
-        style: { maxWidth: '500px' }
-      }, [
-        el('div', { style: { padding: '10px 0' } }, [
-          el(TextControl, {
-            label: __('Domain Name', 'vaptsecure'),
-            value: editDomainData.domain,
-            onChange: (val) => setEditDomainData({ ...editDomainData, domain: val })
-          }),
-          el(SelectControl, {
-            label: __('Type', 'vaptsecure'),
-            value: editDomainData.is_wildcard ? 'wildcard' : 'standard',
-            options: [
-              { label: __('Standard', 'vaptsecure'), value: 'standard' },
-              { label: __('Wildcard (*.domain)', 'vaptsecure'), value: 'wildcard' }
-            ],
-            onChange: (val) => setEditDomainData({ ...editDomainData, is_wildcard: val === 'wildcard' })
-          }),
-          el(ToggleControl, {
-            label: __('Enabled', 'vaptsecure'),
-            checked: editDomainData.is_enabled,
-            onChange: (val) => setEditDomainData({ ...editDomainData, is_enabled: val }),
-            help: __('Enable or disable all VAPT features for this domain.', 'vaptsecure')
-          }),
-          el('div', { style: { marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' } }, [
-            el(Button, { isSecondary: true, onClick: () => setEditModalOpen(false) }, __('Cancel', 'vaptsecure')),
-            el(Button, {
-              isPrimary: true,
-              onClick: () => {
-                addDomain(editDomainData.domain, editDomainData.is_wildcard, editDomainData.is_enabled, editDomainData.id);
-                setEditModalOpen(false);
-              }
-            }, __('Update Domain', 'vaptsecure'))
-          ])
-        ])
-      ]),
-      isDomainModalOpen && selectedDomain && el(Modal, {
-        key: 'modal',
-        title: sprintf(__('Select Feature to Publish: %s', 'vaptsecure'), selectedDomain.domain),
-        onRequestClose: () => setDomainModalOpen(false),
-        className: 'vapt-domain-features-modal',
-        style: { maxWidth: '1400px', width: '90%' }
-      }, [
-        el('div', { style: { display: 'flex', gap: '0', height: '60vh', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' } }, [
-          // Main Content: Two-Column Feature Grid
-          el('div', {
-            style: {
-              flexGrow: 1,
-              padding: '25px',
-              background: '#fff',
-              overflowY: 'auto'
-            }
-          }, [
-            ((Array.isArray(displayFeatures) ? displayFeatures : []).length === 0) ? el('div', { style: { textAlign: 'center', padding: '40px', color: '#94a3b8' } }, __('No Release features available.', 'vaptsecure')) :
-              el('div', { style: { display: 'flex', gap: '20px', height: '100%' } }, [
-                // Left Column: Available (Disabled) Features
-                el('div', { style: { flex: 1, display: 'flex', flexDirection: 'column' } }, [
-                  el('h3', { style: { margin: '0 0 15px 0', fontSize: '14px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' } }, __('Available Features', 'vaptsecure')),
-                  el('div', { style: { flex: 1, overflowY: 'auto', paddingRight: '10px' } },
-                    displayFeatures
-                      .filter(f => !(Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key))
-                      .map(f => el('div', {
-                        key: f.key,
-                        style: {
-                          padding: '15px',
-                          marginBottom: '10px',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          background: '#fff',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          position: 'relative',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                        }
-                      }, [
-                        el('div', { style: { marginBottom: '10px', paddingRight: '80px' } }, [
-                          el('h4', { style: { margin: '0 0 5px 0', fontSize: '14px', fontWeight: 600, color: '#1e293b' } }, f.label),
-                          el('p', { style: { margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4' } }, f.description)
-                        ]),
-                        el(Button, {
-                          isPrimary: true,
-                          isSmall: true,
-                          style: {
-                            position: 'absolute',
-                            bottom: '12px',
-                            right: '12px',
-                            backgroundColor: '#10b981',
-                            borderColor: '#10b981',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: '11px',
-                            padding: '4px 14px',
-                            borderRadius: '9999px',
-                            boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)',
-                            transition: 'all 0.2s ease',
-                            minHeight: 'auto',
-                            height: 'auto'
-                          },
-                          onMouseEnter: (e) => {
-                            e.target.style.backgroundColor = '#059669';
-                            e.target.style.borderColor = '#059669';
-                            e.target.style.boxShadow = '0 3px 6px rgba(16, 185, 129, 0.4)';
-                          },
-                          onMouseLeave: (e) => {
-                            e.target.style.backgroundColor = '#10b981';
-                            e.target.style.borderColor = '#10b981';
-                            e.target.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.3)';
-                          },
-                          onClick: () => {
-                            const newFeats = [...(Array.isArray(selectedDomain.features) ? selectedDomain.features : []), f.key];
-                            updateDomainFeatures(selectedDomain.id, newFeats);
-                            setSelectedDomain({ ...selectedDomain, features: newFeats });
-                          }
-                        }, __('Publish', 'vaptsecure'))
-                      ]))
-                  )
-                ]),
-                // Right Column: Enabled Features
-                el('div', { style: { flex: 1, display: 'flex', flexDirection: 'column' } }, [
-                  el('h3', { style: { margin: '0 0 15px 0', fontSize: '14px', fontWeight: 600, color: '#2271b1', textTransform: 'uppercase' } }, __('Enabled Features', 'vaptsecure')),
-                  el('div', { style: { flex: 1, overflowY: 'auto', paddingRight: '10px' } },
-                    displayFeatures
-                      .filter(f => (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key))
-                      .map(f => el('div', {
-                        key: f.key,
-                        style: {
-                          padding: '15px',
-                          marginBottom: '10px',
-                          border: '1px solid #2271b1',
-                          borderRadius: '8px',
-                          background: '#f0f7ff',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          position: 'relative',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                        }
-                      }, [
-                        el('div', { style: { marginBottom: '10px', paddingRight: '80px' } }, [
-                          el('h4', { style: { margin: '0 0 5px 0', fontSize: '14px', fontWeight: 600, color: '#1e293b' } }, f.label),
-                          el('p', { style: { margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4' } }, f.description)
-                        ]),
-                        el(Button, {
-                          isSecondary: true,
-                          isSmall: true,
-                          style: {
-                            position: 'absolute',
-                            bottom: '12px',
-                            right: '12px',
-                            backgroundColor: '#ef4444',
-                            borderColor: '#ef4444',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: '11px',
-                            padding: '4px 12px',
-                            borderRadius: '9999px',
-                            boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                            transition: 'all 0.2s ease',
-                            minHeight: 'auto',
-                            height: 'auto'
-                          },
-                          onMouseEnter: (e) => {
-                            e.target.style.backgroundColor = '#dc2626';
-                            e.target.style.borderColor = '#dc2626';
-                            e.target.style.boxShadow = '0 3px 6px rgba(239, 68, 68, 0.4)';
-                          },
-                          onMouseLeave: (e) => {
-                            e.target.style.backgroundColor = '#ef4444';
-                            e.target.style.borderColor = '#ef4444';
-                            e.target.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.3)';
-                          },
-                          onClick: () => {
-                            const newFeats = (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).filter(k => k !== f.key);
-                            updateDomainFeatures(selectedDomain.id, newFeats);
-                            setSelectedDomain({ ...selectedDomain, features: newFeats });
-                          }
-                        }, __('Unpublish', 'vaptsecure'))
-                      ]))
-                  )
-                ])
-              ])
+        // Edit Domain Modal
+        isEditModalOpen && el(Modal, {
+          title: __('Edit Domain Settings', 'vaptsecure'),
+          onRequestClose: () => setEditModalOpen(false),
+          style: { maxWidth: '500px' }
+        }, [
+          el('div', { style: { padding: '10px 0' } }, [
+            el(TextControl, {
+              label: __('Domain Name', 'vaptsecure'),
+              value: editDomainData.domain,
+              onChange: (val) => setEditDomainData({ ...editDomainData, domain: val })
+            }),
+            el(SelectControl, {
+              label: __('Type', 'vaptsecure'),
+              value: editDomainData.is_wildcard ? 'wildcard' : 'standard',
+              options: [
+                { label: __('Standard', 'vaptsecure'), value: 'standard' },
+                { label: __('Wildcard (*.domain)', 'vaptsecure'), value: 'wildcard' }
+              ],
+              onChange: (val) => setEditDomainData({ ...editDomainData, is_wildcard: val === 'wildcard' })
+            }),
+            el(ToggleControl, {
+              label: __('Enabled', 'vaptsecure'),
+              checked: editDomainData.is_enabled,
+              onChange: (val) => setEditDomainData({ ...editDomainData, is_enabled: val }),
+              help: __('Enable or disable all VAPT features for this domain.', 'vaptsecure')
+            }),
+            el('div', { style: { marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' } }, [
+              el(Button, { isSecondary: true, onClick: () => setEditModalOpen(false) }, __('Cancel', 'vaptsecure')),
+              el(Button, {
+                isPrimary: true,
+                onClick: () => {
+                  addDomain(editDomainData.domain, editDomainData.is_wildcard, editDomainData.is_enabled, editDomainData.id);
+                  setEditModalOpen(false);
+                }
+              }, __('Update Domain', 'vaptsecure'))
+            ])
           ])
         ]),
-        el('div', { style: { marginTop: '20px', textAlign: 'right' } }, el(Button, {
-          isPrimary: true,
-          onClick: () => setDomainModalOpen(false)
-        }, __('Done', 'vaptsecure')))
-      ]),
-      // View Features Modal
-      viewFeaturesModalOpen && viewFeaturesModalDomain && el(Modal, {
-        id: 'vapt-view-features-modal',
-        title: sprintf(__('Enabled Features for %s', 'vaptsecure'), viewFeaturesModalDomain.domain),
-        onRequestClose: () => setViewFeaturesModalOpen(false),
-        style: { maxWidth: '1200px', width: '90%' }
-      }, [
-        el('div', {
-          id: 'vapt-view-features-grid-wrap',
-          style: {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-            padding: '20px',
-            maxHeight: '70vh',
-            overflowY: 'auto'
-          }
-        },
-          (displayFeatures || []).filter(f => (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key)).map(f =>
-            el(Card, {
-              key: f.key,
-              style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }
+        isDomainModalOpen && selectedDomain && el(Modal, {
+          key: 'modal',
+          title: sprintf(__('Features for %s', 'vaptsecure'), selectedDomain.domain),
+          onRequestClose: () => setDomainModalOpen(false),
+          className: 'vapt-domain-features-modal',
+          style: { maxWidth: '1400px', width: '90%' }
+        }, [
+          // Status Visibility Filters
+          el('div', {
+            style: {
+              marginBottom: '20px',
+              padding: '12px 20px',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '20px'
+            }
+          }, [
+            el('span', { style: { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' } }, __('Status Visibility:')),
+            el(Button, {
+              isPrimary: (statusFilters || []).length !== 4,
+              variant: (statusFilters || []).length === 4 ? 'secondary' : 'primary',
+              onClick: () => {
+                if ((statusFilters || []).length === 4) setStatusFilters([]);
+                else setStatusFilters(['draft', 'develop', 'test', 'release']);
+              },
+              style: {
+                fontWeight: 700,
+                padding: '8px 20px',
+                height: 'auto',
+                boxShadow: (statusFilters || []).length !== 4 ? '0 2px 4px rgba(34, 113, 177, 0.2)' : 'none'
+              }
+            }, (statusFilters || []).length === 4 ? __('Reset All Filters', 'vaptsecure') : __('Select All Statuses', 'vaptsecure')),
+            el('div', { style: { display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '2px solid #e2e8f0' } }, [
+              { label: __('Draft', 'vaptsecure'), value: 'draft' },
+              { label: __('Develop', 'vaptsecure'), value: 'develop' },
+              { label: __('Release', 'vaptsecure'), value: 'release' }
+            ].filter(o => o.value).map(opt => el(CheckboxControl, {
+              key: opt.value,
+              label: opt.label,
+              checked: statusFilters.includes(opt.value),
+              onChange: (val) => {
+                if (val) setStatusFilters([...statusFilters, opt.value]);
+                else if ((statusFilters || []).length > 1) setStatusFilters(statusFilters.filter(v => v !== opt.value));
+              },
+              __nextHasNoMarginBottom: true
+            })))
+          ]),
+
+          el('div', { style: { display: 'flex', gap: '0', height: '60vh', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' } }, [
+            // Left Sidebar: Categories
+            el('aside', {
+              style: {
+                width: '240px',
+                flexShrink: 0,
+                background: '#fcfcfd',
+                borderRight: '1px solid #e2e8f0',
+                padding: '20px 0',
+                overflowY: 'auto'
+              }
             }, [
-              el(CardHeader, {
-                style: {
-                  background: '#f8fafc',
-                  borderBottom: '1px solid #e2e8f0',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '5px'
-                }
-              }, [
-                el('span', {
+              el('div', { style: { padding: '0 20px 10px', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' } }, __('Feature Categories')),
+              el('div', { id: 'vapt-domain-features-sidebar-categories', style: { display: 'flex', flexDirection: 'column' } }, [
+                // All Categories Link
+                el('a', {
+                  id: 'vapt-category-link-all',
+                  href: '#',
+                  onClick: (e) => { e.preventDefault(); setActiveCategory('all'); },
+                  className: 'vapt-sidebar-link' + (activeCategory === 'all' ? ' is-active' : ''),
                   style: {
-                    fontSize: '9px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    background: '#e2e8f0',
-                    color: '#475569'
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 20px',
+                    textDecoration: 'none',
+                    color: activeCategory === 'all' ? '#2271b1' : '#64748b',
+                    background: activeCategory === 'all' ? '#eff6ff' : 'transparent',
+                    fontWeight: activeCategory === 'all' ? 600 : 500,
+                    fontSize: '13px',
+                    borderRight: activeCategory === 'all' ? '3px solid #2271b1' : 'none'
                   }
-                }, f.category || 'General'),
-                el('strong', { style: { fontSize: '13px', color: '#1e293b' } }, f.label)
-              ]),
-              el(CardBody, { style: { padding: '16px' } }, [
-                el('div', { style: { marginBottom: '10px' } }, [
+                }, [
+                  el('span', null, __('All Categories', 'vaptsecure')),
+                  el('span', { style: { fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: activeCategory === 'all' ? '#dbeafe' : '#f1f5f9' } }, (Array.isArray(filteredByStatus) ? filteredByStatus : []).length)
+                ]),
+                // Category Links
+                ...categories.map(cat => {
+                  const count = (Array.isArray(filteredByStatus) ? filteredByStatus : []).filter(f => (f.category || 'Uncategorized') === cat).length;
+                  const isActive = activeCategory === cat;
+                  return el('a', {
+                    key: cat,
+                    href: '#',
+                    onClick: (e) => { e.preventDefault(); setActiveCategory(cat); },
+                    className: 'vapt-sidebar-link' + (isActive ? ' is-active' : ''),
+                    style: {
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px 20px',
+                      textDecoration: 'none',
+                      color: isActive ? '#2271b1' : '#64748b',
+                      background: isActive ? '#eff6ff' : 'transparent',
+                      fontWeight: isActive ? 600 : 500,
+                      fontSize: '13px',
+                      borderRight: isActive ? '3px solid #2271b1' : 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'visible'
+                    }
+                  }, [
+                    el('span', { style: { overflow: 'hidden', textOverflow: 'ellipsis' } }, cat),
+                    el('span', { style: { fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: isActive ? '#dbeafe' : '#f1f5f9', marginLeft: '8px', flexShrink: 0 } }, count)
+                  ]);
+                })
+              ])
+            ]),
+
+            // Main Content: Feature Cards
+            el('div', {
+              style: {
+                flexGrow: 1,
+                padding: '25px',
+                background: '#fff',
+                overflowY: 'auto'
+              }
+            }, [
+              ((Array.isArray(displayFeatures) ? displayFeatures : []).length === 0) ? el('div', { style: { textAlign: 'center', padding: '40px', color: '#94a3b8' } }, __('No features matching the current selection.', 'vaptsecure')) :
+                Object.entries(featuresByCategory).map(([catName, catFeatures]) => el(Fragment, { key: catName }, [
+                  el('h3', { className: 'vapt-category-header' }, [
+                    el(Dashicon, { icon: 'category', size: 16 }),
+                    catName
+                  ]),
+                  el('div', { className: 'vapt-feature-grid' }, catFeatures.map(f => el('div', {
+                    key: f.key,
+                    className: `vapt - domain - feature - card ${f.exists_in_multiple_files ? 'vapt-feature-multi-file' : (f.is_from_active_file === false ? 'vapt-feature-inactive-only' : '')} `,
+                    style: {
+                      padding: '20px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      background: '#fff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: 'all 0.3s',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }
+                  }, [
+                    el('div', { style: { marginBottom: '20px' } }, [
+                      el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' } }, [
+                        el('h4', { style: { margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' } }, f.label),
+                        el('span', {
+                          className: `vapt - status - pill status - ${(f.status || '').toLowerCase()} `,
+                          style: {
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
+                              (f.status === 'Test' || f.status === 'test') ? '#eab308' :
+                                (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
+                            border: 'none',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                          }
+                        }, f.status)
+                      ]),
+                      el('p', { style: { margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5' } }, f.description)
+                    ]),
+                    el('div', {
+                      id: `vapt - domain - feature - footer - ${f.key} `,
+                      style: {
+                        marginTop: 'auto',
+                        paddingTop: '15px',
+                        borderTop: '1px solid #f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }
+                    }, [
+                      el('span', { id: `vapt - domain - feature - status - text - ${f.key} `, style: { fontSize: '12px', fontWeight: 600, color: '#475569' } }, (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key) ? __('Active', 'vaptsecure') : __('Disabled', 'vaptsecure')),
+                      el(ToggleControl, {
+                        checked: (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).includes(f.key),
+                        onChange: (val) => {
+                          const newFeats = val
+                            ? [...(Array.isArray(selectedDomain.features) ? selectedDomain.features : []), f.key]
+                            : (Array.isArray(selectedDomain.features) ? selectedDomain.features : []).filter(k => k !== f.key);
+                          updateDomainFeatures(selectedDomain.id, newFeats);
+                          setSelectedDomain({ ...selectedDomain, features: newFeats });
+                        },
+                        __nextHasNoMarginBottom: true,
+                        style: { margin: 0 }
+                      })
+                    ])
+                  ])))
+                ]))
+            ])
+          ]),
+          el('div', { style: { marginTop: '20px', textAlign: 'right' } }, el(Button, {
+            isPrimary: true,
+            onClick: () => setDomainModalOpen(false)
+          }, __('Done', 'vaptsecure')))
+        ]),
+        // View Features Modal
+        viewFeaturesModalOpen && viewFeaturesModalDomain && el(Modal, {
+          id: 'vapt-view-features-modal',
+          title: sprintf(__('Enabled Features for %s', 'vaptsecure'), viewFeaturesModalDomain.domain),
+          onRequestClose: () => setViewFeaturesModalOpen(false),
+          style: { maxWidth: '1200px', width: '90%' }
+        }, [
+          el('div', {
+            id: 'vapt-view-features-grid-wrap',
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '20px',
+              padding: '20px',
+              maxHeight: '70vh',
+              overflowY: 'auto'
+            }
+          },
+            (features || []).filter(f => (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key)).map(f =>
+              el(Card, {
+                key: f.key,
+                style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }
+              }, [
+                el(CardHeader, {
+                  style: {
+                    background: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '5px'
+                  }
+                }, [
                   el('span', {
                     style: {
-                      display: 'inline-block',
-                      fontSize: '10px',
-                      fontWeight: 700,
+                      fontSize: '9px',
+                      fontWeight: 600,
                       textTransform: 'uppercase',
-                      padding: '3px 8px',
-                      borderRadius: '12px',
-                      color: '#fff',
-                      background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
-                        (f.status === 'Test' || f.status === 'test') ? '#eab308' :
-                          (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: '#e2e8f0',
+                      color: '#475569'
                     }
-                  }, f.status || 'Unknown')
+                  }, f.category || 'General'),
+                  el('strong', { style: { fontSize: '13px', color: '#1e293b' } }, f.label)
                 ]),
-                el('p', { style: { fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.5' } }, f.description)
+                el(CardBody, { style: { padding: '16px' } }, [
+                  el('div', { style: { marginBottom: '10px' } }, [
+                    el('span', {
+                      style: {
+                        display: 'inline-block',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
+                          (f.status === 'Test' || f.status === 'test') ? '#eab308' :
+                            (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                      }
+                    }, f.status || 'Unknown')
+                  ]),
+                  el('p', { style: { fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.5' } }, f.description)
+                ])
               ])
-            ])
+            )
+          ),
+          el('div', { style: { marginTop: '20px', textAlign: 'right', borderTop: '1px solid #e2e8f0', paddingTop: '15px' } },
+            el(Button, { isPrimary: true, onClick: () => setViewFeaturesModalOpen(false) }, __('Close', 'vaptsecure'))
           )
-        ),
-        el('div', { style: { marginTop: '20px', textAlign: 'right', borderTop: '1px solid #e2e8f0', paddingTop: '15px' } },
-          el(Button, { isPrimary: true, onClick: () => setViewFeaturesModalOpen(false) }, __('Close', 'vaptsecure'))
-        )
+        ])
       ])
     ]);
   };
+
 
   // FieldRow MUST live outside BuildGenerator — if defined inside, 
   // React creates a new component type on every render, causing unmount/remount
@@ -2636,6 +2682,7 @@ window.vaptScriptLoaded = true;
       }
       whiteLabelRef.current = whiteLabel;
     }, [whiteLabel]);
+
     const [generating, setGenerating] = useState(false);
     const [downloadUrl, setDownloadUrl] = useState(null);
     const [importedAt, setImportedAt] = useState(null);
@@ -2778,7 +2825,6 @@ window.vaptScriptLoaded = true;
       });
     }
 
-
     return el('div', { className: 'vapt-build-generator' }, [
       el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '25px', marginTop: '30px' } }, [
         el(Icon, { icon: 'hammer', size: 24 }),
@@ -2797,11 +2843,11 @@ window.vaptScriptLoaded = true;
           ]),
           el(CardBody, { style: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 } }, [
             // Domain & Config Toggle (Side-by-Side)
-            el('div', { style: { display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' } }, [
-              // Target Domain + Scope Badge
-              el('div', { style: { flex: 1, display: 'flex', alignItems: 'center', gap: '10px' } }, [
-                el('label', { style: { width: '85px', fontSize: '12px', fontWeight: '500', color: '#64748b', flexShrink: 0 } }, __('Target Domain', 'vaptsecure')),
-                el('div', { style: { flex: 1 } },
+            el('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', padding: '12px 20px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' } }, [
+              // LEFT GROUP: Target Domain + Scope Badge
+              el('div', { style: { display: 'flex', alignItems: 'center', gap: '15px' } }, [
+                el('label', { style: { fontSize: '12px', fontWeight: '500', color: '#64748b', marginRight: '5px' } }, __('Target Domain', 'vaptsecure')),
+                el('div', { style: { width: '320px' } },
                   el(SelectControl, {
                     value: buildDomain,
                     options: [
@@ -2821,6 +2867,7 @@ window.vaptScriptLoaded = true;
                       const dom = (Array.isArray(domains) ? domains : []).find(d => d.domain === val);
                       if (dom) setLicenseScope(dom.license_scope || 'single');
                     },
+                    __nextHasNoMarginBottom: true,
                     style: { marginBottom: 0 }
                   })
                 ),
@@ -2829,47 +2876,51 @@ window.vaptScriptLoaded = true;
                   style: {
                     fontSize: '11px',
                     fontWeight: 600,
-                    padding: '3px 10px',
+                    padding: '4px 12px',
                     borderRadius: '12px',
                     background: licenseScope === 'multisite' ? '#dbeafe' : '#dcfce7',
                     color: licenseScope === 'multisite' ? '#1d4ed8' : '#15803d',
                     border: `1px solid ${licenseScope === 'multisite' ? '#bfdbfe' : '#bbf7d0'}`,
                     whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    lineHeight: '1',
-                    alignSelf: 'center'
+                    lineHeight: '1'
                   }
                 }, licenseScope === 'multisite' ? __('Multi-Site', 'vaptsecure') : __('Single Domain', 'vaptsecure'))
               ]),
-              // Include Config Toggle
-              el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 } }, [
-                el('div', { style: { marginBottom: 0, lineHeight: 1 } },
-                  el(ToggleControl, {
-                    label: __('Include Config', 'vaptsecure'),
-                    checked: includeConfig,
-                    onChange: (val) => setIncludeConfig(val),
-                    help: null,
-                    style: { marginBottom: 0 }
-                  })
-                ),
-                el(Tooltip, { text: __('Include current feature configurations & security rules.', 'vaptsecure') },
-                  el('span', { className: 'dashicons dashicons-editor-help', style: { fontSize: '14px', color: '#94a3b8', cursor: 'help' } })
-                )
-              ]),
-              // Include Active Data Toggle
-              el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 } }, [
-                el('div', { style: { marginBottom: 0, lineHeight: 1 } },
-                  el(ToggleControl, {
-                    label: __('Include Active Data', 'vaptsecure'),
-                    checked: includeData,
-                    onChange: (val) => setIncludeData(val),
-                    help: null,
-                    style: { marginBottom: 0 }
-                  })
-                ),
-                el(Tooltip, { text: sprintf(__('Include Risk Catalog and definitions from active file: %s (Found %d items).', 'vaptsecure'), activeFile || 'Default', features ? features.length : 0) },
-                  el('span', { className: 'dashicons dashicons-editor-help', style: { fontSize: '14px', color: '#94a3b8', cursor: 'help' } })
-                )
+
+              // RIGHT GROUP: Configuration Toggles
+              el('div', { style: { display: 'flex', alignItems: 'center', gap: '20px' } }, [
+                // Include Config Toggle
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
+                  el('div', { style: { marginBottom: 0, lineHeight: 1 } },
+                    el(ToggleControl, {
+                      label: __('Include Config', 'vaptsecure'),
+                      checked: includeConfig,
+                      onChange: (val) => setIncludeConfig(val),
+                      help: null,
+                      __nextHasNoMarginBottom: true,
+                      style: { marginBottom: 0 }
+                    })
+                  ),
+                  el(Tooltip, { text: __('Include current feature configurations & security rules.', 'vaptsecure') },
+                    el('span', { className: 'dashicons dashicons-editor-help', style: { fontSize: '14px', color: '#94a3b8', cursor: 'help' } })
+                  )
+                ]),
+                // Include Active Data Toggle
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
+                  el('div', { style: { marginBottom: 0, lineHeight: 1 } },
+                    el(ToggleControl, {
+                      label: __('Include Active Data', 'vaptsecure'),
+                      checked: includeData,
+                      onChange: (val) => setIncludeData(val),
+                      help: null,
+                      __nextHasNoMarginBottom: true,
+                      style: { marginBottom: 0 }
+                    })
+                  ),
+                  el(Tooltip, { text: sprintf(__('Include Risk Catalog and definitions from active file: %s.', 'vaptsecure'), activeFile || 'Default') },
+                    el('span', { className: 'dashicons dashicons-editor-help', style: { fontSize: '14px', color: '#94a3b8', cursor: 'help' } })
+                  )
+                ])
               ])
             ]),
 
@@ -2894,7 +2945,7 @@ window.vaptScriptLoaded = true;
                   })
                 ),
                 el(FieldRow, { label: __('Text Domain', 'vaptsecure') },
-                  el(TextControl, { value: whiteLabel.text_domain, readOnly: true, style: { marginBottom: 0, background: '#f8fafc' } })
+                  el(TextControl, { value: whiteLabel.text_domain, readOnly: true, style: { marginBottom: 0, background: '#f1f5f9' } })
                 ),
               ]),
               // Col 2
@@ -2948,16 +2999,14 @@ window.vaptScriptLoaded = true;
                 disabled: generating || !buildDomain
               }, [
                 el(Icon, { icon: 'download', size: 18, style: { marginRight: '5px' } }),
-                generating ? __('Generating...', 'vapt-Copilot') : __('Download Build', 'vapt-Copilot')
+                generating ? __('Generating...', 'vaptsecure') : __('Download Build', 'vaptsecure')
               ])
             ])
           ])
         ]),
 
-        // RIGHT COLUMN: Status (Equal Height)
+        // RIGHT COLUMN: Status
         el(Card, { style: { borderRadius: '8px', border: '1px solid #e2e8f0', height: '100%', background: '#fff' } }, [
-          // Content updated with better styling in next tool call or implicit here?
-          // Using existing structure but ensuring it matches visual requirements
           el(CardHeader, { style: { background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '12px 20px' } }, [
             el('h4', { style: { margin: 0, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' } }, [
               el(Icon, { icon: 'info-outline', size: 16 }),
@@ -2965,31 +3014,39 @@ window.vaptScriptLoaded = true;
             ])
           ]),
           el(CardBody, { style: { padding: '20px' } }, [
-            // ... Content Logic
             el('div', { style: { fontSize: '13px', color: '#64748b', lineHeight: '1.8' } }, [
-              el('div', { style: { marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' } }, [
+              el('div', { style: { marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
                 el('strong', null, __('Generated Version', 'vaptsecure')),
                 el('span', { style: { fontFamily: 'monospace', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' } }, buildVersion)
               ]),
-              el('div', { style: { marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' } }, [
+              el('div', { style: { marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
                 el('strong', null, __('Target Domain', 'vaptsecure')),
-                el('code', { style: { color: '#0f172a' } }, buildDomain || 'None')
+                el('span', {
+                  style: {
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    background: buildDomain ? '#e0f2fe' : '#f1f5f9',
+                    color: buildDomain ? '#0369a1' : '#64748b'
+                  }
+                }, buildDomain || __('None', 'vaptsecure'))
               ]),
-              el('div', { style: { marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' } }, [
+              el('div', { style: { marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
                 el('strong', null, __('Active Features', 'vaptsecure')),
                 el('span', { style: { fontWeight: '600', color: '#16a34a' } }, (() => {
-                  const selectedDomain = domains.find(d => d.domain === buildDomain);
-                  return selectedDomain ? (selectedDomain.features?.length || 0) : 0;
-                })() + ' Modules')
+                  const selectedDomain = (domains || []).find(d => d.domain === buildDomain);
+                  return (selectedDomain ? (selectedDomain.features?.length || 0) : 0) + ' Modules';
+                })())
               ]),
               el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
                 el('strong', null, __('Last Import', 'vaptsecure')),
-                el('span', { style: { fontSize: '11px', fontStyle: 'italic' } }, importedAt || 'Never')
+                el('span', { style: { fontSize: '11px', fontStyle: 'italic' } }, importedAt || __('Never', 'vaptsecure'))
               ])
             ]),
             el(Button, {
               isSecondary: true,
-              style: { width: '100%', marginTop: '20px' },
+              style: { width: '100%', marginTop: '20px', justifyContent: 'center' },
               onClick: forceReImport,
               disabled: generating || !buildDomain || (buildDomain !== window.location.hostname && buildDomain !== window.location.hostname.replace(/^www\./, ''))
             }, __('Force Re-import from Server', 'vaptsecure')),
@@ -2997,13 +3054,14 @@ window.vaptScriptLoaded = true;
               style: { fontSize: '11px', color: (buildDomain && buildDomain !== window.location.hostname && buildDomain !== window.location.hostname.replace(/^www\./, '')) ? '#ef4444' : '#94a3b8', marginTop: '10px', textAlign: 'center' }
             }, (buildDomain && buildDomain !== window.location.hostname && buildDomain !== window.location.hostname.replace(/^www\./, ''))
               ? __('This action is only available for the current active domain.', 'vaptsecure')
-              : __('Forces sync with vapt-locked-config.php', 'vaptsecure')
-            )
+              : __('Forces sync with vapt-locked-config.php', 'vaptsecure'))
           ])
         ])
       ])
     ]);
   };
+
+
 
   const LicenseManager = ({ domains, fetchData, isSuper, loading, addDomain, deleteDomain, globalSetConfirmState, deletingId }) => {
     // Manage state for the selected domain (if multiple, allows switching)
@@ -3031,6 +3089,15 @@ window.vaptScriptLoaded = true;
       });
       return usage;
     }, [domains]);
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    };
 
     const [formState, setFormState] = useState({
       domain: '',
@@ -3296,15 +3363,6 @@ window.vaptScriptLoaded = true;
       });
     };
 
-    // Helper to format date
-    const formatDate = (dateStr) => {
-      if (!dateStr || dateStr.startsWith('0000')) return __('Never / Invalid', 'vaptsecure');
-      try {
-        return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-      } catch (e) {
-        return dateStr;
-      }
-    };
 
     const toggleSort = (key) => {
       if (sortBy === key) {
@@ -3320,7 +3378,9 @@ window.vaptScriptLoaded = true;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    return el(PanelBody, { title: __('License & Subscription Management', 'vaptsecure'), initialOpen: true }, [
+    return el('div', { className: 'vapt-license-management-container' }, [
+      // Section Header (No collapsible arrow)
+      el('h2', { style: { padding: '16px 16px 10px', margin: 0, fontSize: '14px', fontWeight: 600, color: '#1e1e1e' } }, __('License & Subscription Management', 'vaptsecure')),
       // TOP: Two-Column Form Grid
       el('div', { className: 'vapt-license-grid' }, [
         // LEFT: Status Card
@@ -3615,63 +3675,63 @@ window.vaptScriptLoaded = true;
         el('table', { className: 'wp-list-table widefat fixed striped' }, [
           el('thead', null, el('tr', null, [
             el('th', {
-              className: `manage - column sortable ${sortBy === 'license_id' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column sortable ${sortBy === 'license_id' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('license_id'),
-              style: { cursor: 'pointer' }
+              style: { cursor: 'pointer', width: '180px', paddingRight: '10px' }
             }, [
               el('span', null, __('License ID', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage - column sortable ${sortBy === 'installation_limit' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column sortable ${sortBy === 'installation_limit' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('installation_limit'),
-              style: { cursor: 'pointer', width: '80px' }
+              style: { cursor: 'pointer', width: '20%', paddingRight: '10px' }
             }, [
-              el('span', null, __('Limit', 'vaptsecure')),
+              el('span', null, __('Usage', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage - column column - primary sortable ${sortBy === 'domain' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column column-primary sortable ${sortBy === 'domain' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('domain'),
-              style: { cursor: 'pointer' }
+              style: { cursor: 'pointer', width: 'auto', paddingRight: '10px' }
             }, [
               el('span', null, __('Domain', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage - column sortable ${sortBy === 'version' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column sortable ${sortBy === 'version' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('version'),
-              style: { cursor: 'pointer' }
+              style: { cursor: 'pointer', width: '70px', paddingRight: '10px' }
             }, [
               el('span', null, __('Version', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage - column sortable ${sortBy === 'license_type' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column sortable ${sortBy === 'license_type' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('license_type'),
-              style: { cursor: 'pointer' }
+              style: { cursor: 'pointer', width: '100px', paddingRight: '10px' }
             }, [
               el('span', null, __('License', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage - column sortable ${sortBy === 'first_activated_at' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column sortable ${sortBy === 'first_activated_at' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('first_activated_at'),
-              style: { cursor: 'pointer' }
+              style: { cursor: 'pointer', width: '120px', paddingRight: '10px' }
             }, [
               el('span', null, __('Activated At', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', {
-              className: `manage - column sortable ${sortBy === 'manual_expiry_date' ? 'sorted ' + sortOrder : ''} `,
+              className: `manage-column sortable ${sortBy === 'manual_expiry_date' ? 'sorted ' + sortOrder : ''}`,
               onClick: () => toggleSort('manual_expiry_date'),
-              style: { cursor: 'pointer' }
+              style: { cursor: 'pointer', width: '120px', paddingRight: '10px' }
             }, [
               el('span', null, __('Expiry', 'vaptsecure')),
               el('span', { className: 'sorting-indicator' })
             ]),
             el('th', { style: { width: '80px' } }, __('Renewals', 'vaptsecure')),
-            el('th', { style: { width: '80px', textAlign: 'right' } }, __('Actions', 'vaptsecure')),
+            el('th', { style: { width: '140px', textAlign: 'right' } }, __('Action', 'vaptsecure')),
           ])),
           el('tbody', null, sortedDomains.length === 0 ? el('tr', null, el('td', { colSpan: 8 }, __('No domains found.', 'vaptsecure'))) :
             sortedDomains.sort((a, b) => {
@@ -3702,95 +3762,87 @@ window.vaptScriptLoaded = true;
               }
               return 0;
             }).map((dom) => el('tr', { key: dom.id, className: dom.id == selectedDomainId ? 'is-selected' : '' }, [
-              el('td', null, el('code', { style: { fontSize: '11px' } }, dom.license_id || '-')),
-              el('td', null, dom.license_id ? (() => {
-                const usageCount = licenseUsage[dom.license_id] || 0;
+              el('td', { style: { width: '180px', paddingRight: '10px' } }, el('span', { style: { fontFamily: 'monospace', fontSize: '11px', color: '#64748b' } }, dom.license_id || '-')),
+              el('td', { style: { width: '20%', paddingRight: '10px' } }, (dom.license_id) ? (() => {
+                const count = licenseUsage[dom.license_id] || 0;
                 const limit = parseInt(dom.installation_limit) || 1;
-                const isMulti = dom.license_scope === 'multisite';
-                const fillPercent = isMulti ? Math.min(100, Math.round((usageCount / limit) * 100)) : (usageCount > 0 ? 100 : 0);
-                const statusClass = fillPercent >= 100 ? 'danger' : (fillPercent >= 80 ? 'warning' : 'safe');
-
-                return el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' } }, [
-                  el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
-                    el('span', { style: { background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', color: '#334155' } }, `Used: ${usageCount}`),
-                    el(Tooltip, { text: isMulti ? __('Multi-Site', 'vaptsecure') : __('Single Domain', 'vaptsecure') },
-                      el('span', { className: 'dashicons dashicons-networking', style: { fontSize: '14px', color: '#94a3b8' } })
-                    )
+                const percent = Math.min(100, Math.round((count / limit) * 100));
+                const status = percent >= 90 ? 'danger' : (percent >= 70 ? 'warning' : 'safe');
+                return el('div', { className: 'vapt-usage-directory-wrapper' }, [
+                  el('span', { className: 'vapt-usage-count', style: { color: percent >= 90 ? '#ef4444' : '#1e293b' } }, `${count} / ${limit}`),
+                  limit > 1 && el('div', { className: 'vapt-usage-bar-bg', style: { flex: 1, margin: 0 } }, [
+                    el('div', { className: `vapt-usage-bar-fill ${status}`, style: { width: `${percent}%` } })
                   ]),
-                  isMulti && el('div', { className: 'vapt-usage-bar-container' }, [
-                    el('div', { className: `vapt-usage-bar-fill ${statusClass}`, style: { width: `${fillPercent}%` } })
-                  ]),
-                  isMulti && el('div', { className: 'vapt-usage-text' }, [
-                    el('span', null, `${fillPercent}%`),
-                    el('span', null, `Limit: ${limit}`)
-                  ])
+                  limit > 1 && el('span', { className: 'vapt-usage-percent' }, `${percent}%`),
+                  el('span', { className: 'dashicons dashicons-admin-users vapt-usage-icon' })
                 ]);
               })() : '-'),
-              el('td', { className: 'column-primary' }, [
-                el('strong', null, dom.domain),
-                (dom.is_wildcard == 1) && el('span', { style: { marginLeft: '8px', fontSize: '10px', background: '#f0f0f1', padding: '2px 6px', borderRadius: '10px' } }, __('Wildcard', 'vaptsecure')),
+              el('td', { className: 'column-primary', style: { paddingRight: '10px' } }, [
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
+                  el('span', { className: 'dashicons dashicons-networking', style: { color: '#64748b', fontSize: '16px', width: '16px', height: '16px' } }),
+                  el('strong', null, dom.domain),
+                  (dom.is_wildcard == 1) && el('span', { className: 'vapt-license-badge', style: { marginLeft: '4px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', fontSize: '9px', padding: '1px 5px' } }, __('Wildcard', 'vaptsecure')),
+                ]),
                 el('button', { type: 'button', className: 'toggle-row' }, el('span', { className: 'screen-reader-text' }, __('Show more details', 'vaptsecure')))
               ]),
-              el('td', { style: { fontWeight: '500', color: '#475569' } }, dom.version || '1.0.0'),
-              el('td', null, el('span', { className: `vapt-license-badge ${dom.license_type || 'standard'}` }, (dom.license_type || 'Standard').toUpperCase())),
-              el('td', null, dom.first_activated_at ? formatDate(dom.first_activated_at) : '-'),
-              el('td', null, dom.license_type === 'developer' ? __('Never', 'vaptsecure') : (dom.manual_expiry_date ? formatDate(dom.manual_expiry_date) : '-')),
-              el('td', null, `${dom.renewals_count || 0} `),
-              el('td', { style: { textAlign: 'right' } }, el('div', { style: { display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center' } }, [
-                el(Button, {
-                  isSmall: true,
-                  style: {
-                    padding: '0 8px',
-                    minWidth: '70px',
-                    background: (dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? '#f97316' : '#10b981',
-                    borderColor: (dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? '#ea580c' : '#10b981',
-                    color: '#fff',
-                    fontWeight: 600
-                  },
+              el('td', { style: { fontWeight: '500', color: '#475569', paddingRight: '10px' } }, dom.version || '1.0.0'),
+              el('td', { style: { paddingRight: '10px' } }, el('span', { className: `vapt-license-badge ${dom.license_type || 'standard'}` }, (dom.license_type || 'Standard').toUpperCase())),
+              el('td', { style: { paddingRight: '10px' } }, dom.first_activated_at ? formatDate(dom.first_activated_at) : '-'),
+              el('td', { style: { paddingRight: '10px' } }, dom.license_type === 'developer' ? __('Never', 'vaptsecure') : (dom.manual_expiry_date ? formatDate(dom.manual_expiry_date) : '-')),
+              el('td', { style: { paddingRight: '10px' } }, `${dom.renewals_count || 0} `),
+              el('td', { style: { textAlign: 'right' } }, el('div', { style: { display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' } }, [
+                el('button', {
+                  className: `vapt-status-pill-btn ${(dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? 'inactive' : 'active'}`,
+                  style: (dom.is_enabled !== '0' && dom.is_enabled !== 0 && dom.is_enabled !== false) ? { background: '#dcfce7', color: '#15803d', borderColor: '#bbf7d0', padding: '4px 10px' } : { padding: '4px 10px' },
                   onClick: () => {
                     const nextState = (dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? 1 : 0;
                     addDomain(dom.domain, dom.is_wildcard, nextState, dom.id);
                   }
-                }, (dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? __('Inactive', 'vaptsecure') : __('Active', 'vaptsecure')),
-                isSuper && el(Button, {
-                  isDestructive: true,
-                  isSmall: true,
-                  variant: 'tertiary',
-                  onClick: () => {
-                    globalSetConfirmState({
-                      isOpen: true,
-                      type: 'delete_license',
-                      message: __('Are you sure you want to delete this domain license entirely?', 'vaptsecure'),
-                      isDestructive: true,
-                      onConfirm: () => { deleteDomain(dom.id); globalSetConfirmState(null); }
-                    });
-                  },
-                  isBusy: deletingId === dom.id,
-                  disabled: deletingId === dom.id
-                }, deletingId === dom.id ? __('Deleting...', 'vaptsecure') : __('Delete', 'vaptsecure')),
-                isSuper && dom.manual_expiry_date && el(Button, {
-                  isDestructive: true,
-                  isSmall: true,
-                  style: { marginLeft: '5px' },
-                  onClick: () => {
-                    globalSetConfirmState({
-                      isOpen: true,
-                      type: 'invalidate_license',
-                      message: __('Are you sure you want to invalidate this license? This will instantly trigger the kill-switch on the client side.', 'vaptsecure'),
-                      isDestructive: true,
-                      onConfirm: () => {
-                        apiFetch({
-                          path: 'vaptsecure/v1/domains/update',
-                          method: 'POST',
-                          data: { id: dom.id, action: 'invalidate' }
-                        }).then(() => {
-                          fetchData();
-                          globalSetConfirmState(null);
-                        });
-                      }
-                    });
-                  }
-                }, __('Invalidate', 'vaptsecure'))
+                }, [
+                  el('span', { className: `dashicons dashicons-${(dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? 'no-alt' : 'yes'}`, style: { fontSize: '14px', marginRight: '4px' } }),
+                  (dom.is_enabled === '0' || dom.is_enabled === 0 || dom.is_enabled === false) ? __('INACTIVE', 'vaptsecure') : __('ACTIVE', 'vaptsecure')
+                ]),
+                el(Tooltip, { text: __('Delete Domain License', 'vaptsecure') },
+                  el('button', {
+                    className: 'vapt-elite-action-btn delete',
+                    style: { color: '#94a3b8', background: 'none', border: 'none', padding: 0 },
+                    disabled: deletingId === dom.id,
+                    onClick: () => {
+                      globalSetConfirmState({
+                        isOpen: true,
+                        type: 'delete_license',
+                        message: __('Are you sure you want to delete this domain license entirely?', 'vaptsecure'),
+                        isDestructive: true,
+                        onConfirm: () => { deleteDomain(dom.id); globalSetConfirmState(null); }
+                      });
+                    }
+                  }, el('span', { className: `dashicons dashicons-${deletingId === dom.id ? 'update' : 'trash'}`, style: { fontSize: '18px' } }))
+                ),
+                el(Tooltip, { text: __('Invalidate License', 'vaptsecure') },
+                  el('button', {
+                    className: 'vapt-elite-action-btn',
+                    style: { color: '#94a3b8', background: 'none', border: 'none', padding: 0 },
+                    disabled: !dom.manual_expiry_date,
+                    onClick: () => {
+                      globalSetConfirmState({
+                        isOpen: true,
+                        type: 'invalidate_license',
+                        message: __('Are you sure you want to invalidate this license? This will instantly trigger the kill-switch on the client side.', 'vaptsecure'),
+                        isDestructive: true,
+                        onConfirm: () => {
+                          apiFetch({
+                            path: 'vaptsecure/v1/domains/update',
+                            method: 'POST',
+                            data: { id: dom.id, action: 'invalidate' }
+                          }).then(() => {
+                            fetchData();
+                            globalSetConfirmState(null);
+                          });
+                        }
+                      });
+                    }
+                  }, el('span', { className: 'dashicons dashicons-lock', style: { fontSize: '18px' } }))
+                )
               ]))
             ]))
           )
@@ -3914,15 +3966,28 @@ window.vaptScriptLoaded = true;
     const hasMappingRules = mappedUiLayout || mappedComponents || mappedActions;
 
     const lines = [
-      `# VAPT Implementation Brief v2.0`,
+      `# VAPT Implementation Brief v2.0 (Schema-First)`,
       `**Risk**: ${id} (${title})`,
       `**Severity**: ${severity} | **Priority**: ${priority}`,
       ``,
-      `## 🛡️ Strategic Mandate`,
+      `## 0. Core Principle: Preserve Core Functionality`,
+      `- **Whitelisting**: You MUST ensure that all security rules explicitly whitelist or preserve access to:`,
+      `    - WordPress Admin (\`/wp-admin/\`, \`admin-ajax.php\`)`,
+      `    - REST API Endpoints (\`/wp-json/\`)`,
+      `    - JSON core endpoints.`,
+      `- Failure to do this will result in a site lockout. Site availability is the top priority.`,
+      ``,
+      `## 🛡️ Strategic Mandate (Schema-First v2.0)`,
       `- **Goal**: ${summary}`,
       `- **Primary Driver**: ${detectedDriver}`,
-      `- **Compliance Reference**: Consult \`enforcer_pattern_library_v2.0.json\` for the \`${driverKey || 'general'}\` pattern.`,
+      `- **Rulebook**: Ingest \`ai_agent_instructions_v2.0.json\`.`,
+      `- **Blueprint**: Look up \`${id}\` in \`interface_schema_v2.0.json\`.`,
+      `- **Pattern matching**: Map \`lib_key\` to \`enforcer_pattern_library_v2.0.json\`.`,
       ``,
+      `## 🎚️ Toggle Intelligence`,
+      `- **Control**: Check \`feat_enabled\` state for all enforcement code.`,
+      `- **Conditional Logic**: Inject full blocks if enabled; comment out/remove if disabled.`,
+      `- **Markers**: Always use VAPT markers (BEGIN/END) for all injections.`,
       `## 🧩 User Interface Requirements`,
       ...(hasMappingRules ? [
         `You MUST strictly adhere to the mapped UI Schema references provided in the Context data:`,
@@ -3936,41 +4001,18 @@ window.vaptScriptLoaded = true;
       ]),
       ``,
       `## 📁 Target Configuration Files`,
-      `Ensure that the suggested protection configurations are specifically targeted to be written/appended within exactly these files (via the Driver manifest outputs):`,
+      `Ensure that the suggested protection configurations are specifically targeted to be written/appended within exactly these files:`,
       ...targetFiles.map(file => `- \`${file}\``),
       ``,
       `## ⚠️ Targeted Safety Guidelines`,
       ...(safetyRules.length > 0 ? safetyRules.map(rule => `- ${rule}`) : [`- Follow standard WordPress security best practices.`]),
       ``,
-      `## 🔍 Verification Protocol`,
-      `- **Success Criteria**: Protection must block probes or enforce the security policy correctly.`,
-      `- **Mandatory Markers**: Code MUST be wrapped in BEGIN/END blocks.`,
-      `- **Rollback**: Deleting the wrapped block must gracefully restore system to previous state.`,
-      ``,
-      `## 📋 Full Self-Check Rubric (Target Score: ≥16/19)`,
-      `Ensure you validate your ENTIRE output against these strict conditions before delivering:`,
-      `1. [ ] Component IDs match schema exactly?`,
-      `2. [ ] Enforcement code read from library (not memory)?`,
-      `3. [ ] Severity colors match global config?`,
-      `4. [ ] Handler names follow \`handleRISK...\` conventions?`,
-      `5. [ ] Target platforms map to \`available_platforms\`?`,
-      `6. [ ] VAPT block markers present in output?`,
-      `7. [ ] Command verification present?`,
-      `8. [ ] No forbidden naming patterns?`,
-      `9. [ ] No forbidden Apache directives?`,
-      `10. [ ] RewriteRules placed BEFORE \`# BEGIN WordPress\`?`,
-      `11. [ ] RewriteRules wrapped in \`<IfModule>\` properly?`,
-      `12. [ ] \`mod_headers\` requirement noted (if applicable)?`,
-      `13. [ ] \`AllowOverride\` requirement noted (if applicable)?`,
-      `14. [ ] Uploads-specific risks use correct target directory?`,
-      `15. [ ] IIS rewrites note URL Rewrite Module requirement?`,
-      `16. [ ] Caddy output uses v2 syntax only?`,
-      `17. [ ] \`code_ref\` uses correct \`lib_key\` format?`,
-      `18. [ ] \`driver_ref\` points to \`vapt_driver_manifest_v2.0\`?`,
-      `19. [ ] driver diagnosis outputs include all sub-fields?`,
+      `## 📋 Self-Check & Rubric (Completion Standards)`,
+      `- **Develop Phase**: Minimum Score **16/19**.`,
+      `- **Deploy Phase**: Minimum Score **18/19** (Governed by \`/develop-to-deploy\` workflow).`,
       ``,
       `> [!IMPORTANT]`,
-      `> This brief is designed to trigger the **VAPTSchema-Builder** skill patterns. You MUST output highly strict interactive schemas and configurations hitting ≥90% accuracy.`
+      `> This brief follows the **VAPT v2.0 Schema First Architecture**. You MUST prioritize **Whitelisting** and follow the **Transition to Develop** sequence.`
     ];
 
     // Overlay custom user instructions if any existed previously
@@ -3984,7 +4026,8 @@ window.vaptScriptLoaded = true;
   const FeatureList = ({
     features, schema, updateFeature, loading, dataFiles, selectedFile, onSelectFile, onUpload, allFiles, hiddenFiles, onUpdateHiddenFiles, manageSourcesStatus, isManageModalOpen, setIsManageModalOpen, onRemoveFile, designPromptConfig, setDesignPromptConfig,
     historyFeature, setHistoryFeature, designFeature, setDesignFeature, transitioning, setTransitioning, isPromptConfigModalOpen, setIsPromptConfigModalOpen, isMappingModalOpen, setIsMappingModalOpen,
-    sortBySource, setSortBySource, sortSourceDirection, setSortSourceDirection
+    sortBySource, setSortBySource, sortSourceDirection, setSortSourceDirection,
+    environmentProfile
   }) => {
     const [confirmingFile, setConfirmingFile] = useState(null);
     const [columnOrder, setColumnOrder] = useState(() => {
@@ -4194,6 +4237,41 @@ window.vaptScriptLoaded = true;
     const allKeys = [...new Set(safeFeatures.reduce((acc, f) => [...acc, ...Object.keys(f)], []))].filter(k =>
       !['key', 'label', 'status', 'normalized_status', 'has_history', 'include_test_method', 'include_verification', 'include_verification_engine', 'wireframe_url', 'generated_schema', 'implemented_at', 'assigned_to'].includes(k)
     );
+    if (!allKeys.includes('enforcer')) allKeys.push('enforcer');
+
+    const resolveEnforcer = (feature) => {
+      const platforms = feature.platform_implementations || {};
+      const optimal = environmentProfile?.optimal_platform || 'php_functions';
+
+      const envToSchemaMap = {
+        'apache_htaccess': '.htaccess',
+        'nginx_config': 'Nginx',
+        'iis_config': 'IIS',
+        'php_functions': 'PHP Functions',
+        'cloudflare_edge': 'Cloudflare'
+      };
+
+      const targetSchemaKey = envToSchemaMap[optimal];
+      if (platforms[targetSchemaKey]) return targetSchemaKey;
+
+      if (feature.steps && feature.steps.length > 0) {
+        const optimalStep = feature.steps.find(s => {
+          const e = (s.enforcer || '').toLowerCase();
+          if (optimal === 'apache_htaccess') return e.includes('htaccess');
+          if (optimal === 'nginx_config') return e.includes('nginx');
+          if (optimal === 'php_functions') return e.includes('functions') || e.includes('hook');
+          if (optimal === 'cloudflare_edge') return e.includes('cloudflare');
+          return false;
+        });
+        if (optimalStep) return optimalStep.enforcer;
+        return feature.steps[0].enforcer;
+      }
+
+      const keys = Object.keys(platforms);
+      if (keys.length > 0) return keys[0];
+
+      return '-';
+    };
 
     // Update columnOrder if new keys are found that aren't in there
     useEffect(() => {
@@ -4281,6 +4359,11 @@ window.vaptScriptLoaded = true;
       if (sortBy === 'name' || sortBy === 'title') comparison = nameA.localeCompare(nameB);
       else if (sortBy === 'category') comparison = catA.localeCompare(catB);
       else if (sortBy === 'severity') comparison = sevA - sevB;
+      else if (sortBy === 'enforcer') {
+        const enfA = resolveEnforcer(a).toLowerCase();
+        const enfB = resolveEnforcer(b).toLowerCase();
+        comparison = enfA.localeCompare(enfB);
+      }
 
       else if (sortBy === 'status') {
         const priority = {
@@ -4780,7 +4863,7 @@ window.vaptScriptLoaded = true;
             const width = isDescription ? 'auto' : '1%';
             const whiteSpace = isDescription ? 'normal' : 'nowrap';
 
-            const isSortable = ['title', 'name', 'category', 'severity'].includes(col) || col.toLowerCase().includes('risk');
+            const isSortable = ['title', 'name', 'category', 'severity', 'enforcer'].includes(col) || col.toLowerCase().includes('risk');
             const isActive = sortBy === col || (col === 'title' && sortBy === 'name');
 
             return el('th', {
@@ -4835,6 +4918,8 @@ window.vaptScriptLoaded = true;
                 content = el('div', { style: { fontSize: '11px', display: 'flex', flexWrap: 'wrap', gap: '4px' } }, f[col].map((item, idx) => el('span', { key: idx, className: 'vapt-pill-compact' },
                   typeof item === 'object' ? JSON.stringify(item) : String(item)
                 )));
+              } else if (col === 'enforcer') {
+                content = resolveEnforcer(f);
               } else if (typeof f[col] === 'object' && f[col] !== null) {
                 content = el('pre', { style: { fontSize: '10px', margin: 0, background: '#f0f0f0', padding: '4px', whiteSpace: 'pre-wrap' } }, JSON.stringify(f[col], null, 2));
               }
@@ -4923,10 +5008,22 @@ window.vaptScriptLoaded = true;
                     el(Button, {
                       className: 'vapt-aplus-workbench-btn',
                       style: {
-                        background: (f.status === 'Develop' || f.status === 'develop') && (f.is_enforced == 1 || f.is_enforced === true) ? '#10b981' :
-                          (f.status === 'Develop' || f.status === 'develop') ? '#3b82f6' :
-                            (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' :
-                              'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                        background: (() => {
+                          // v1.9.5: 3-tier color matrix
+                          // Orange → Release/implemented (approved for client)
+                          // Green  → schema present AND enforced (actively deployed)
+                          // Blue   → no schema or not enforced (pending implementation)
+                          const isRelease = ['release', 'Release', 'implemented'].includes(f.status);
+                          const hasSchema = f.generated_schema &&
+                            f.generated_schema !== 'null' &&
+                            f.generated_schema !== '{}' &&
+                            f.generated_schema !== '[]' &&
+                            (Array.isArray(f.generated_schema) ? f.generated_schema.length > 0 : Object.keys(f.generated_schema).length > 0);
+                          const isEnforced = (f.is_enforced == 1) && hasSchema;
+                          if (isRelease) return 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'; // Orange
+                          if (isEnforced) return 'linear-gradient(135deg, #10b981 0%, #059669 100%)'; // Green
+                          return 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)';                 // Blue
+                        })(),
                         color: '#fff',
                         border: 'none',
                         fontWeight: '600',
@@ -4981,12 +5078,12 @@ window.vaptScriptLoaded = true;
     // v1.9.2 – Batch Revert state
     const [batchRevertModal, setBatchRevertModal] = useState(null); // null | { previewData, isLoading, isExecuting }
     const [includeBroken, setIncludeBroken] = useState(true); // Toggle for including broken features (default: true)
+    const [includeRelease, setIncludeRelease] = useState(false); // Toggle for including Release features
 
     const [catalogInfo, setCatalogInfo] = useState({ file: '', count: 0 }); // v3.6.29
     const [sortBySource, setSortBySource] = useState(false); // Primary Sort
     const [sortSourceDirection, setSortSourceDirection] = useState('desc'); // Primary Sort Direction
-
-    const [deletingId, setDeletingId] = useState(null);
+    const [environmentProfile, setEnvironmentProfile] = useState(null); // v2.4.14 - For dynamic enforcer mapping
 
     // Field Mapping State
     const [fieldMapping, setFieldMapping] = useState(() => {
@@ -5051,6 +5148,7 @@ window.vaptScriptLoaded = true;
           setDesignPromptConfig(res.design_prompt || null); // Load prompt config
           setRootAiInstructions(res.ai_agent_instructions || {});
           setRootGlobalSettings(res.global_settings || {});
+          setEnvironmentProfile(res.environment_profile || null);
           if (res.active_catalog) {
             setCatalogInfo({ file: res.active_catalog, count: res.total_features || 0 });
           }
@@ -5070,6 +5168,7 @@ window.vaptScriptLoaded = true;
           setDesignPromptConfig(res.design_prompt || null);
           setRootAiInstructions(res.ai_agent_instructions || {});
           setRootGlobalSettings(res.global_settings || {});
+          setEnvironmentProfile(res.environment_profile || null);
           setDomains(domainData || []);
           setDataFiles(cleanedFiles);
           setLoading(false);
@@ -5128,7 +5227,7 @@ window.vaptScriptLoaded = true;
 
     const updateFeature = (key, data) => {
       // Optimistic Update
-      setFeatures(prev => prev.map(f => (f.key === key || f.id === key) ? { ...f, ...data } : f));
+      setFeatures(prev => prev.map(f => f.key === key ? { ...f, ...data } : f));
       setSaveStatus({ message: __('Saving...', 'vaptsecure'), type: 'info' });
 
       return apiFetch({
@@ -5151,7 +5250,7 @@ window.vaptScriptLoaded = true;
 
       const safeFeatures = Array.isArray(features) ? features : [];
       const feature = safeFeatures.find(f => f.key === key);
-      let updates = { status: nextStatus, history_note: note, dev_instruct: dev_instruct, is_enforced: 0, is_pushed: 0 };
+      let updates = { status: nextStatus, history_note: note, dev_instruct: dev_instruct };
 
       // Save Wireframe if provided
       if (wireframeUrl) {
@@ -5225,13 +5324,19 @@ window.vaptScriptLoaded = true;
       });
     };
 
-    const deleteDomain = (domainId) => {
-      setDeletingId(domainId);
+    const [deletingId, setDeletingId] = useState(null);
+
+    const deleteDomain = (id) => {
+      setDeletingId(id);
       apiFetch({
-        path: `vaptsecure/v1/domains/delete?id=${domainId}`,
+        path: `vaptsecure/v1/domains/delete/${id}`,
         method: 'DELETE'
-      }).then(() => fetchData())
-        .finally(() => setDeletingId(null));
+      }).then(() => {
+        fetchData();
+        setDeletingId(null);
+      }).catch(() => {
+        setDeletingId(null);
+      });
     };
 
     const batchDeleteDomains = (ids) => {
@@ -5370,7 +5475,7 @@ window.vaptScriptLoaded = true;
     const previewBatchRevert = () => {
       setBatchRevertModal({ previewData: null, isLoading: true, isExecuting: false });
       apiFetch({
-        path: 'vaptsecure/v1/features/preview-revert?include_broken=' + (includeBroken ? '1' : '0'),
+        path: 'vaptsecure/v1/features/preview-revert?include_broken=' + (includeBroken ? '1' : '0') + '&include_release=' + (includeRelease ? '1' : '0'),
         method: 'GET',
       }).then(res => {
         setBatchRevertModal({ previewData: res, isLoading: false, isExecuting: false });
@@ -5388,7 +5493,7 @@ window.vaptScriptLoaded = true;
       apiFetch({
         path: 'vaptsecure/v1/features/batch-revert',
         method: 'POST',
-        data: { note: 'Batch revert to Draft via Workbench', include_broken: includeBroken }
+        data: { note: 'Batch revert to Draft via Workbench', include_broken: includeBroken, include_release: includeRelease }
       }).then(res => {
         setBatchRevertModal(null);
         setSaveStatus({
@@ -5401,6 +5506,22 @@ window.vaptScriptLoaded = true;
       }).catch(err => {
         setSaveStatus({ message: err.message || __('Batch revert failed', 'vaptsecure'), type: 'error' });
         setBatchRevertModal(prev => ({ ...prev, isExecuting: false }));
+      });
+    };
+
+    // v1.9.2 – Clear Enforcement Cache
+    const clearEnforcementCache = () => {
+      apiFetch({
+        path: 'vaptsecure/v1/clear-cache',
+        method: 'POST',
+      }).then(res => {
+        setSaveStatus({
+          message: __('Enforcement cache cleared. Refresh the page to see updated features.', 'vaptsecure'),
+          type: 'success'
+        });
+        setTimeout(() => setSaveStatus(null), 4000);
+      }).catch(err => {
+        setSaveStatus({ message: err.message || __('Failed to clear cache', 'vaptsecure'), type: 'error' });
       });
     };
 
@@ -5442,7 +5563,6 @@ window.vaptScriptLoaded = true;
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          position: 'relative',
           background: '#fff',
           padding: '0 20px',
           borderBottom: '1px solid #ccd0d4',
@@ -5456,36 +5576,33 @@ window.vaptScriptLoaded = true;
           el('span', { style: { fontSize: '11px', color: '#646970' } }, `v${settings.pluginVersion}`)
         ]),
 
-        // Center: Custom Tabs (centered in the row)
-        el('div', { style: { position: 'absolute', left: '50%', transform: 'translateX(-50%)' } }, [
-          // Custom Tabs (centered)
-          el('div', { style: { display: 'flex', gap: '0' } }, tabs.map(tab =>
-            el('button', {
-              key: tab.name,
-              className: `vapt-custom-tab ${activeTab === tab.name ? 'is-active' : ''}`,
-              onClick: () => {
-                setActiveTab(tab.name);
-                localStorage.setItem('vaptsecure_admin_active_tab', tab.name);
-              },
-              style: {
-                background: 'none',
-                border: 'none',
-                padding: '16px 15px',
-                fontSize: '13px',
-                fontWeight: activeTab === tab.name ? '600' : '400',
-                color: activeTab === tab.name ? '#2271b1' : '#646970',
-                borderBottom: activeTab === tab.name ? '3px solid #2271b1' : '3px solid transparent',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                margin: '0',
-                boxShadow: 'none',
-                outline: 'none'
-              }
-            }, tab.title)
-          ))
-        ]),
+        // Center Column: Custom Tabs
+        el('div', { style: { display: 'flex', gap: '0' } }, tabs.map(tab =>
+          el('button', {
+            key: tab.name,
+            className: `vapt-custom-tab ${activeTab === tab.name ? 'is-active' : ''}`,
+            onClick: () => {
+              setActiveTab(tab.name);
+              localStorage.setItem('vaptsecure_admin_active_tab', tab.name);
+            },
+            style: {
+              background: 'none',
+              border: 'none',
+              padding: '16px 15px',
+              fontSize: '13px',
+              fontWeight: activeTab === tab.name ? '600' : '400',
+              color: activeTab === tab.name ? '#2271b1' : '#646970',
+              borderBottom: activeTab === tab.name ? '3px solid #2271b1' : '3px solid transparent',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              margin: '0',
+              boxShadow: 'none',
+              outline: 'none'
+            }
+          }, tab.title)
+        )),
 
-        // Right: Batch Revert button
+        // Right Column: Badges + Batch Revert
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
           // v1.9.2 – Batch Revert to Draft button
           isSuper && el(Tooltip, { text: __('Revert all features in Develop status back to Draft. This will delete all history and implementation data.', 'vaptsecure') },
@@ -5494,12 +5611,20 @@ window.vaptScriptLoaded = true;
               variant: 'secondary',
               isDestructive: true,
               onClick: () => previewBatchRevert(),
-              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s' }
+              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s', marginLeft: '5px' }
             }, __('↩️ Revert All to Draft', 'vaptsecure'))
+          ),
+          // v1.9.2 – Clear Enforcement Cache button
+          isSuper && el(Tooltip, { text: __('Clear the enforcement cache to refresh the X-VAPT-Feature header list. Use this after implementing or reverting features.', 'vaptsecure') },
+            el(Button, {
+              id: 'vapt-clear-cache-btn',
+              variant: 'secondary',
+              onClick: () => clearEnforcementCache(),
+              style: { fontSize: '11px', height: '28px', padding: '0 10px', transition: 'all 0.2s', marginLeft: '5px' }
+            }, __('🔄 Clear Cache', 'vaptsecure'))
           )
         ])
       ]),
-
       saveStatus && el('div', {
         id: 'vapt-global-status-toast',
         className: `vapt-toast-notification is-${saveStatus.type === 'error' ? 'error' : 'success'}`
@@ -5540,10 +5665,20 @@ window.vaptScriptLoaded = true;
             sortBySource,
             setSortBySource,
             sortSourceDirection,
-            setSortSourceDirection
+            setSortSourceDirection,
+            environmentProfile
           });
-          case 'license': return el(LicenseManager, { domains, fetchData, isSuper, loading, addDomain, deleteDomain, globalSetConfirmState: setConfirmState, deletingId });
-          case 'domains': return el(DomainFeatures, { domains, features, isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains, setSelectedDomains, dataFiles, selectedFile, onSelectFile, deletingId });
+          case 'license': return el(LicenseManager, {
+            domains,
+            fetchData,
+            isSuper,
+            loading,
+            addDomain,
+            deleteDomain,
+            globalSetConfirmState: setConfirmState,
+            deletingId
+          });
+          case 'domains': return el(DomainFeatures, { domains, features, isDomainModalOpen, selectedDomain, setDomainModalOpen, setSelectedDomain, updateDomainFeatures, addDomain, deleteDomain, batchDeleteDomains, setConfirmState, selectedDomains, setSelectedDomains, dataFiles, selectedFile, onSelectFile });
           case 'build': return el(BuildGenerator, { domains, features, activeFile: selectedFile, setAlertState });
           default: return null;
         }
@@ -5570,6 +5705,8 @@ window.vaptScriptLoaded = true;
         isExecuting: batchRevertModal.isExecuting,
         includeBroken: includeBroken,
         onToggleIncludeBroken: setIncludeBroken,
+        includeRelease: includeRelease,
+        onToggleIncludeRelease: setIncludeRelease,
         onRefresh: previewBatchRevert,
         onConfirm: executeBatchRevert,
         onCancel: () => setBatchRevertModal(null)
@@ -5621,7 +5758,7 @@ window.vaptScriptLoaded = true;
   const init = () => {
     const container = document.getElementById('vapt-admin-root');
     if (!container) {
-      console.warn('VAPT Secure: Root container #vapt-admin-root not found.');
+      console.debug('VAPT Secure: Root container #vapt-admin-root not found.');
       return;
     }
 

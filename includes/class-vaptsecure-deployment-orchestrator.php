@@ -42,14 +42,15 @@ class VAPTSECURE_Deployment_Orchestrator
    * @param string $risk_id
    * @param array $schema The interface schema (v3.2+)
    * @param string $profile auto_detect|maximum|conservative
+   * @param array $impl_data User toggle inputs from workbench
    */
-  public function orchestrate($risk_id, $schema, $profile = 'auto_detect')
+  public function orchestrate($risk_id, $schema, $profile = 'auto_detect', $impl_data = [])
   {
     $env = $this->detector->detect();
     $results = [];
 
     // 1. Resolve Platform Matrix
-    $platform_matrix = $schema['platform_matrix'] ?? $this->derive_matrix_from_legacy($schema);
+    $platform_matrix = $schema['platform_matrix'] ?? $this->derive_matrix_from_legacy($schema, $impl_data);
 
     // 2. Select Targets
     $targets = $this->resolve_targets($profile, $env, $platform_matrix);
@@ -58,9 +59,16 @@ class VAPTSECURE_Deployment_Orchestrator
     foreach ($targets as $platform) {
       if (isset($this->deployers[$platform]) && isset($platform_matrix[$platform])) {
         $deployer = $this->deployers[$platform];
-        $implementation = $platform_matrix[$platform];
+        // 2.1 Calculate toggle state (v4.0.0 Adaptive logic)
+        $is_enabled = true;
+        if (isset($impl_data['feat_enabled'])) {
+            $is_enabled = filter_var($impl_data['feat_enabled'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($impl_data['enabled'])) {
+            $is_enabled = filter_var($impl_data['enabled'], FILTER_VALIDATE_BOOLEAN);
+        }
 
-        $res = $deployer->deploy($risk_id, $implementation);
+        $implementation = $platform_matrix[$platform];
+        $res = $deployer->deploy($risk_id, $implementation, $is_enabled);
         if (is_wp_error($res)) {
           $results[$platform] = [
             'success' => false,
@@ -112,7 +120,7 @@ class VAPTSECURE_Deployment_Orchestrator
     return array_unique($targets);
   }
 
-  private function derive_matrix_from_legacy($schema)
+  private function derive_matrix_from_legacy($schema, $impl_data = [])
   {
     $matrix = [];
     $driver = $schema['enforcement']['driver'] ?? 'hook';
@@ -121,18 +129,43 @@ class VAPTSECURE_Deployment_Orchestrator
 
     if (empty($mappings)) return $matrix;
 
+    // Check toggle state (v4.0.0 Adaptive logic)
+    $is_enabled = true;
+    if (isset($impl_data['feat_enabled'])) {
+        $is_enabled = filter_var($impl_data['feat_enabled'], FILTER_VALIDATE_BOOLEAN);
+    } elseif (isset($impl_data['enabled'])) {
+        $is_enabled = filter_var($impl_data['enabled'], FILTER_VALIDATE_BOOLEAN);
+    }
+
     // Map legacy drivers to v4.0 platforms
     if ($driver === 'htaccess') {
-      $matrix['apache_htaccess'] = ['rules' => $mappings, 'target' => $target];
+      require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
+      
+      $raw_code = VAPTSECURE_Enforcer::extract_code_from_mapping($mappings, 'htaccess');
+      
+      // Perform variable substitution
+      $site_url = function_exists('get_site_url') ? get_site_url() : '';
+      $replacements = [
+        '{{site_url}}' => $site_url,
+        '{{home_url}}' => function_exists('get_home_url') ? get_home_url() : '',
+        '{{admin_url}}' => function_exists('get_admin_url') ? get_admin_url() : '',
+        '{{domain}}'   => parse_url($site_url, PHP_URL_HOST) ?? '',
+      ];
+      $raw_code = str_replace(array_keys($replacements), array_values($replacements), $raw_code);
+
+      $matrix['apache_htaccess'] = ['rules' => $raw_code, 'target' => $target];
       // Also provide a PHP fallback for mixed environments
       $matrix['php_functions'] = ['code' => '/* Managed via htaccess redirect */'];
     } elseif ($driver === 'nginx') {
-      $matrix['nginx_config'] = ['rules' => $mappings];
+      $rules = is_array($mappings) ? implode("\n", $mappings) : $mappings;
+      $matrix['nginx_config'] = ['rules' => $rules];
       $matrix['php_functions'] = ['code' => '/* Managed via nginx config */'];
-    } elseif ($driver === 'wp-config') {
-      $matrix['php_functions'] = ['code' => $mappings]; // wp-config rules are essentially PHP defines
+    } elseif ($driver === 'wp-config' || $driver === 'hook') {
+      $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
+      $matrix['php_functions'] = ['code' => $code];
     } else {
-      $matrix['php_functions'] = ['code' => $mappings];
+      $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
+      $matrix['php_functions'] = ['code' => $code];
     }
 
     return $matrix;

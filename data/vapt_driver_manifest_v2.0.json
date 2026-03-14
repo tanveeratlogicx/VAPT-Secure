@@ -90,9 +90,9 @@
     ".htaccess": "{ABSPATH}.htaccess",
     "wp-content/uploads/.htaccess": "{ABSPATH}wp-content/uploads/.htaccess",
     "wp-config.php": "{ABSPATH}wp-config.php",
-    "PHP Functions": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
-    "WordPress": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
-    "WordPress Core": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
+    "PHP Functions": "{VAPTSECURE_PATH}vapt-functions.php",
+    "WordPress": "{VAPTSECURE_PATH}vapt-functions.php",
+    "WordPress Core": "{VAPTSECURE_PATH}vapt-functions.php",
     "fail2ban": "/etc/fail2ban/jail.local",
     "Nginx": "/etc/nginx/conf.d/vapt-security.conf",
     "Apache": "/etc/apache2/conf-available/vapt-security.conf",
@@ -231,7 +231,7 @@
           "lib_key": "php_functions",
           "operation": "add_action_hook",
           "write_mode": "append_to_file",
-          "target_file": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
+          "target_file": "{VAPTSECURE_PATH}vapt-functions.php",
           "backup_required": true,
           "idempotency": {
             "check_string": "// BEGIN VAPT RISK-004",
@@ -311,7 +311,7 @@
           "lib_key": "wordpress_core",
           "operation": "add_filter_hook",
           "write_mode": "append_to_file",
-          "target_file": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
+          "target_file": "{VAPTSECURE_PATH}vapt-functions.php",
           "backup_required": true,
           "idempotency": {
             "check_string": "// BEGIN VAPT RISK-006",
@@ -391,7 +391,7 @@
           "lib_key": "php_functions",
           "operation": "add_filter_hook",
           "write_mode": "append_to_file",
-          "target_file": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
+          "target_file": "{VAPTSECURE_PATH}vapt-functions.php",
           "backup_required": true,
           "idempotency": {
             "check_string": "// BEGIN VAPT RISK-008",
@@ -431,7 +431,7 @@
           "lib_key": "php_functions",
           "operation": "add_action_hook",
           "write_mode": "append_to_file",
-          "target_file": "{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php",
+          "target_file": "{VAPTSECURE_PATH}vapt-functions.php",
           "backup_required": true,
           "idempotency": {
             "check_string": "// BEGIN VAPT RISK-009",
