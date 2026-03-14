@@ -56,6 +56,41 @@ This configuration uses symlinks to maintain a single source of truth:
 └── settings.json -> ../.ai/rules/claude-settings.json
 ```
 
+### Qoder (.qoder/)
+```
+.qoder/
+└── skills/ -> ../../.ai/skills/
+└── qoder.rules -> ../.ai/SOUL.md
+```
+
+### Trae (.trae/)
+```
+.trae/
+└── skills/ -> ../../.ai/skills/
+└── trae.rules -> ../.ai/SOUL.md
+```
+
+### Windsurf (.windsurf/)
+```
+.windsurf/
+└── skills/ -> ../../.ai/skills/
+.windsurfrules -> .ai/SOUL.md
+```
+
+### Kilo Code (.kilo/)
+```
+.kilo/
+└── skills/ -> ../../.ai/skills/
+└── kilo.rules -> ../.ai/SOUL.md
+```
+
+### Roo Code (.roo/)
+```
+.roo/
+└── skills/ -> ../../.ai/skills/
+└── roo.rules -> ../.ai/SOUL.md
+```
+
 ### VS Code (.vscode/)
 ```
 .vscode/
@@ -180,4 +215,4 @@ When modifying this configuration:
 
 ---
 
-*Generated for VAPTSecure WordPress Plugin v2.4.11*
+*Generated for VAPTSecure WordPress Plugin v2.4.13*
