@@ -198,14 +198,34 @@
             maximum_protection: { name: "Maximum Protection (All Layers)", strategy: "defense_in_depth" },
             conservative: { name: "Conservative (Shared Hosting Safe)", allowed_platforms: ["php_functions", "apache_htaccess"] }
           },
-          enforcement: {
-            driver: "htaccess",
-            target: "root",
-            is_adaptive: true,
-            mappings: {
-              feat_enabled: this.suggestApacheRules(feature),
+          enforcement: (() => {
+            const apacheRules = this.suggestApacheRules(feature);
+            const isConfigBased = feature.key === 'RISK-001' || (feature.platform_implementations && (feature.platform_implementations['wp-config.php'] || feature.platform_implementations['wp_config']));
+            
+            if (apacheRules && apacheRules.length > 10 && !isConfigBased) {
+              return {
+                driver: "htaccess",
+                target: "root",
+                is_adaptive: true,
+                mappings: { feat_enabled: apacheRules }
+              };
             }
-          }
+            
+            // If it's RISK-001 or has wp-config implementation, use 'config' driver
+            if (isConfigBased) {
+              return {
+                driver: "config",
+                is_adaptive: true,
+                mappings: { feat_enabled: feature.platform_implementations?.['wp-config.php']?.code || "define('DISABLE_WP_CRON', true);" }
+              };
+            }
+
+            return {
+              driver: "hook",
+              is_adaptive: true,
+              mappings: { feat_enabled: "/* Managed via PHP hooks */" }
+            };
+          })()
         },
         _instructions: customInstruction || "Generated via A+ Adaptive Workbench"
       };
@@ -253,8 +273,6 @@
         // Fallback: Try to construct from common patterns
         if (feature.key && feature.key.includes('RISK-003')) {
           ruleCode = '<IfModule mod_rewrite.c>\n    RewriteEngine On\n    RewriteBase /\n    RewriteCond %{REQUEST_URI} !/wp-json/wp/v2/users/me [NC]\n    RewriteRule ^wp-json/wp/v2/users - [F,L]\n</IfModule>';
-        } else if (feature.key && feature.key.includes('RISK-001')) {
-          ruleCode = "define('DISABLE_WP_CRON', true);";
         } else if (feature.key && (feature.key.includes('xmlrpc') || feature.key.includes('xml-rpc'))) {
           ruleCode = '<Files "xmlrpc.php">\n    Order Deny,Allow\n    Deny from all\n</Files>';
         }

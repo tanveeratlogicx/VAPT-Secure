@@ -1,123 +1,669 @@
-VAPT Enforcement Run at 2026-03-14 11:21:32
+VAPT Enforcement Run at 2026-03-14 11:43:17
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:23:33
+VAPT Enforcement Run at 2026-03-14 11:43:43
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:25:34
+VAPT Enforcement Run at 2026-03-14 11:44:13
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:25:58
+VAPT Enforcement Run at 2026-03-14 11:45:18
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:26:58
+VAPT Enforcement Run at 2026-03-14 11:45:44
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:27:35
+VAPT Enforcement Run at 2026-03-14 11:46:13
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:28:54
+VAPT Enforcement Run at 2026-03-14 11:47:19
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:28:55
+VAPT Enforcement Run at 2026-03-14 11:47:45
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:00
+VAPT Enforcement Run at 2026-03-14 11:48:13
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:02
+VAPT Enforcement Run at 2026-03-14 11:49:20
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:06
+VAPT Enforcement Run at 2026-03-14 11:49:46
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:06
+VAPT Enforcement Run at 2026-03-14 11:50:14
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:10
+VAPT Enforcement Run at 2026-03-14 11:51:21
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:10
+VAPT Enforcement Run at 2026-03-14 11:51:47
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:10
+VAPT Enforcement Run at 2026-03-14 11:53:22
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:21
+VAPT Enforcement Run at 2026-03-14 11:53:48
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:27
+VAPT Enforcement Run at 2026-03-14 11:55:23
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:32
+VAPT Enforcement Run at 2026-03-14 11:55:49
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:33
+VAPT Enforcement Run at 2026-03-14 11:57:24
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:36
+VAPT Enforcement Run at 2026-03-14 11:57:50
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:38
+VAPT Enforcement Run at 2026-03-14 11:59:25
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:38
+VAPT Enforcement Run at 2026-03-14 11:59:51
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:29:38
+VAPT Enforcement Run at 2026-03-14 12:01:26
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:30:01
+VAPT Enforcement Run at 2026-03-14 12:01:52
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:30:32
+VAPT Enforcement Run at 2026-03-14 12:03:27
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:31:11
+VAPT Enforcement Run at 2026-03-14 12:03:53
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:31:37
+VAPT Enforcement Run at 2026-03-14 12:05:30
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:32:33
+VAPT Enforcement Run at 2026-03-14 12:05:54
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:33:12
+VAPT Enforcement Run at 2026-03-14 12:07:29
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:33:38
+VAPT Enforcement Run at 2026-03-14 12:07:55
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:34:32
+VAPT Enforcement Run at 2026-03-14 12:09:30
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:35:13
+VAPT Enforcement Run at 2026-03-14 12:09:56
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:35:39
+VAPT Enforcement Run at 2026-03-14 12:11:31
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:36:32
+VAPT Enforcement Run at 2026-03-14 12:11:57
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:37:14
+VAPT Enforcement Run at 2026-03-14 12:13:32
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:37:40
+VAPT Enforcement Run at 2026-03-14 12:13:58
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:38:32
+VAPT Enforcement Run at 2026-03-14 12:15:33
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:39:15
+VAPT Enforcement Run at 2026-03-14 12:15:59
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:39:41
+VAPT Enforcement Run at 2026-03-14 12:17:34
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:41:13
+VAPT Enforcement Run at 2026-03-14 12:18:00
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
-VAPT Enforcement Run at 2026-03-14 11:41:16
+VAPT Enforcement Run at 2026-03-14 12:19:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:20:01
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:21:36
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:22:02
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:23:37
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:24:03
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:25:38
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:26:04
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:27:39
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:28:05
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:29:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:30:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:31:41
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:32:07
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:33:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:34:08
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:35:43
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:36:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:37:44
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:38:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:39:45
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:40:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:41:46
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:42:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:43:47
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:44:13
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:45:48
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:46:14
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:47:49
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:48:15
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:49:50
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:50:16
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:51:51
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:52:17
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:53:52
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:54:18
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:55:53
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:56:19
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:57:54
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:58:20
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 12:59:55
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:00:21
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:01:56
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:02:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:03:57
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:04:23
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:05:58
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:06:24
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:07:59
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:08:25
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:10:00
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:10:26
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:12:01
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:12:27
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:14:02
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:14:28
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:16:03
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:16:29
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:18:04
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:18:30
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:20:05
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:22:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:24:07
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:26:08
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:28:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:30:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:32:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:34:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:36:13
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:36:29
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:36:34
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:36:44
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:36:44
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:36:55
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:37:00
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:37:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:37:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:37:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:37:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:37:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:38:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:38:14
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:40:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:40:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:41:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:41:38
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:41:41
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:41:49
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:41:59
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:42:04
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:42:06
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:42:12
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:42:18
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-14 13:42:21
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:42:26
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:42:58
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:43:03
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:43:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:43:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:44:07
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:44:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:45:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:46:08
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:46:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:47:11
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:48:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:48:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:49:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:49:12
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:50:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:51:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:51:13
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:52:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:53:14
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:54:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:55:15
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:56:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:57:16
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 13:58:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 14:00:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:03:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:04:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:05:13
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:05:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:06:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:06:24
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:07:03
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:08:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:09:22
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:07
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:18
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:18
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:28
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:34
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:45
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:45
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:10:45
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:11:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:12:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:13:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:14:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:15:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:16:40
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:16:56
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:03
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:03
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:04
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:09
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:10
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:17:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:18:04
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:18:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:20:05
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:20:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:22:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:22:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:24:07
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:24:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:25:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:26:08
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:26:35
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:27:15
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:27:31
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:27:36
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:27:37
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:28:01
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:35:14
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:35:20
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:35:43
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:36:26
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:37:14
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:39:13
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:49:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:50:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:52:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:54:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:56:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:57:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 17:59:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-14 18:01:42
 Feature: RISK-003
 Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}

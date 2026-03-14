@@ -141,8 +141,10 @@ actions:
 ### Code Generation
 1. **ALWAYS reference the enforcer library** - never write from memory
 2. **Use the 4-step workflow**: Rulebook → Blueprint → Enforcement → Self-Check
-3. **Score output against 19-point rubric** before delivering
-4. **Maintain naming conventions**: `UI-RISK-XXX-YYY` format
+3. **Score output against 20-point rubric** before delivering
+4. **Dynamic Inference**: Derive allowed syntax from the `lib_key` (e.g., `htaccess` = apache, `wp_config` = PHP). 
+5. **No Hardcoding**: Avoid rules or fallbacks tied to specific Risk IDs.
+6. **Maintain naming conventions**: `UI-RISK-XXX-YYY` format
 
 ---
 

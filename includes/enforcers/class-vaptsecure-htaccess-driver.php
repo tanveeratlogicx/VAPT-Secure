@@ -310,8 +310,8 @@ class VAPTSECURE_Htaccess_Driver
       }
     }
 
-    // Clean up empty lines? 
-    // Just ensure we don't end up with huge gaps.
+    // [v3.13.28] Tidy content: Collapse redundant blank lines (ensure max 1 empty line between blocks)
+    $new_content = preg_replace("/\n\s*\n(\s*\n)+/", "\n\n", $new_content);
 
     // Write
     if ($new_content !== $content || !file_exists($htaccess_path)) {

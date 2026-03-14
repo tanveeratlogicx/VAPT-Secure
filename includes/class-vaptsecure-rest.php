@@ -324,6 +324,11 @@ class VAPTSECURE_REST
       $ai_agent_instructions = null;
       $global_settings = null;
 
+      // [v1.4.2] Detected Environment Profile for dynamic enforcer mapping
+      require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-environment-detector.php';
+      $detector = new VAPTSECURE_Environment_Detector();
+      $environment_profile = $detector->detect();
+
       // 3. Load and process each file
       foreach ($files_to_load as $file) {
         $json_path = VAPTSECURE_PATH . 'data/' . sanitize_file_name($file);
@@ -581,7 +586,8 @@ class VAPTSECURE_REST
         'schema' => $schema,
         'design_prompt' => $design_prompt,
         'ai_agent_instructions' => $ai_agent_instructions,
-        'global_settings' => $global_settings
+        'global_settings' => $global_settings,
+        'environment_profile' => $environment_profile
       );
       if ($is_superadmin) {
         $response_data['active_catalog'] = $requested_file;

@@ -4026,7 +4026,8 @@ window.vaptScriptLoaded = true;
   const FeatureList = ({
     features, schema, updateFeature, loading, dataFiles, selectedFile, onSelectFile, onUpload, allFiles, hiddenFiles, onUpdateHiddenFiles, manageSourcesStatus, isManageModalOpen, setIsManageModalOpen, onRemoveFile, designPromptConfig, setDesignPromptConfig,
     historyFeature, setHistoryFeature, designFeature, setDesignFeature, transitioning, setTransitioning, isPromptConfigModalOpen, setIsPromptConfigModalOpen, isMappingModalOpen, setIsMappingModalOpen,
-    sortBySource, setSortBySource, sortSourceDirection, setSortSourceDirection
+    sortBySource, setSortBySource, sortSourceDirection, setSortSourceDirection,
+    environmentProfile
   }) => {
     const [confirmingFile, setConfirmingFile] = useState(null);
     const [columnOrder, setColumnOrder] = useState(() => {
@@ -4236,6 +4237,41 @@ window.vaptScriptLoaded = true;
     const allKeys = [...new Set(safeFeatures.reduce((acc, f) => [...acc, ...Object.keys(f)], []))].filter(k =>
       !['key', 'label', 'status', 'normalized_status', 'has_history', 'include_test_method', 'include_verification', 'include_verification_engine', 'wireframe_url', 'generated_schema', 'implemented_at', 'assigned_to'].includes(k)
     );
+    if (!allKeys.includes('enforcer')) allKeys.push('enforcer');
+
+    const resolveEnforcer = (feature) => {
+      const platforms = feature.platform_implementations || {};
+      const optimal = environmentProfile?.optimal_platform || 'php_functions';
+
+      const envToSchemaMap = {
+        'apache_htaccess': '.htaccess',
+        'nginx_config': 'Nginx',
+        'iis_config': 'IIS',
+        'php_functions': 'PHP Functions',
+        'cloudflare_edge': 'Cloudflare'
+      };
+
+      const targetSchemaKey = envToSchemaMap[optimal];
+      if (platforms[targetSchemaKey]) return targetSchemaKey;
+
+      if (feature.steps && feature.steps.length > 0) {
+        const optimalStep = feature.steps.find(s => {
+          const e = (s.enforcer || '').toLowerCase();
+          if (optimal === 'apache_htaccess') return e.includes('htaccess');
+          if (optimal === 'nginx_config') return e.includes('nginx');
+          if (optimal === 'php_functions') return e.includes('functions') || e.includes('hook');
+          if (optimal === 'cloudflare_edge') return e.includes('cloudflare');
+          return false;
+        });
+        if (optimalStep) return optimalStep.enforcer;
+        return feature.steps[0].enforcer;
+      }
+
+      const keys = Object.keys(platforms);
+      if (keys.length > 0) return keys[0];
+
+      return '-';
+    };
 
     // Update columnOrder if new keys are found that aren't in there
     useEffect(() => {
@@ -4323,6 +4359,11 @@ window.vaptScriptLoaded = true;
       if (sortBy === 'name' || sortBy === 'title') comparison = nameA.localeCompare(nameB);
       else if (sortBy === 'category') comparison = catA.localeCompare(catB);
       else if (sortBy === 'severity') comparison = sevA - sevB;
+      else if (sortBy === 'enforcer') {
+        const enfA = resolveEnforcer(a).toLowerCase();
+        const enfB = resolveEnforcer(b).toLowerCase();
+        comparison = enfA.localeCompare(enfB);
+      }
 
       else if (sortBy === 'status') {
         const priority = {
@@ -4822,7 +4863,7 @@ window.vaptScriptLoaded = true;
             const width = isDescription ? 'auto' : '1%';
             const whiteSpace = isDescription ? 'normal' : 'nowrap';
 
-            const isSortable = ['title', 'name', 'category', 'severity'].includes(col) || col.toLowerCase().includes('risk');
+            const isSortable = ['title', 'name', 'category', 'severity', 'enforcer'].includes(col) || col.toLowerCase().includes('risk');
             const isActive = sortBy === col || (col === 'title' && sortBy === 'name');
 
             return el('th', {
@@ -4877,6 +4918,8 @@ window.vaptScriptLoaded = true;
                 content = el('div', { style: { fontSize: '11px', display: 'flex', flexWrap: 'wrap', gap: '4px' } }, f[col].map((item, idx) => el('span', { key: idx, className: 'vapt-pill-compact' },
                   typeof item === 'object' ? JSON.stringify(item) : String(item)
                 )));
+              } else if (col === 'enforcer') {
+                content = resolveEnforcer(f);
               } else if (typeof f[col] === 'object' && f[col] !== null) {
                 content = el('pre', { style: { fontSize: '10px', margin: 0, background: '#f0f0f0', padding: '4px', whiteSpace: 'pre-wrap' } }, JSON.stringify(f[col], null, 2));
               }
@@ -5040,6 +5083,7 @@ window.vaptScriptLoaded = true;
     const [catalogInfo, setCatalogInfo] = useState({ file: '', count: 0 }); // v3.6.29
     const [sortBySource, setSortBySource] = useState(false); // Primary Sort
     const [sortSourceDirection, setSortSourceDirection] = useState('desc'); // Primary Sort Direction
+    const [environmentProfile, setEnvironmentProfile] = useState(null); // v2.4.14 - For dynamic enforcer mapping
 
     // Field Mapping State
     const [fieldMapping, setFieldMapping] = useState(() => {
@@ -5104,6 +5148,7 @@ window.vaptScriptLoaded = true;
           setDesignPromptConfig(res.design_prompt || null); // Load prompt config
           setRootAiInstructions(res.ai_agent_instructions || {});
           setRootGlobalSettings(res.global_settings || {});
+          setEnvironmentProfile(res.environment_profile || null);
           if (res.active_catalog) {
             setCatalogInfo({ file: res.active_catalog, count: res.total_features || 0 });
           }
@@ -5123,6 +5168,7 @@ window.vaptScriptLoaded = true;
           setDesignPromptConfig(res.design_prompt || null);
           setRootAiInstructions(res.ai_agent_instructions || {});
           setRootGlobalSettings(res.global_settings || {});
+          setEnvironmentProfile(res.environment_profile || null);
           setDomains(domainData || []);
           setDataFiles(cleanedFiles);
           setLoading(false);
@@ -5619,7 +5665,8 @@ window.vaptScriptLoaded = true;
             sortBySource,
             setSortBySource,
             sortSourceDirection,
-            setSortSourceDirection
+            setSortSourceDirection,
+            environmentProfile
           });
           case 'license': return el(LicenseManager, {
             domains,

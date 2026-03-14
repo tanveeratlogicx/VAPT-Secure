@@ -64,6 +64,7 @@
         "3. Read enforcer_pattern_library_v2.0.patterns[risk_id][lib_key]",
         "4. If .htaccess: run htaccess_syntax_guard",
         "5. Output wrapped_code with VAPT markers",
+        "5a. Payload Syntax Verification: Ensure code matches enforcer type (e.g. .htaccess != PHP)",
         "6. Append verification.command",
         "7. Self-check rubric \u2192 score \u226516 \u2192 deliver"
       ]
@@ -117,8 +118,13 @@
         "correct_alternative": "Header unset Server"
       },
       "<Directory>": {
-        "reason": "SILENTLY IGNORED in .htaccess \u2014 Apache processes <Directory> in httpd.conf only",
+        "reason": "SILENTLY IGNORED in .htaccess — Apache processes <Directory> in httpd.conf only",
         "correct_alternative": "Use <FilesMatch> in the target subdirectory's own .htaccess (e.g. wp-content/uploads/.htaccess for RISK-020)"
+      },
+      "PHP Code": {
+        "reason": "CRITICAL: PHP code injected into .htaccess causes 500 SERVER ERROR (Engine Mismatch)",
+        "forbidden_keywords": ["<?php", "define(", "add_action(", "add_filter("],
+        "correct_alternative": "Use lib_key: 'wp_config' or 'php_functions' for PHP-based remediation."
       }
     },
     "required_structure_for_rewrite_blocks": {
@@ -151,8 +157,8 @@
     }
   },
   "self_check_rubric": {
-    "minimum_score": 16,
-    "maximum_score": 19,
+    "minimum_score": 17,
+    "maximum_score": 20,
     "checks": [
       {
         "id": 1,
@@ -248,6 +254,11 @@
         "id": 19,
         "weight": 1,
         "check": "For driver diagnosis: all required driver{} sub-fields present (write_mode, target_file, write_block, anchor_string, idempotency_check)"
+      },
+      {
+        "id": 20,
+        "weight": 1,
+        "check": "Architectural Language Synchronization: Payload syntax MUST match the target file's engine (e.g., .htaccess != PHP, wp-config.php != Apache)."
       }
     ],
     "scoring_rule": "Sum weights of passing checks. Score < 16 \u2192 identify failing checks and regenerate. Never deliver output scoring < 16."

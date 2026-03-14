@@ -41,6 +41,13 @@ class VAPTSECURE_Apache_Deployer
 
     $rules = trim($this->extract_rules($implementation));
     
+    // 🛡️ SECURITY GUARD: Validate rules before writing (v4.0.1)
+    $validation = $this->validate_rules($rules);
+    if (is_wp_error($validation)) {
+      error_log("VAPT: Rejecting deployment for $risk_id - " . $validation->get_error_message());
+      return $validation;
+    }
+    
     // If rules are empty and we are NOT enabled, it means we should undeploy
     if (empty($rules) && !$is_enabled) {
       $removed = $this->undeploy($risk_id, $target);
@@ -108,6 +115,9 @@ class VAPTSECURE_Apache_Deployer
       $content = $new_block . $content;
     }
 
+    // [v3.13.28] Tidy content: Collapse redundant blank lines
+    $content = preg_replace("/\n\s*\n(\s*\n)+/", "\n\n", $content);
+
     $result = file_put_contents($this->htaccess_path, trim($content) . "\n", LOCK_EX);
 
     return $result !== false ? ['status' => 'deployed', 'platform' => 'apache_htaccess'] : new WP_Error('vapt_write_error', 'Failed to write to .htaccess');
@@ -130,6 +140,9 @@ class VAPTSECURE_Apache_Deployer
       $content = $whitelist_rules . "\n" . $content;
     }
 
+    // [v3.13.28] Tidy content: Collapse redundant blank lines
+    $content = preg_replace("/\n\s*\n(\s*\n)+/", "\n\n", $content);
+
     file_put_contents($this->htaccess_path, trim($content) . "\n", LOCK_EX);
   }
 
@@ -149,6 +162,38 @@ class VAPTSECURE_Apache_Deployer
     if ($new_content !== $content) {
       return file_put_contents($this->htaccess_path, trim($new_content) . "\n", LOCK_EX);
     }
+
+    return true;
+  }
+
+  /**
+   * Validates that the rules are likely valid Apache directives and NOT PHP code.
+   * 
+   * @param string $rules
+   * @return bool|WP_Error
+   */
+  private function validate_rules($rules)
+  {
+    if (empty($rules)) return true;
+
+    // Reject PHP-specific patterns
+    $php_patterns = [
+      '/define\s*\(/i',
+      '/add_action\s*\(/i',
+      '/add_filter\s*\(/i',
+      '/function\s+[a-zA-Z_]+/i',
+      '/<\?php/i',
+      '/\$[a-zA-Z_]+[a-zA-Z0-9_]*\s*=/i', // assignments like $var = ...
+    ];
+
+    foreach ($php_patterns as $pattern) {
+      if (preg_match($pattern, $rules)) {
+        return new WP_Error('vapt_invalid_rules', 'Detected PHP code in .htaccess ruleset. Deployment blocked for security.');
+      }
+    }
+
+    // basic check for common apache directives (whitelist approach for extra safety?)
+    // For now, just blacklisting PHP is the most important fix for this issue.
 
     return true;
   }
