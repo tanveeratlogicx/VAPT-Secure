@@ -156,13 +156,13 @@
       });
 
       const configMap = {
-        critical: { label: __('Critical', 'vaptsecure'), icon: 'warning', color: '#dc2626' },
+        critical: { label: __('Critical Severity', 'vaptsecure'), icon: 'warning', color: '#dc2626' },
         high: { label: __('High Severity', 'vaptsecure'), icon: 'warning', color: '#ea580c' },
-        medium: { label: __('Medium', 'vaptsecure'), icon: 'flag', color: '#2271b1' },
+        medium: { label: __('Medium Severity', 'vaptsecure'), icon: 'flag', color: '#2271b1' },
         low: { label: __('Low Severity', 'vaptsecure'), icon: 'yes-alt', color: '#64748b' }
       };
 
-      const items = [{ id: 'all', label: __('All Features', 'vaptsecure'), icon: 'shield', count: counts.all }];
+      const items = [{ id: 'all', label: __('All Severity Levels', 'vaptsecure'), icon: 'shield', count: counts.all }];
 
       // Add existing severities dynamically
       ['critical', 'high', 'medium', 'low'].forEach(key => {
@@ -263,11 +263,7 @@
 
         el('div', { className: 'sidebar-menu', style: { padding: '25px', flexGrow: 1 } }, [
           el('div', { style: { fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px', paddingLeft: '10px' } }, __('Protection Status')),
-          [
-            { id: 'all', label: __('All Features'), icon: 'shield', count: features.length },
-            { id: 'high', label: __('High Severity'), icon: 'warning', count: features.filter(f => f.severity === 'HIGH').length, color: '#ef4444' },
-            { id: 'medium', label: __('Medium'), icon: 'flag', count: features.filter(f => f.severity === 'MEDIUM').length, color: '#f59e0b' }
-          ].map(item => el('div', {
+          severityConfigs.map(item => el('div', {
             key: item.id,
             onClick: () => setActiveTab(item.id),
             style: {
@@ -281,7 +277,8 @@
               background: activeTab === item.id ? '#f1f5f9' : 'transparent',
               color: activeTab === item.id ? '#0f172a' : '#64748b',
               fontWeight: activeTab === item.id ? 700 : 500,
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }
           }, [
             el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [

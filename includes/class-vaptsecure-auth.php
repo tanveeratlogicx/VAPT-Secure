@@ -63,6 +63,10 @@ class VAPTSECURE_Auth
       return;
     }
 
+    if (! is_vaptsecure_superadmin(false)) {
+      return;
+    }
+
     if (! isset($_POST['vaptsecure_email_otp'])) {
       return;
     }
