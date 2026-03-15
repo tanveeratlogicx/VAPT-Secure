@@ -216,3 +216,6 @@ Applying rules with Data: {"feat_enabled":true}
 VAPT Enforcement Run at 2026-03-14 19:11:39
 Feature: RISK-001
 Applying rules with Data: {"feat_enabled":true}
+VAPT Enforcement Run at 2026-03-15 00:07:17
+Feature: RISK-001
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
