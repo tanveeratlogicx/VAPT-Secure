@@ -27,3 +27,16 @@ Investigate why the tooltip points to wp-config.php when the hook driver is the 
 8. Committed changes to version control using the message `"Clarifying Hook Driver Fallback for wp-config targets in WorkBench UI"`.
 
 **Status:** Completed. The Workbench UI now precisely clarifies to Superadmins exactly how `wp-config.php` operations fall back to the Hook Driver, satisfying the original concern while keeping the actual dual-enforcement design.
+
+### 20260315_@1220 - Review: Hide Hook Driver Concept from Standard Admins
+
+**Objective:**
+Ensure that the technical mention of PHP Hook Drivers and the Adaptive Fallback mechanisms injected into the tooltips are completely hidden from standard WordPress Admins and are exclusively revealed to the authorized Superadmin.
+
+**Actions Taken:**
+1. Modified `assets/js/modules/generated-interface.js` to wrap the `wp-config` tooltip mutation logic in a check against `window.vaptSecureSettings?.isSuper` and `isSuperAdmin`.
+2. Modified `assets/js/modules/aplus-generator.js` so that the preview tooltip snippet injection logic also strictly honors `window.vaptSecureSettings?.isSuper`.
+3. Bumped plugin version `VAPTSECURE_VERSION` to 2.4.19.
+4. Committed changes to version control using the message `"Hide Hook Driver technical details from non-superadmins"`.
+
+**Status:** Completed. Standard users now see standard `wp-config.php` traces without mentions of the Adaptive Hook fallback, retaining operational secrecy from non-superadmin actors.

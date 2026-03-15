@@ -167,7 +167,8 @@
                     let previewCode = implDetails.code || 'Code snippet reference is loading...';
                     
                     // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                    if (previewTarget.includes('wp-config') || implTarget.includes('wp-config')) {
+                    // Show this only to Superadmin
+                    if ((previewTarget.includes('wp-config') || implTarget.includes('wp-config')) && window.vaptSecureSettings?.isSuper) {
                       previewTarget = 'wp-config.php (Primary) + PHP Hook Driver (Adaptive Fallback)';
                       if(previewCode) previewCode += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
                     }

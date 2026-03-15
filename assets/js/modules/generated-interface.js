@@ -1251,7 +1251,8 @@
                         let displayName = name;
                         
                         // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                        if (target.includes('wp-config') || displayName.includes('wp-config')) {
+                        // Show this additional information only to the Superadmin and hide it from normal admins
+                        if ((target.includes('wp-config') || displayName.includes('wp-config')) && isSuperAdmin) {
                           displayName = 'wp-config / PHP Hook (Adaptive)';
                           target = 'wp-config.php / Hook Driver';
                           // Show both the config constant and the hook behavior
