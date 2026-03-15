@@ -188,7 +188,7 @@
           } else {
             // Case: Global headers exist but this feature isn't in the active list (intentional non-enforcement)
               if (isFeatureEnabled(featureData) === false) {
-              return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). No enforcement headers for this feature.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
+              return { success: false, unprotected: true, message: `Baseline Test: No enforcement headers for this feature. The system is unprotected for this risk vector.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
             }
             return { success: false, message: `Discrepancy: Global headers found, but this specific feature ('${featureKey}') is NOT matching enforcement policy.`, raw: `URL: ${url} | Status: ${response.status} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
           }
@@ -198,7 +198,7 @@
       }
 
       if (isFeatureEnabled(featureData) === false) {
-        return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). No enforcement detected.`, raw: `URL: ${url} | Status: ${response.status} | Expected: No VAPT Headers\n\n${headerStr.trim()}` };
+        return { success: false, unprotected: true, message: `Baseline Test: No enforcement detected. You are currently unprotected for this feature.`, raw: `URL: ${url} | Status: ${response.status} | Expected: No VAPT Headers\n\n${headerStr.trim()}` };
       }
 
       return { success: false, message: `Security headers present, but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
@@ -329,8 +329,8 @@
           window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey } }));
           if (!isEnabled && blocked === 0) {
             return {
-              success: false, skipped: true,
-              message: `Status: Protection Disabled (Intentional). Traffic was not restricted.`,
+              success: false, unprotected: true,
+              message: `Baseline Test: Sent ${total} requests and all were accepted. The system is unprotected from rate limiting.`,
               meta: resultMeta,
               raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
             };
@@ -346,12 +346,20 @@
           };
         }
 
+        if (!isEnabled) {
+          return {
+            success: false, external_block: blocked > 0, unprotected: blocked === 0,
+            message: blocked > 0 ? `Baseline Test: Some traffic was restricted. An external rate limiter is active.` : `Baseline Test: Traffic was not restricted. The system is unprotected.`,
+            meta: resultMeta,
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
+          };
+        }
+
         return {
-          success: isEnabled ? false : false, // wait, let's keep it safe
-          skipped: !isEnabled,
-          message: isEnabled ? `Rate Limiter is NOT active. Traffic was not restricted.` : `Status: Protection Disabled (Intentional). Traffic was not restricted.`,
+          success: false,
+          message: `Rate Limiter is NOT active. Traffic was not restricted.`,
           meta: resultMeta,
-          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: ${isEnabled ? '429' : '200'}`
+          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 429`
         };
       } catch (err) {
         return {
@@ -387,8 +395,9 @@
       if (!isEnabled) {
         return {
           success: false,
-          skipped: isVulnerable,
-          message: isVulnerable ? `Status: Protection Disabled (Intentional). XML-RPC responded.` : `XML-RPC is blocked (HTTP ${response.status}), but NOT by this plugin.`,
+          unprotected: isVulnerable,
+          external_block: !isVulnerable,
+          message: isVulnerable ? `Baseline Test: XML-RPC responded (HTTP 200). The site is vulnerable to XML-RPC attacks.` : `Baseline Test: XML-RPC is blocked (HTTP ${response.status}). Another plugin or server configuration is protecting this endpoint.`,
           raw: `URL: ${url} | Status: ${response.status} | Expected: 200`
         };
       }
@@ -424,7 +433,11 @@
       }
 
       if (!isEnabled) {
-        return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). Directory was accessible.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        if (resp.status === 200) {
+           return { success: false, unprotected: true, message: `Baseline Test: Directory browsing is accessible (HTTP ${resp.status}). The site is vulnerable.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        } else {
+           return { success: false, external_block: true, message: `Baseline Test: Directory browsing is blocked (HTTP ${resp.status}). Another system is protecting this directory.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+        }
       }
 
       return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
@@ -448,7 +461,11 @@
       }
 
       if (!isEnabled) {
-        return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). Payload accepted.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        if (resp.status === 200) {
+           return { success: false, unprotected: true, message: `Baseline Test: Null byte payload accepted (HTTP ${resp.status}). The site is vulnerable.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        } else {
+           return { success: false, external_block: true, message: `Baseline Test: Null byte payload rejected (HTTP ${resp.status}). Another system is blocking this attack vector.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        }
       }
 
       return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
@@ -577,11 +594,11 @@
           message = `Discrepancy: Feature '${featureKey}' is DISABLED in UI, but server is still ENFORCING it ('${vaptEnforced}').`;
         } else {
           isSecure = false;
-          let isSkipped = true;
-          message = (code === 200)
-            ? `Status: Protection Disabled (Intentional). Site responds normally (HTTP 200).`
-            : `Status: Protection Disabled (Intentional). Site is blocked (HTTP ${code}) by another system.`;
-          return { success: isSecure, skipped: isSkipped, message, raw: `URL: ${url} | Status: ${code}` };
+          let isUnprotected = (code === 200) || (!expectsBlock && !hasHeaderCheck);
+          message = isUnprotected
+            ? `Baseline Test: Target reached successfully (HTTP ${code}). The system is currently unprotected and vulnerable to this risk.`
+            : `Baseline Test: Access was blocked (HTTP ${code}). Protected by an external system or firewall.`;
+          return { success: isSecure, unprotected: isUnprotected, external_block: !isUnprotected, message, raw: `URL: ${url} | Status: ${code}` };
         }
       } else if (hasHeaderCheck) {
         isSecure = headerMatches && (code === 200 || expectsAllow || statusMatches);
@@ -846,7 +863,15 @@
         const res = await Promise.race([handlerPromise, timeoutPromise]);
 
         if (res && typeof res === 'object') {
-          setStatus(res.skipped ? 'skipped' : (res.success ? 'success' : 'error'));
+          if (res.unprotected) {
+             setStatus('unprotected');
+          } else if (res.external_block) {
+             setStatus('external_block');
+          } else if (res.skipped) {
+             setStatus('skipped');
+          } else {
+             setStatus(res.success ? 'success' : 'error');
+          }
           setResult(res);
         } else {
           throw new Error('Invalid test result format');
@@ -923,27 +948,27 @@
         style: {
           marginTop: '15px',
           padding: '16px',
-          background: status === 'success' ? 'rgba(16, 185, 129, 0.04)' : (status === 'skipped' ? 'rgba(245, 158, 11, 0.04)' : 'rgba(239, 68, 68, 0.04)'),
-          border: `1px solid ${status === 'success' ? 'rgba(16, 185, 129, 0.2)' : (status === 'skipped' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')}`,
+          background: status === 'success' ? 'rgba(16, 185, 129, 0.04)' : (status === 'unprotected' ? 'rgba(239, 68, 68, 0.04)' : (status === 'external_block' ? 'rgba(59, 130, 246, 0.04)' : (status === 'skipped' ? 'rgba(245, 158, 11, 0.04)' : 'rgba(239, 68, 68, 0.04)'))),
+          border: `1px solid ${status === 'success' ? 'rgba(16, 185, 129, 0.2)' : (status === 'unprotected' ? 'rgba(239, 68, 68, 0.2)' : (status === 'external_block' ? 'rgba(59, 130, 246, 0.2)' : (status === 'skipped' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')))}`,
           borderRadius: '10px',
           transition: 'all 0.3s ease-in-out'
         }
       }, [
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' } }, [
           el(Icon, {
-            icon: status === 'success' ? 'yes' : (status === 'skipped' ? 'warning' : 'no'),
+            icon: status === 'success' ? 'yes' : (status === 'unprotected' ? 'warning' : (status === 'external_block' ? 'shield' : (status === 'skipped' ? 'warning' : 'no'))),
             size: 18,
-            style: { color: status === 'success' ? '#10b981' : (status === 'skipped' ? '#d97706' : '#ef4444') }
+            style: { color: status === 'success' ? '#10b981' : (status === 'unprotected' ? '#dc2626' : (status === 'external_block' ? '#2563eb' : (status === 'skipped' ? '#d97706' : '#ef4444'))) }
           }),
           el('span', {
             style: {
               fontSize: '12px',
               fontWeight: 800,
-              color: status === 'success' ? '#065f46' : (status === 'skipped' ? '#92400e' : '#991b1b'),
+              color: status === 'success' ? '#065f46' : (status === 'unprotected' ? '#991b1b' : (status === 'external_block' ? '#1e3a8a' : (status === 'skipped' ? '#92400e' : '#991b1b'))),
               textTransform: 'uppercase',
               letterSpacing: '0.025em'
             }
-          }, status === 'success' ? __('Verification Success', 'vaptsecure') : (status === 'skipped' ? __('Protection Disabled', 'vaptsecure') : __('Verification Failure', 'vaptsecure')))
+          }, status === 'success' ? __('Verification Success', 'vaptsecure') : (status === 'unprotected' ? __('System Vulnerable (Unprotected)', 'vaptsecure') : (status === 'external_block' ? __('External Protection Detected', 'vaptsecure') : (status === 'skipped' ? __('Protection Disabled', 'vaptsecure') : __('Verification Failure', 'vaptsecure')))))
         ]),
 
         el('div', { style: { fontSize: '13px', color: '#334155', lineHeight: '1.5', marginBottom: '12px', fontWeight: 500 } }, result.message),
