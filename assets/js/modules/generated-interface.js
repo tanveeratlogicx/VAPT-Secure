@@ -188,7 +188,7 @@
           } else {
             // Case: Global headers exist but this feature isn't in the active list (intentional non-enforcement)
               if (isFeatureEnabled(featureData) === false) {
-              return { success: true, message: `Status: Protection Disabled (Intentional). No enforcement headers for this feature.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
+              return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). No enforcement headers for this feature.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
             }
             return { success: false, message: `Discrepancy: Global headers found, but this specific feature ('${featureKey}') is NOT matching enforcement policy.`, raw: `URL: ${url} | Status: ${response.status} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
           }
@@ -198,7 +198,7 @@
       }
 
       if (isFeatureEnabled(featureData) === false) {
-        return { success: true, message: `Status: Protection Disabled (Intentional). No enforcement detected.`, raw: `URL: ${url} | Status: ${response.status} | Expected: No VAPT Headers\n\n${headerStr.trim()}` };
+        return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). No enforcement detected.`, raw: `URL: ${url} | Status: ${response.status} | Expected: No VAPT Headers\n\n${headerStr.trim()}` };
       }
 
       return { success: false, message: `Security headers present, but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
@@ -329,7 +329,7 @@
           window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey } }));
           if (!isEnabled && blocked === 0) {
             return {
-              success: true,
+              success: false, skipped: true,
               message: `Status: Protection Disabled (Intentional). Traffic was not restricted.`,
               meta: resultMeta,
               raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
@@ -347,7 +347,8 @@
         }
 
         return {
-          success: isEnabled ? false : true,
+          success: isEnabled ? false : false, // wait, let's keep it safe
+          skipped: !isEnabled,
           message: isEnabled ? `Rate Limiter is NOT active. Traffic was not restricted.` : `Status: Protection Disabled (Intentional). Traffic was not restricted.`,
           meta: resultMeta,
           raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: ${isEnabled ? '429' : '200'}`
@@ -385,7 +386,8 @@
 
       if (!isEnabled) {
         return {
-          success: isVulnerable,
+          success: false,
+          skipped: isVulnerable,
           message: isVulnerable ? `Status: Protection Disabled (Intentional). XML-RPC responded.` : `XML-RPC is blocked (HTTP ${response.status}), but NOT by this plugin.`,
           raw: `URL: ${url} | Status: ${response.status} | Expected: 200`
         };
@@ -422,7 +424,7 @@
       }
 
       if (!isEnabled) {
-        return { success: true, message: `Status: Protection Disabled (Intentional). Directory was accessible.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). Directory was accessible.`, raw: `URL: ${target} | Status: ${resp.status}` };
       }
 
       return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
@@ -446,7 +448,7 @@
       }
 
       if (!isEnabled) {
-        return { success: true, message: `Status: Protection Disabled (Intentional). Payload accepted.`, raw: `URL: ${target} | Status: ${resp.status}` };
+        return { success: false, skipped: true, message: `Status: Protection Disabled (Intentional). Payload accepted.`, raw: `URL: ${target} | Status: ${resp.status}` };
       }
 
       return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
@@ -574,10 +576,12 @@
           isSecure = false;
           message = `Discrepancy: Feature '${featureKey}' is DISABLED in UI, but server is still ENFORCING it ('${vaptEnforced}').`;
         } else {
-          isSecure = (code === 200); // Vulnerable = SUCCESS (Intentional)
-          message = isSecure
+          isSecure = false;
+          let isSkipped = true;
+          message = (code === 200)
             ? `Status: Protection Disabled (Intentional). Site responds normally (HTTP 200).`
             : `Status: Protection Disabled (Intentional). Site is blocked (HTTP ${code}) by another system.`;
+          return { success: isSecure, skipped: isSkipped, message, raw: `URL: ${url} | Status: ${code}` };
         }
       } else if (hasHeaderCheck) {
         isSecure = headerMatches && (code === 200 || expectsAllow || statusMatches);
@@ -842,7 +846,7 @@
         const res = await Promise.race([handlerPromise, timeoutPromise]);
 
         if (res && typeof res === 'object') {
-          setStatus(res.success ? 'success' : 'error');
+          setStatus(res.skipped ? 'skipped' : (res.success ? 'success' : 'error'));
           setResult(res);
         } else {
           throw new Error('Invalid test result format');
@@ -919,27 +923,27 @@
         style: {
           marginTop: '15px',
           padding: '16px',
-          background: status === 'success' ? 'rgba(16, 185, 129, 0.04)' : 'rgba(239, 68, 68, 0.04)',
-          border: `1px solid ${status === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+          background: status === 'success' ? 'rgba(16, 185, 129, 0.04)' : (status === 'skipped' ? 'rgba(245, 158, 11, 0.04)' : 'rgba(239, 68, 68, 0.04)'),
+          border: `1px solid ${status === 'success' ? 'rgba(16, 185, 129, 0.2)' : (status === 'skipped' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)')}`,
           borderRadius: '10px',
           transition: 'all 0.3s ease-in-out'
         }
       }, [
         el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' } }, [
           el(Icon, {
-            icon: status === 'success' ? 'yes' : 'no',
+            icon: status === 'success' ? 'yes' : (status === 'skipped' ? 'warning' : 'no'),
             size: 18,
-            style: { color: status === 'success' ? '#10b981' : '#ef4444' }
+            style: { color: status === 'success' ? '#10b981' : (status === 'skipped' ? '#d97706' : '#ef4444') }
           }),
           el('span', {
             style: {
               fontSize: '12px',
               fontWeight: 800,
-              color: status === 'success' ? '#065f46' : '#991b1b',
+              color: status === 'success' ? '#065f46' : (status === 'skipped' ? '#92400e' : '#991b1b'),
               textTransform: 'uppercase',
               letterSpacing: '0.025em'
             }
-          }, status === 'success' ? __('Verification Success', 'vaptsecure') : __('Verification Failure', 'vaptsecure'))
+          }, status === 'success' ? __('Verification Success', 'vaptsecure') : (status === 'skipped' ? __('Protection Disabled', 'vaptsecure') : __('Verification Failure', 'vaptsecure')))
         ]),
 
         el('div', { style: { fontSize: '13px', color: '#334155', lineHeight: '1.5', marginBottom: '12px', fontWeight: 500 } }, result.message),
@@ -1303,39 +1307,7 @@
               statusMap[key].message
             ])),
             // 🛡️ Visual Indicator for Code Addition (v3.13.15 Enhanced)
-            toBool(value) && el(Tooltip, {
-              text: el('div', { style: { padding: '8px', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto' } }, [
-                el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Confirming Applied Protections', 'vaptsecure')),
-                feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
-                  Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
-                    let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
-                    if (!code) return null;
-                    let target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
-                    let displayName = name;
-                    
-                    // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                    if (target.includes('wp-config') || displayName.includes('wp-config')) {
-                      displayName = 'wp-config / PHP Hook (Adaptive)';
-                      target = 'wp-config.php / Hook Driver';
-                      code += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
-                    }
-
-                    return el('div', { key: idx, style: { marginBottom: '15px' } }, [
-                      el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
-                        el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, displayName),
-                        el('span', { style: { fontFamily: 'monospace' } }, target)
-                      ]),
-                      el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
-                    ]);
-                  }) : 
-                  (mapping ? el('div', [
-                    el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
-                      sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.driver === 'config' ? 'wp-config.php / Hook Driver (Adaptive)' : (schema.enforcement?.target || 'root'))))
-                    ),
-                    el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
-                  ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
-              ])
-            }, el('div', {
+            toBool(value) && el('div', {
               style: {
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1350,13 +1322,12 @@
                 marginBottom: '8px',
                 marginLeft: '35px',
                 border: '1px solid #10b981',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                cursor: 'help'
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
               }
             }, [
               el(Icon, { icon: 'editor-code', size: 12 }),
               __('Active Protection Confirmed', 'vaptsecure')
-            ])),
+            ])
           ]);
 
         case 'input':
