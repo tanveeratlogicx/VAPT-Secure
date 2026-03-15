@@ -838,7 +838,7 @@
    */
 
 
-  const TestRunnerControl = ({ control, featureData, featureKey }) => {
+  const TestRunnerControl = ({ control, featureData, featureKey, globalProtection }) => {
     const [status, setStatus] = useState('idle');
     const [result, setResult] = useState(null);
     const [progress, setProgress] = useState(null);
@@ -910,6 +910,10 @@
           el('strong', { style: { fontSize: '12px', color: '#334155' } }, displayLabel)
         ]),
         el(Button, { isSecondary: true, isSmall: true, isBusy: status === 'running', onClick: handleClick, disabled: status === 'running' }, 'Run Verify')
+      ]),
+      !globalProtection && el('div', { style: { marginBottom: '10px', padding: '8px 12px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' } }, [
+        el(Icon, { icon: 'warning', size: 16, style: { color: '#ea580c' } }),
+        el('span', { style: { fontSize: '11px', color: '#9a3412', fontWeight: '600' } }, __('Global Protection is OFF. This real-time test will likely report "System Vulnerable".', 'vaptsecure'))
       ]),
       control.help && el('p', { style: { margin: '2px 0 0', fontSize: '11px', color: '#64748b', opacity: 0.8 } }, control.help),
 
@@ -1217,7 +1221,7 @@
 
       switch (type) {
         case 'test_action':
-          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection });
+          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection: globalProtection });
 
         case 'button':
           return el('div', { key: uniqueKey, style: { marginBottom: '15px' } }, [
@@ -1306,7 +1310,32 @@
                 timeoutsRef.current[key].push(t1);
               }
             }),
-            // 🛡️ Localized Status Pill (v3.13.12)
+            // 🛡️ Localized Status Pill (v3.13.12) / Inhibited Status (v3.14.0)
+            !globalProtection && el('div', {
+              style: {
+                marginTop: '-8px',
+                marginBottom: '8px',
+                marginLeft: '35px',
+                display: 'flex'
+              }
+            }, el('span', {
+              style: {
+                fontSize: '10px',
+                fontWeight: '600',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                background: '#f1f5f9',
+                color: '#64748b',
+                border: '1px dashed #cbd5e1',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }
+            }, [
+              el(Icon, { icon: 'warning', size: 12 }),
+              __('Inhibited (Master Switch OFF)', 'vaptsecure')
+            ])),
             statusMap[key] && el('div', {
               style: {
                 marginTop: '-8px',
@@ -1333,7 +1362,7 @@
               statusMap[key].message
             ])),
             // 🛡️ Visual Indicator for Code Addition (v3.13.15 Enhanced)
-            toBool(value) && el('div', {
+            globalProtection && toBool(value) && el('div', {
               style: {
                 display: 'inline-flex',
                 alignItems: 'center',
