@@ -190,7 +190,6 @@
                   <div style="color: #475569; margin-top: 4px;">
                     <strong>Protection Applied:</strong> Activating this control mitigates the following security risk: <em>"${cleanedDesc}"</em>. This ensures that the system is properly hardened and enforces verified security protocols.
                   </div>
-                  ${codePreview}
                 </div>
               `;
             })()

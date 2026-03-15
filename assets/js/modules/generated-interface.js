@@ -69,7 +69,7 @@
     }
 
     const normalizedPath = sub.startsWith('/') ? sub : '/' + sub;
-    let result = base + (normalizedPath === '/' ? '' : normalizedPath);
+    let result = base.replace(/\/$/, '') + (normalizedPath === '/' ? '' : normalizedPath);
     
     // [FIX v2.4.11] Append query string if it was separated
     if (queryPart) {

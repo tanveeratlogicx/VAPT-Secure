@@ -20,7 +20,7 @@ Investigate and fix tooltip placement and Active Protection Probe logic when pro
 **Actions Taken:**
 
 1. Modified `generated-interface.js` to remove the `Tooltip` component wrapping the `Active Protection Confirmed` pill in the feature UI, ensuring the tooltip is restricted to the toggle icon `(?)` as intended.
-2. Audited the `PROBE_REGISTRY` functions `check_headers`, `spam_requests`, `xmlrpc`, `directory_browsing`, `null_byte`, and `probe` to return actual `unprotected` or `external_block` results instead of a misleading `success: true` or `skipped: true`. 
+2. Audited the `PROBE_REGISTRY` functions `check_headers`, `spam_requests`, `xmlrpc`, `directory_browsing`, `null_byte`, and `probe` to return actual `unprotected` or `external_block` results instead of a misleading `success: true` or `skipped: true`.
 3. Updated the `TestRunnerControl` state logic and UI rendering block in `generated-interface.js` to intelligently render baseline vulnerability states: Red/Amber blocks for "System Vulnerable (Unprotected)" or Blue/Amber for "External Protection Detected", greatly improving test utility when protection is off.
 4. Bumped plugin version to `2.4.18` in `vaptsecure.php`.
 5. Created the git commit containing the fix.
