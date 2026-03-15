@@ -166,6 +166,12 @@
                     let previewTarget = implDetails.target_file || implTarget;
                     let previewCode = implDetails.code || 'Code snippet reference is loading...';
                     
+                    // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
+                    if (previewTarget.includes('wp-config') || implTarget.includes('wp-config')) {
+                      previewTarget = 'wp-config.php (Primary) + PHP Hook Driver (Adaptive Fallback)';
+                      if(previewCode) previewCode += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
+                    }
+                    
                     codePreview = `
                       <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; overflow-x: auto;">
                         <div style="font-weight: 600; color: #334155; margin-bottom: 6px;">Injecting into: <span style="font-family: monospace; color: #0ea5e9;">${previewTarget}</span></div>

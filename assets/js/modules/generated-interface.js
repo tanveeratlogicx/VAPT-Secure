@@ -1218,18 +1218,27 @@
                       Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
                         const code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
                         if (!code) return null;
-                        const target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                        let target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                        
+                        // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
+                        if (target.includes('wp-config') || name.includes('wp-config')) {
+                          name = 'wp-config / PHP Hook (Adaptive)';
+                          target = 'wp-config.php / Hook Driver';
+                          // Show both the config constant and the hook behavior
+                          code += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
+                        }
+
                         return el('div', { key: idx, style: { marginBottom: '15px' } }, [
                           el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
                             el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, name),
                             el('span', { style: { fontFamily: 'monospace' } }, target)
                           ]),
-                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155' } }, code)
+                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
                         ]);
                       }) : 
                       (mapping ? el('div', [
                         el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
-                          sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+                          sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.driver === 'config' ? 'wp-config.php / Hook Driver (Adaptive)' : (schema.enforcement?.target || 'root'))))
                         ),
                         el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
                       ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
@@ -1298,20 +1307,28 @@
                 el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Confirming Applied Protections', 'vaptsecure')),
                 feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
                   Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
-                    const code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
+                    let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
                     if (!code) return null;
-                    const target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                    let target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                    
+                    // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
+                    if (target.includes('wp-config') || name.includes('wp-config')) {
+                      name = 'wp-config / PHP Hook (Adaptive)';
+                      target = 'wp-config.php / Hook Driver';
+                      code += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
+                    }
+
                     return el('div', { key: idx, style: { marginBottom: '15px' } }, [
                       el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
                         el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, name),
                         el('span', { style: { fontFamily: 'monospace' } }, target)
                       ]),
-                      el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155' } }, code)
+                      el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
                     ]);
                   }) : 
                   (mapping ? el('div', [
                     el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
-                      sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root')))
+                      sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.driver === 'config' ? 'wp-config.php / Hook Driver (Adaptive)' : (schema.enforcement?.target || 'root'))))
                     ),
                     el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
                   ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
