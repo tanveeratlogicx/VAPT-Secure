@@ -1743,13 +1743,14 @@ window.vaptScriptLoaded = true;
       className: 'vapt-batch-revert-modal',
       style: { width: '650px', maxWidth: '95vw' }
     }, [
-      isLoading ?
+      // Condition 1: Cold start (No data and loading)
+      !previewData && isLoading ?
         el('div', { style: { padding: '40px', textAlign: 'center' } }, [
           el(Spinner, null),
           el('p', { style: { marginTop: '10px' } }, __('Analyzing features...', 'vaptsecure'))
         ]) :
         [
-          // Toggle for including broken features
+          // Control Toggles (Always visible if counts exist)
           brokenCount > 0 && el('div', {
             key: 'toggle-broken',
             style: { background: '#f0f6fc', padding: '12px', borderRadius: '4px', marginBottom: '15px', border: '1px solid #2271b1' }
@@ -1757,15 +1758,14 @@ window.vaptScriptLoaded = true;
             el(ToggleControl, {
               label: sprintf(__('Include %d broken feature(s) (Draft status with history records)', 'vaptsecure'), brokenCount),
               checked: includeBroken,
-              onChange: (val) => { onToggleIncludeBroken(val); onRefresh(); },
-              disabled: isExecuting
+              onChange: (val) => onToggleIncludeBroken(val),
+              disabled: isExecuting || isLoading
             }),
             el('p', {
               style: { margin: '5px 0 0 0', fontSize: '11px', color: '#646970', fontStyle: 'italic' }
             }, __('Broken features are in Draft status but have leftover history records from incomplete transitions.', 'vaptsecure'))
           ]),
 
-          // Toggle for including Release features
           releaseCount > 0 && el('div', {
             key: 'toggle-release',
             style: { background: '#f0f9f0', padding: '12px', borderRadius: '4px', marginBottom: '15px', border: '1px solid #00a32a' }
@@ -1773,121 +1773,142 @@ window.vaptScriptLoaded = true;
             el(ToggleControl, {
               label: sprintf(__('Include %d Release feature(s)', 'vaptsecure'), releaseCount),
               checked: includeRelease,
-              onChange: (val) => { onToggleIncludeRelease(val); onRefresh(); },
-              disabled: isExecuting
+              onChange: (val) => onToggleIncludeRelease(val),
+              disabled: isExecuting || isLoading
             }),
             el('p', {
               style: { margin: '5px 0 0 0', fontSize: '11px', color: '#646970', fontStyle: 'italic' }
             }, __('Release features are currently active in production. Reverting them will disable enforcement.', 'vaptsecure'))
           ]),
 
-          count === 0 ?
-            el('div', { key: 'no-features', style: { padding: '20px', textAlign: 'center' } }, [
-              el('p', { style: { fontSize: '16px', color: '#646970' } },
-                __('✓ No features in Develop status to revert.', 'vaptsecure'))
-            ]) :
-            [
-              // Summary Section
-              el('div', {
-                key: 'summary',
-                style: { background: '#f6f7f7', padding: '15px', borderRadius: '4px', marginBottom: '15px' }
-              }, [
-                el('h3', {
-                  style: { margin: '0 0 10px 0', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e1e1e' }
-                }, __('Summary of Changes', 'vaptsecure')),
+          // Dynamic Preview Area
+          el('div', {
+            key: 'dynamic-content',
+            style: { position: 'relative', opacity: isLoading ? 0.6 : 1, transition: 'opacity 0.2s' }
+          }, [
+            // Overlay Spinner for Ajax refresh
+            isLoading && previewData && el('div', {
+              style: {
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 10,
+                background: 'rgba(255,255,255,0.7)',
+                padding: '10px',
+                borderRadius: '50%'
+              }
+            }, el(Spinner)),
+
+            count === 0 ?
+              el('div', { key: 'no-features', style: { padding: '20px', textAlign: 'center' } }, [
+                el('p', { style: { fontSize: '16px', color: '#646970' } },
+                  __('✓ No features in selected statuses to revert.', 'vaptsecure'))
+              ]) :
+              [
+                // Summary Section
                 el('div', {
-                  style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }
+                  key: 'summary',
+                  style: { background: '#f6f7f7', padding: '15px', borderRadius: '4px', marginBottom: '15px' }
                 }, [
-                  el('div', null, [
-                    el('strong', null, developCount),
-                    __(' Develop features', 'vaptsecure'),
-                    includeBroken && includedBrokenCount > 0 && el('span', { style: { color: '#856404' } }, sprintf(__(' + %d broken', 'vaptsecure'), includedBrokenCount)),
-                    includeRelease && includedReleaseCount > 0 && el('span', { style: { color: '#d63638' } }, sprintf(__(' + %d release', 'vaptsecure'), includedReleaseCount))
-                  ]),
-                  el('div', null, [el('strong', { style: { color: '#d63638' } }, totalHistory), __(' history records will be deleted', 'vaptsecure')]),
-                  el('div', null, [el('strong', { style: { color: '#d63638' } }, totalSchema), __(' generated schemas will be cleared', 'vaptsecure')]),
-                  el('div', null, [el('strong', { style: { color: '#d63638' } }, totalEnforced), __(' enforced features will be disabled', 'vaptsecure')]),
-                ])
-              ]),
-
-              // Warning
-              el('div', {
-                key: 'warning',
-                style: { background: '#fcf0f1', border: '1px solid #d63638', padding: '12px', borderRadius: '4px', marginBottom: '15px' }
-              }, [
-                el('p', {
-                  style: { margin: 0, color: '#d63638', fontWeight: '600', fontSize: '13px' }
-                }, __('⚠️ Warning: This action is IRREVERSIBLE. All history and implementation data will be permanently deleted.', 'vaptsecure'))
-              ]),
-
-              // Feature List Table
-              el('div', {
-                key: 'table-container',
-                style: { maxHeight: '250px', overflow: 'auto', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '15px' }
-              }, [
-                el('table', {
-                  style: { width: '100%', borderCollapse: 'collapse', fontSize: '12px' }
-                }, [
-                  el('thead', {
-                    style: { background: '#f6f7f7', position: 'sticky', top: 0, zIndex: 1 }
+                  el('h3', {
+                    style: { margin: '0 0 10px 0', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#1e1e1e' }
+                  }, __('Summary of Changes', 'vaptsecure')),
+                  el('div', {
+                    style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }
                   }, [
-                    el('tr', null, [
-                      el('th', { style: { padding: '8px', textAlign: 'left', borderBottom: '1px solid #ddd' } }, __('Feature', 'vaptsecure')),
-                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '60px' } }, __('Status', 'vaptsecure')),
-                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '60px' } }, __('History', 'vaptsecure')),
-                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '50px' } }, __('Schema', 'vaptsecure')),
-                      el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '50px' } }, __('Impl', 'vaptsecure')),
-                    ])
-                  ]),
-                  el('tbody', null,
-                    features.slice(0, 20).map((f, idx) =>
-                      el('tr', {
-                        key: f.feature_key || idx,
-                        style: { borderBottom: '1px solid #eee', background: f.is_broken ? '#fff3cd' : 'transparent' }
-                      }, [
-                        el('td', { style: { padding: '8px' } }, f.feature_key),
-                        el('td', {
-                          style: { padding: '8px', textAlign: 'center', fontSize: '10px', fontWeight: '600' }
-                        }, f.is_broken ? el('span', { style: { color: '#856404' } }, 'BROKEN') : el('span', { style: { color: '#2271b1' } }, 'Develop')),
-                        el('td', { style: { padding: '8px', textAlign: 'center' } }, f.history_records),
-                        el('td', {
-                          style: { padding: '8px', textAlign: 'center', color: f.has_generated_schema ? '#d63638' : '#999' }
-                        }, f.has_generated_schema ? '✓' : '-'),
-                        el('td', {
-                          style: { padding: '8px', textAlign: 'center', color: f.has_implementation_data ? '#d63638' : '#999' }
-                        }, f.has_implementation_data ? '✓' : '-'),
-                      ])
-                    )
-                  )
+                    el('div', null, [
+                      el('strong', null, developCount),
+                      __(' Develop features', 'vaptsecure'),
+                      includeBroken && includedBrokenCount > 0 && el('span', { style: { color: '#856404' } }, sprintf(__(' + %d broken', 'vaptsecure'), includedBrokenCount)),
+                      includeRelease && includedReleaseCount > 0 && el('span', { style: { color: '#d63638' } }, sprintf(__(' + %d release', 'vaptsecure'), includedReleaseCount))
+                    ]),
+                    el('div', null, [el('strong', { style: { color: '#d63638' } }, totalHistory), __(' history records will be deleted', 'vaptsecure')]),
+                    el('div', null, [el('strong', { style: { color: '#d63638' } }, totalSchema), __(' generated schemas will be cleared', 'vaptsecure')]),
+                    el('div', null, [el('strong', { style: { color: '#d63638' } }, totalEnforced), __(' enforced features will be disabled', 'vaptsecure')]),
+                  ])
                 ]),
-                features.length > 20 && el('p', {
-                  style: { fontStyle: 'italic', color: '#646970', margin: '8px', fontSize: '12px' }
-                }, sprintf(__('...and %d more features', 'vaptsecure'), features.length - 20))
-              ]),
 
-              // Action Buttons
-              el('div', {
-                key: 'actions',
-                style: { display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '15px', marginTop: '15px', borderTop: '2px solid #ddd' }
-              }, [
-                el(Button, {
-                  variant: 'secondary',
-                  onClick: onCancel,
-                  disabled: isExecuting,
-                  style: { minWidth: '80px' }
-                }, __('Cancel', 'vaptsecure')),
-                el(Button, {
-                  variant: 'primary',
-                  isDestructive: true,
-                  isBusy: isExecuting,
-                  disabled: isExecuting,
-                  onClick: onConfirm,
-                  style: { minWidth: '180px', background: '#d63638', borderColor: '#d63638' }
-                }, isExecuting
-                  ? __('Reverting...', 'vaptsecure')
-                  : sprintf(__('⚠️ Execute Revert (%d features)', 'vaptsecure'), count))
-              ])
-            ]
+                // Warning
+                el('div', {
+                  key: 'warning',
+                  style: { background: '#fcf0f1', border: '1px solid #d63638', padding: '12px', borderRadius: '4px', marginBottom: '15px' }
+                }, [
+                  el('p', {
+                    style: { margin: 0, color: '#d63638', fontWeight: '600', fontSize: '13px' }
+                  }, __('⚠️ Warning: This action is IRREVERSIBLE. All history and implementation data will be permanently deleted.', 'vaptsecure'))
+                ]),
+
+                // Feature List Table
+                el('div', {
+                  key: 'table-container',
+                  style: { maxHeight: '250px', overflow: 'auto', border: '1px solid #ddd', borderRadius: '4px', marginBottom: '15px' }
+                }, [
+                  el('table', {
+                    style: { width: '100%', borderCollapse: 'collapse', fontSize: '12px' }
+                  }, [
+                    el('thead', {
+                      style: { background: '#f6f7f7', position: 'sticky', top: 0, zIndex: 1 }
+                    }, [
+                      el('tr', null, [
+                        el('th', { style: { padding: '8px', textAlign: 'left', borderBottom: '1px solid #ddd' } }, __('Feature', 'vaptsecure')),
+                        el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '60px' } }, __('Status', 'vaptsecure')),
+                        el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '60px' } }, __('History', 'vaptsecure')),
+                        el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '50px' } }, __('Schema', 'vaptsecure')),
+                        el('th', { style: { padding: '8px', textAlign: 'center', borderBottom: '1px solid #ddd', width: '50px' } }, __('Impl', 'vaptsecure')),
+                      ])
+                    ]),
+                    el('tbody', null,
+                      features.slice(0, 20).map((f, idx) =>
+                        el('tr', {
+                          key: f.feature_key || idx,
+                          style: { borderBottom: '1px solid #eee', background: f.is_broken ? '#fff3cd' : 'transparent' }
+                        }, [
+                          el('td', { style: { padding: '8px' } }, f.feature_key),
+                          el('td', {
+                            style: { padding: '8px', textAlign: 'center', fontSize: '10px', fontWeight: '600' }
+                          }, f.is_broken ? el('span', { style: { color: '#856404' } }, 'BROKEN') : 
+                             (f.is_release ? el('span', { style: { color: '#00a32a' } }, 'Release') : el('span', { style: { color: '#2271b1' } }, 'Develop'))),
+                          el('td', { style: { padding: '8px', textAlign: 'center' } }, f.history_records),
+                          el('td', {
+                            style: { padding: '8px', textAlign: 'center', color: f.has_generated_schema ? '#d63638' : '#999' }
+                          }, f.has_generated_schema ? '✓' : '-'),
+                          el('td', {
+                            style: { padding: '8px', textAlign: 'center', color: f.has_implementation_data ? '#d63638' : '#999' }
+                          }, f.has_implementation_data ? '✓' : '-'),
+                        ])
+                      )
+                    )
+                  ]),
+                  features.length > 20 && el('p', {
+                    style: { fontStyle: 'italic', color: '#646970', margin: '8px', fontSize: '12px' }
+                  }, sprintf(__('...and %d more features', 'vaptsecure'), features.length - 20))
+                ]),
+
+                // Action Buttons
+                el('div', {
+                  key: 'actions',
+                  style: { display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '15px', marginTop: '15px', borderTop: '2px solid #ddd' }
+                }, [
+                  el(Button, {
+                    variant: 'secondary',
+                    onClick: onCancel,
+                    disabled: isExecuting,
+                    style: { minWidth: '80px' }
+                  }, __('Cancel', 'vaptsecure')),
+                  el(Button, {
+                    variant: 'primary',
+                    isDestructive: true,
+                    isBusy: isExecuting,
+                    disabled: isExecuting || count === 0,
+                    onClick: onConfirm,
+                    style: { minWidth: '180px', background: '#d63638', borderColor: '#d63638' }
+                  }, isExecuting
+                    ? __('Reverting...', 'vaptsecure')
+                    : sprintf(__('⚠️ Execute Revert (%d features)', 'vaptsecure'), count))
+                ])
+              ]
+          ])
         ]
     ]);
   };
@@ -5472,10 +5493,14 @@ window.vaptScriptLoaded = true;
     };
 
     // v1.9.2 – Batch Revert: Preview affected features
-    const previewBatchRevert = () => {
-      setBatchRevertModal({ previewData: null, isLoading: true, isExecuting: false });
+    const previewBatchRevert = (overrides = {}) => {
+      const incBroken = overrides.includeBroken !== undefined ? overrides.includeBroken : includeBroken;
+      const incRelease = overrides.includeRelease !== undefined ? overrides.includeRelease : includeRelease;
+
+      setBatchRevertModal(prev => ({ ...(prev || {}), previewData: (prev ? prev.previewData : null), isLoading: true, isExecuting: false }));
+      
       apiFetch({
-        path: 'vaptsecure/v1/features/preview-revert?include_broken=' + (includeBroken ? '1' : '0') + '&include_release=' + (includeRelease ? '1' : '0'),
+        path: 'vaptsecure/v1/features/preview-revert?include_broken=' + (incBroken ? '1' : '0') + '&include_release=' + (incRelease ? '1' : '0'),
         method: 'GET',
       }).then(res => {
         setBatchRevertModal({ previewData: res, isLoading: false, isExecuting: false });
@@ -5704,9 +5729,9 @@ window.vaptScriptLoaded = true;
         isLoading: batchRevertModal.isLoading,
         isExecuting: batchRevertModal.isExecuting,
         includeBroken: includeBroken,
-        onToggleIncludeBroken: setIncludeBroken,
+        onToggleIncludeBroken: (val) => { setIncludeBroken(val); previewBatchRevert({ includeBroken: val }); },
         includeRelease: includeRelease,
-        onToggleIncludeRelease: setIncludeRelease,
+        onToggleIncludeRelease: (val) => { setIncludeRelease(val); previewBatchRevert({ includeRelease: val }); },
         onRefresh: previewBatchRevert,
         onConfirm: executeBatchRevert,
         onCancel: () => setBatchRevertModal(null)

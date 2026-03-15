@@ -222,6 +222,12 @@ class VAPTSECURE_REST
       'permission_callback' => array($this, 'check_permission'),
     ));
 
+    register_rest_route('vaptsecure/v1', '/clear-cache', array(
+      'methods'             => 'POST',
+      'callback'            => array($this, 'clear_enforcement_cache'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+
     register_rest_route('vaptsecure/v1', '/security/stats', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_security_stats'),
