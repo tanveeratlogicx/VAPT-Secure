@@ -168,20 +168,37 @@
         // x-vapt-risk-id is not emitted by any enforcer today — checking x-vapt-enforced is sufficient.
         const validEnforcers = ['htaccess', 'nginx', 'php-headers', 'php-rate-limit', 'php-xmlrpc', 'php-dir', 'php-null-byte'];
         const isValidEnforcer = vaptEnforced && validEnforcers.some(e => vaptEnforced.toLowerCase().includes(e));
-        
-        if (!isValidEnforcer) {
-          // Expected VAPT headers are missing
+        const isProtectionEnabled = isFeatureEnabled(featureData);
+
+        // [FIX v2.5.1] Properly validate toggle state against actual server response
+        if (isProtectionEnabled === false) {
+          // Toggle is OFF - we expect NO protection headers to be present
+          if (isValidEnforcer) {
+            // PROBLEM: Toggle is OFF but headers are still present - protection not removed!
+            return {
+              success: false,
+              message: `CRITICAL: Protection toggle is OFF but server is still enforcing headers (${vaptEnforced}). Protection was not properly removed.`,
+              raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: ${vaptEnforced}\n\n${headerStr.trim()}`
+            };
+          }
+          // SUCCESS: Toggle is OFF and no headers present - protection correctly disabled
           return {
-            success: false,
-            message: `VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`,
-            raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}`
+            success: true,
+            message: `Protection correctly disabled. No enforcement headers detected (toggle is OFF).`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: none\n\n${headerStr.trim()}`
           };
         }
-        // Headers found - verify they match expectations
-        // [FIX] Check if protection is actually enabled in the UI before reporting success
-        if (isFeatureEnabled(featureData) === false) {
-          return { success: false, unprotected: true, message: `Protection is DISABLED. Enable the 'Enable Protection' toggle to activate enforcement.`, raw: `URL: ${url} | Status: ${response.status} | x-vapt-enforced: ${vaptEnforced}\n\n${headerStr.trim()}` };
+
+        // Toggle is ON - we expect protection headers to be present
+        if (!isValidEnforcer) {
+          // PROBLEM: Toggle is ON but headers are missing - protection not active!
+          return {
+            success: false,
+            message: `Protection toggle is ON but VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Expected: A+ Headers\n\n${headerStr.trim()}`
+          };
         }
+        // SUCCESS: Toggle is ON and headers are present - protection is active
         return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
       }
       
