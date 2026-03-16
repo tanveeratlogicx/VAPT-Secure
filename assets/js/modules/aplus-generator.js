@@ -129,13 +129,31 @@
             const platformTargetList = [];
 
             if (feature.platform_implementations) {
+              const activeEnforcer = feature.active_enforcer;
+              const envProfile = window.vaptEnvironmentProfile; // Use global profile if available
+
               for (const [key, details] of Object.entries(feature.platform_implementations)) {
-                if (details.target_file) {
-                  platformTargetList.push(`${key} (targets ${details.target_file})`);
-                } else if (details.lib_key) {
-                  platformTargetList.push(`${key} (via ${details.lib_key})`);
-                } else {
-                  platformTargetList.push(key);
+                // Determine if this implementation is relevant to show in notes
+                let isRelevant = true;
+                
+                if (activeEnforcer) {
+                   // If user selected an enforcer, only show that one
+                   isRelevant = (key === activeEnforcer || (key === '.htaccess' && activeEnforcer === 'htaccess'));
+                } else if (envProfile && envProfile.capabilities) {
+                   // Otherwise, skip enforcers strictly incompatible with environment
+                   if (key === 'Nginx' && !envProfile.capabilities.nginx_with_config) isRelevant = false;
+                   if ((key === '.htaccess' || key === 'htaccess') && !envProfile.capabilities.apache_with_htaccess) isRelevant = false;
+                   if (key === 'fail2ban' && !envProfile.capabilities.fail2ban) isRelevant = false;
+                }
+
+                if (isRelevant) {
+                  if (details.target_file) {
+                    platformTargetList.push(`${key} (targets ${details.target_file})`);
+                  } else if (details.lib_key) {
+                    platformTargetList.push(`${key} (via ${details.lib_key})`);
+                  } else {
+                    platformTargetList.push(key);
+                  }
                 }
               }
             }
