@@ -599,14 +599,27 @@ window.vaptScriptLoaded = true;
 }
 `;
 
-      // 1. Determine Driver Priority based on VAPT v2.0 Strategy
+      // 1. Determine Driver Priority based on Selection or VAPT v2.0 Strategy
       // Preferred Order: .htaccess, PHP Function, wp-config
       let prioritizedDriver = 'hook';
       let driverContextInstruction = '';
-      const activeFiles = (selectedFile || '').split(',');
-
+      
+      const selection = feature.active_enforcer;
       const targets = feature.protection?.automated_protection?.implementation_targets || feature.available_platforms || [];
-      if (Array.isArray(targets) && targets.length > 0) {
+
+      if (selection) {
+        const selLower = selection.toLowerCase();
+        if (selLower.includes('htaccess') || selLower === 'apache' || selLower === 'litespeed') prioritizedDriver = 'htaccess';
+        else if (selLower.includes('functions') || selLower.includes('hook') || selLower === 'wordpress' || selLower === 'php') prioritizedDriver = 'hook';
+        else if (selLower.includes('wp-config')) prioritizedDriver = 'wp-config';
+        else if (selLower === 'fail2ban') prioritizedDriver = 'fail2ban';
+        else if (selLower === 'nginx') prioritizedDriver = 'nginx';
+        else if (selLower === 'cloudflare') prioritizedDriver = 'cloudflare';
+        else if (selLower === 'iis') prioritizedDriver = 'iis';
+        else if (selLower === 'caddy') prioritizedDriver = 'caddy';
+        
+        driverContextInstruction = `\n      - **USER SELECTION**: The user explicitly selected **${selection}** as the enforcer. Use the **${prioritizedDriver}** driver core strategy.`;
+      } else if (Array.isArray(targets) && targets.length > 0) {
         if (targets.includes('.htaccess')) prioritizedDriver = 'htaccess';
         else if (targets.includes('PHP Hook') || targets.includes('WordPress') || targets.includes('PHP Functions') || targets.includes('WordPress Core')) prioritizedDriver = 'hook';
         else if (targets.includes('wp-config.php')) prioritizedDriver = 'wp-config';
@@ -3923,7 +3936,74 @@ window.vaptScriptLoaded = true;
     let targetFiles = [];
     let driverKey = '';
 
-    if (targets.includes('.htaccess')) {
+    const selection = f.active_enforcer;
+    
+    if (selection) {
+      const selLower = selection.toLowerCase();
+      if (selLower.includes('htaccess') || selLower === 'apache' || selLower === 'litespeed') {
+        detectedDriver = '.htaccess (Apache Core)';
+        driverKey = 'htaccess';
+        targetFiles = ['{ABSPATH}.htaccess'];
+        safetyRules = [
+          'Always use `# BEGIN VAPT {ID}` and `# END VAPT {ID}` markers.',
+          'Place RewriteRules BEFORE the `# BEGIN WordPress` block to ensure they execute.',
+          'Use `[L,F]` for blocking rules.',
+          'No forbidden directives (`TraceEnable`, `ServerSignature`, `<Directory>`).',
+          'Wrap rewrites in `<IfModule mod_rewrite.c>` with `RewriteEngine On`.'
+        ];
+      }
+      else if (selLower.includes('wp-config')) {
+        detectedDriver = 'wp-config.php Constants';
+        driverKey = 'wp_config';
+        targetFiles = ['{ABSPATH}wp-config.php'];
+        safetyRules = [
+          'Always use `/* BEGIN VAPT {ID} */` and `/* END VAPT {ID} */` markers.',
+          'Place constants BEFORE the `/* That\'s all, stop editing! */` line (before_wp_settings).',
+          'Check if constant is already defined before defining it.',
+          'Use correct boolean or string values as required by WP core.'
+        ];
+      }
+      else if (selLower.includes('functions') || selLower.includes('hook') || selLower === 'wordpress' || selLower === 'php') {
+        detectedDriver = 'WordPress / PHP Hook';
+        driverKey = 'php_functions';
+        targetFiles = ['{ABSPATH}wp-content/plugins/vapt-protection-suite/vapt-functions.php'];
+        safetyRules = [
+          'Always use `// BEGIN VAPT {ID}` and `// END VAPT {ID}` markers.',
+          'Use specific WordPress action or filter hooks.',
+          'Prefix all functions with `vapt_` (e.g. `vapt_disable_xmlrpc`).',
+          'Insert at the end of the file (`functions_php`).'
+        ];
+      }
+      else if (selLower === 'fail2ban') {
+        detectedDriver = 'Fail2Ban Jail';
+        driverKey = 'fail2ban';
+        targetFiles = ['/etc/fail2ban/jail.local', '/etc/fail2ban/filter.d/...'];
+        safetyRules = ['Use `# BEGIN VAPT {ID}` markers.', 'Always include `fail2ban-client reload` in verification.'];
+      }
+      else if (selLower === 'nginx') {
+        detectedDriver = 'Nginx Conf';
+        driverKey = 'nginx';
+        targetFiles = ['/etc/nginx/conf.d/vapt-security.conf'];
+        safetyRules = ['Use `# BEGIN VAPT {ID}` markers.', 'Ensure insertion is after `http {` loop.', 'Include `nginx -t` validation.'];
+      }
+      else if (selLower === 'cloudflare') {
+        detectedDriver = 'Cloudflare (Pattern 4)';
+        driverKey = 'cloudflare';
+        targetFiles = ['Cloudflare Dashboard / API via WAF Rules'];
+      }
+      else if (selLower === 'iis') {
+        detectedDriver = 'IIS / web.config (Pattern 5)';
+        driverKey = 'iis';
+        targetFiles = ['{ABSPATH}web.config'];
+        safetyRules = ['Use `<rule>` formatting inside `<rewrite>`.', 'Ensure URL Rewrite module exists.'];
+      }
+      else if (selLower === 'caddy') {
+        detectedDriver = 'Caddy (Pattern 6)';
+        driverKey = 'caddy';
+        targetFiles = ['/etc/caddy/Caddyfile'];
+        safetyRules = ['Use Caddy v2 syntax.', 'Ensure `caddy reload` is included in verification.'];
+      }
+    } else if (targets.includes('.htaccess')) {
       detectedDriver = '.htaccess (Apache Core)';
       driverKey = 'htaccess';
       targetFiles = ['{ABSPATH}.htaccess'];
@@ -4263,35 +4343,37 @@ window.vaptScriptLoaded = true;
     const resolveEnforcer = (feature) => {
       const platforms = feature.platform_implementations || {};
       const optimal = environmentProfile?.optimal_platform || 'php_functions';
+      const capabilities = environmentProfile?.capabilities || {};
 
-      const envToSchemaMap = {
-        'apache_htaccess': '.htaccess',
-        'nginx_config': 'Nginx',
-        'iis_config': 'IIS',
-        'php_functions': 'PHP Functions',
-        'cloudflare_edge': 'Cloudflare'
+      const compatibilityMap = {
+        'apache_htaccess': ['.htaccess', 'Apache', 'Litespeed'],
+        'nginx_config': ['Nginx'],
+        'iis_config': ['IIS'],
+        'php_functions': ['PHP Functions', 'WordPress', 'WordPress Core', 'wp-config.php'],
+        'cloudflare_edge': ['Cloudflare'],
+        'server_cron': ['Server Cron'],
+        'caddy_native': ['Caddy'],
+        'fail2ban': ['fail2ban']
       };
 
-      const targetSchemaKey = envToSchemaMap[optimal];
-      if (platforms[targetSchemaKey]) return targetSchemaKey;
-
-      if (feature.steps && feature.steps.length > 0) {
-        const optimalStep = feature.steps.find(s => {
-          const e = (s.enforcer || '').toLowerCase();
-          if (optimal === 'apache_htaccess') return e.includes('htaccess');
-          if (optimal === 'nginx_config') return e.includes('nginx');
-          if (optimal === 'php_functions') return e.includes('functions') || e.includes('hook');
-          if (optimal === 'cloudflare_edge') return e.includes('cloudflare');
-          return false;
-        });
-        if (optimalStep) return optimalStep.enforcer;
-        return feature.steps[0].enforcer;
+      // 1. Get ALL supported enforcers for this feature
+      const availableEnforcers = new Set();
+      Object.keys(platforms).forEach(k => availableEnforcers.add(k));
+      if (feature.steps && Array.isArray(feature.steps)) {
+        feature.steps.forEach(s => { if (s.enforcer) availableEnforcers.add(s.enforcer); });
       }
 
-      const keys = Object.keys(platforms);
-      if (keys.length > 0) return keys[0];
+      // 2. Filter by environment compatibility
+      const compatibleEnforcers = Array.from(availableEnforcers).filter(enf => {
+        const enfLower = enf.toLowerCase();
+        return Object.entries(capabilities).some(([cap, enabled]) => {
+          if (!enabled) return false;
+          const compatibleList = compatibilityMap[cap] || [];
+          return compatibleList.some(c => c.toLowerCase() === enfLower);
+        });
+      });
 
-      return '-';
+      return compatibleEnforcers;
     };
 
     // Update columnOrder if new keys are found that aren't in there
@@ -4381,8 +4463,8 @@ window.vaptScriptLoaded = true;
       else if (sortBy === 'category') comparison = catA.localeCompare(catB);
       else if (sortBy === 'severity') comparison = sevA - sevB;
       else if (sortBy === 'enforcer') {
-        const enfA = resolveEnforcer(a).toLowerCase();
-        const enfB = resolveEnforcer(b).toLowerCase();
+        const enfA = (a.active_enforcer || (resolveEnforcer(a)[0] || '')).toLowerCase();
+        const enfB = (b.active_enforcer || (resolveEnforcer(b)[0] || '')).toLowerCase();
         comparison = enfA.localeCompare(enfB);
       }
 
@@ -4940,7 +5022,29 @@ window.vaptScriptLoaded = true;
                   typeof item === 'object' ? JSON.stringify(item) : String(item)
                 )));
               } else if (col === 'enforcer') {
-                content = resolveEnforcer(f);
+                const choices = resolveEnforcer(f);
+                if (choices.length === 0) {
+                  content = el('span', { style: { color: '#949494', fontStyle: 'italic' } }, '-');
+                } else if (choices.length === 1) {
+                  content = choices[0];
+                } else {
+                  // Multiple choices - Radio Buttons
+                  const current = f.active_enforcer || choices[0];
+                  content = el('div', { className: 'vapt-enforcer-selector' }, choices.map(choice => el('label', { 
+                    key: choice, 
+                    style: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', marginBottom: '2px', cursor: 'pointer' } 
+                  }, [
+                    el('input', {
+                      type: 'radio',
+                      name: `enforcer-${f.key}`,
+                      value: choice,
+                      checked: current === choice,
+                      onChange: () => updateFeature(f.key || f.id, { active_enforcer: choice }),
+                      style: { margin: 0, width: '13px', height: '13px' }
+                    }),
+                    choice
+                  ])));
+                }
               } else if (typeof f[col] === 'object' && f[col] !== null) {
                 content = el('pre', { style: { fontSize: '10px', margin: 0, background: '#f0f0f0', padding: '4px', whiteSpace: 'pre-wrap' } }, JSON.stringify(f[col], null, 2));
               }

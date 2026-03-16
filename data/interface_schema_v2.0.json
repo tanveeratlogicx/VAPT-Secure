@@ -1144,7 +1144,8 @@
         }
       ],
       "available_platforms": [
-        "Nginx"
+        "Nginx",
+        ".htaccess"
       ],
       "platform_implementations": {
         "Nginx": {
@@ -1153,6 +1154,15 @@
           "driver_ref": "vapt_driver_manifest_v2.0.risks.RISK-010.steps[*enforcer=Nginx]",
           "operation": "modify_server_tokens",
           "target_file": "Nginx",
+          "backup_required": true,
+          "implementation_type": ""
+        },
+        ".htaccess": {
+          "lib_key": "htaccess",
+          "code_ref": "enforcer_pattern_library_v2.0.patterns.RISK-010.htaccess",
+          "driver_ref": "vapt_driver_manifest_v2.0.risks.RISK-010.steps[*enforcer=.htaccess]",
+          "operation": "banner_grabbing_protection",
+          "target_file": ".htaccess",
           "backup_required": true,
           "implementation_type": ""
         }

@@ -471,8 +471,8 @@
           "position": "after",
           "fallback": "append"
         },
-        "code": "ServerTokens Prod\nServerSignature Off",
-        "wrapped_code": "# BEGIN VAPT RISK-010\nServerTokens Prod\nServerSignature Off\n# END VAPT RISK-010",
+        "code": "server_tokens off;\nadd_header x-vapt-enforced \"nginx\" always;\nadd_header x-vapt-risk-id \"RISK-010\" always;",
+        "wrapped_code": "# BEGIN VAPT RISK-010\nserver_tokens off;\nadd_header x-vapt-enforced \"nginx\" always;\nadd_header x-vapt-risk-id \"RISK-010\" always;\n# END VAPT RISK-010",
         "begin_marker": "# BEGIN VAPT RISK-010",
         "end_marker": "# END VAPT RISK-010",
         "target_hook": null,
@@ -487,10 +487,40 @@
         "driver": {
           "write_mode": "insert_at_anchor",
           "target_file": "/etc/nginx/conf.d/vapt-security.conf",
-          "write_block": "# BEGIN VAPT RISK-010\nServerTokens Prod\nServerSignature Off\n# END VAPT RISK-010",
+          "write_block": "# BEGIN VAPT RISK-010\nserver_tokens off;\nadd_header x-vapt-enforced \"nginx\" always;\nadd_header x-vapt-risk-id \"RISK-010\" always;\n# END VAPT RISK-010",
           "anchor_string": "http {",
           "anchor_position": "after",
           "fallback": "append",
+          "idempotency_check": "# BEGIN VAPT RISK-010",
+          "if_found": "skip"
+        }
+      },
+      "htaccess": {
+        "enforcer": ".htaccess",
+        "operation": "banner_grabbing_protection",
+        "target_file": ".htaccess",
+        "insertion_point": "beginning_of_file",
+        "anchor": {
+          "search": null,
+          "position": "prepend",
+          "fallback": null
+        },
+        "code": "ServerSignature Off\n<IfModule mod_headers.c>\n    Header set x-vapt-enforced \"htaccess\"\n    Header append x-vapt-risk-id \"RISK-010\"\n</IfModule>",
+        "wrapped_code": "# BEGIN VAPT RISK-010\nServerTokens Prod\nServerSignature Off\n<IfModule mod_headers.c>\n    Header set x-vapt-enforced \"htaccess\"\n    Header append x-vapt-risk-id \"RISK-010\"\n</IfModule>\n# END VAPT RISK-010",
+        "begin_marker": "# BEGIN VAPT RISK-010",
+        "end_marker": "# END VAPT RISK-010",
+        "verification": {
+          "command": "apachectl -t",
+          "expected": "Exit 0, no syntax errors"
+        },
+        "rollback": "Remove # BEGIN VAPT RISK-010 ... # END VAPT RISK-010 block from .htaccess",
+        "driver": {
+          "write_mode": "prepend_to_file",
+          "target_file": "{ABSPATH}.htaccess",
+          "write_block": "# BEGIN VAPT RISK-010\nServerTokens Prod\nServerSignature Off\n<IfModule mod_headers.c>\n    Header set x-vapt-enforced \"htaccess\"\n    Header append x-vapt-risk-id \"RISK-010\"\n</IfModule>\n# END VAPT RISK-010",
+          "anchor_string": null,
+          "anchor_position": "prepend",
+          "fallback": null,
           "idempotency_check": "# BEGIN VAPT RISK-010",
           "if_found": "skip"
         }

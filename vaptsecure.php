@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.4.23
+ * Version:           2.4.24
  * Author:            Tanveer Malik
  * Author URI:        https://vapt.copilot.com
  * License:           GPL-2.0+
@@ -49,7 +49,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-  define('VAPTSECURE_VERSION', '2.4.23');
+  define('VAPTSECURE_VERSION', '2.4.24');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.0');
 }
@@ -246,6 +246,7 @@ function vaptsecure_activate_plugin()
         override_implementation_data LONGTEXT DEFAULT NULL,
         is_enabled TINYINT(1) DEFAULT 0,
         is_enforced TINYINT(1) DEFAULT 0,
+        active_enforcer VARCHAR(100) DEFAULT NULL,
         PRIMARY KEY  (feature_key)
     ) $charset_collate;";
   // Feature History/Audit Table
@@ -324,6 +325,12 @@ function vaptsecure_manual_db_fix()
   $column = $wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s", DB_NAME, $table_name, 'is_enforced'));
   if (empty($column)) {
     $wpdb->query("ALTER TABLE $table_name ADD COLUMN is_enforced TINYINT(1) DEFAULT 0");
+  }
+
+  // Check and add active_enforcer if missing
+  $column = $wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s", DB_NAME, $table_name, 'active_enforcer'));
+  if (empty($column)) {
+    $wpdb->query("ALTER TABLE $table_name ADD COLUMN active_enforcer VARCHAR(100) DEFAULT NULL");
   }
 }
 

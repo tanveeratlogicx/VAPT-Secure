@@ -112,7 +112,8 @@ class VAPTSECURE_DB
       'override_schema'               => '%s',
       'override_implementation_data'  => '%s',
       'is_enabled'                    => '%d',
-      'is_enforced'                   => '%d'
+      'is_enforced'                   => '%d',
+      'active_enforcer'               => '%s'
     );
 
     // 2. Filter data against actual database columns (Self-Healing)
