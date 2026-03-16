@@ -159,16 +159,21 @@
         }
       }
 
-      // [FIX v2.4.11] Check if test expects specific headers
+      // [FIX v2.4.25] Check if test expects specific headers
       const hasExpectedHeaders = control.test_config && control.test_config.expected_headers;
       
       if (hasExpectedHeaders) {
-        // This is a specific header validation test - must check if expected headers exist
-        if (!vaptEnforced || !enforcedFeature || !enforcedFeature.includes(featureKey)) {
+        // The reliable marker is x-vapt-enforced being present with a valid enforcer value.
+        // Note: x-vapt-feature contains DB slugs, not RISK-IDs, so we can't match featureKey directly.
+        // x-vapt-risk-id is not emitted by any enforcer today — checking x-vapt-enforced is sufficient.
+        const validEnforcers = ['htaccess', 'nginx', 'php-headers', 'php-rate-limit', 'php-xmlrpc', 'php-dir', 'php-null-byte'];
+        const isValidEnforcer = vaptEnforced && validEnforcers.some(e => vaptEnforced.toLowerCase().includes(e));
+        
+        if (!isValidEnforcer) {
           // Expected VAPT headers are missing
           return { 
             success: false, 
-            message: `VAPT enforcement headers not found. Expected x-vapt-enforced and x-vapt-risk-id=${featureKey}.`, 
+            message: `VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`, 
             raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` 
           };
         }

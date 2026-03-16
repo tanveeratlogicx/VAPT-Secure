@@ -326,7 +326,7 @@
       const featureKey = feature.key || feature.id || '';
 
       // 1. A+ Header Check - Verify VAPT enforcement headers
-      // [FIX v2.4.11] Add specific probe URL so it doesn't just check homepage
+      // [FIX v2.4.25] Only check x-vapt-enforced - no enforcer emits x-vapt-risk-id
       tests.push({
         type: 'test_action',
         id: `vapt-test-headers-${riskId}`,
@@ -336,11 +336,10 @@
         test_config: {
           path: '/?vapt_header_check=1',
           expected_headers: { 
-            'x-vapt-enforced': 'htaccess|nginx|php-headers',
-            'x-vapt-risk-id': riskId 
+            'x-vapt-enforced': 'htaccess|nginx|php-headers'
           }
         },
-        help: 'Verifies that A+ Adaptive headers (x-vapt-enforced, x-vapt-risk-id) are correctly injected.'
+        help: 'Verifies that A+ Adaptive headers (x-vapt-enforced) are correctly injected by the active enforcer.'
       });
 
       // 2. Specific Functional Probes
