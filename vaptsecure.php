@@ -662,7 +662,18 @@ if (! function_exists('vaptsecure_render_client_status_page')) {
 if (! function_exists('vaptsecure_render_workbench_page')) {
   function vaptsecure_render_workbench_page()
   {
-    vaptsecure_check_permissions(true);
+    if (! is_vaptsecure_superadmin(true)) {
+      if (is_vaptsecure_superadmin(false)) {
+        $identity = vaptsecure_get_superadmin_identity();
+        if (! get_transient('vaptsecure_otp_email_' . $identity['user'])) {
+          VAPTSECURE_Auth::send_otp();
+        }
+        VAPTSECURE_Auth::render_otp_form();
+      } else {
+        wp_die(__('You do not have permission to access the VAPT Secure Dashboard.', 'vaptsecure'));
+      }
+      return;
+    }
   ?>
     <div class="wrap">
       <h1 class="wp-heading-inline"><?php _e('VAPT Secure Workbench', 'vaptsecure'); ?></h1>
