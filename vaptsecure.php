@@ -49,7 +49,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-  define('VAPTSECURE_VERSION', '2.4.24');
+  define('VAPTSECURE_VERSION', '2.4.25');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.0');
 }
