@@ -171,13 +171,17 @@
         
         if (!isValidEnforcer) {
           // Expected VAPT headers are missing
-          return { 
-            success: false, 
-            message: `VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`, 
-            raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` 
+          return {
+            success: false,
+            message: `VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`,
+            raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}`
           };
         }
         // Headers found - verify they match expectations
+        // [FIX] Check if protection is actually enabled in the UI before reporting success
+        if (isFeatureEnabled(featureData) === false) {
+          return { success: false, unprotected: true, message: `Protection is DISABLED. Enable the 'Enable Protection' toggle to activate enforcement.`, raw: `URL: ${url} | Status: ${response.status} | x-vapt-enforced: ${vaptEnforced}\n\n${headerStr.trim()}` };
+        }
         return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
       }
       
