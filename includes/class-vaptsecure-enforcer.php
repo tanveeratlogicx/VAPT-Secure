@@ -7,572 +7,594 @@
  * (Htaccess, Hooks, etc.) based on the feature's generated_schema.
  */
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) { exit;
+}
 
 class VAPTSECURE_Enforcer
 {
 
-  public static function init()
-  {
-    // Listen for workbench saves
-    add_action('vaptsecure_feature_saved', array(__CLASS__, 'dispatch_enforcement'), 10, 2);
+    public static function init()
+    {
+        // Listen for workbench saves
+        add_action('vaptsecure_feature_saved', array(__CLASS__, 'dispatch_enforcement'), 10, 2);
 
-    // Apply PHP-based hooks at runtime
-    self::runtime_enforcement();
-  }
+        // Apply PHP-based hooks at runtime
+        self::runtime_enforcement();
+    }
 
-  /**
-   * Applies all active 'hook' based enforcements on every request
-   */
-  public static function runtime_enforcement()
-  {
-    $cache_key = 'vaptsecure_active_enforcements';
-    $enforced = get_transient($cache_key);
+    /**
+     * Applies all active 'hook' based enforcements on every request
+     */
+    public static function runtime_enforcement()
+    {
+        $cache_key = 'vaptsecure_active_enforcements';
+        $enforced = get_transient($cache_key);
 
-    if (false === $enforced) {
-      global $wpdb;
-      $table = $wpdb->prefix . 'vaptsecure_feature_meta';
-      $is_global = VAPTSECURE_DB::get_global_enforcement();
+        if (false === $enforced) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'vaptsecure_feature_meta';
+            $is_global = VAPTSECURE_DB::get_global_enforcement();
 
-      if ($is_global) {
-        $enforced = $wpdb->get_results("
+            if ($is_global) {
+                $enforced = $wpdb->get_results(
+                    "
           SELECT m.*, s.status 
           FROM $table m
           LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key
           WHERE s.status IN ('develop', 'release', 'test')
           AND m.is_enabled = 1
-        ", ARRAY_A);
-      } else {
-        // [v3.13.20] Global is OFF: Total Kill Switch (Return Nothing)
-        $enforced = array();
-      }
-      set_transient($cache_key, $enforced, HOUR_IN_SECONDS);
-    }
-
-    if (empty($enforced)) return;
-
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php';
-
-    // [v3.13.27] Load external PHP functions files for php_functions enforcer
-    self::load_php_functions_file();
-
-    foreach ($enforced as $meta) {
-      $status = isset($meta['status']) ? strtolower($meta['status']) : 'draft';
-
-      // Override Logic
-      $use_override_schema = in_array($status, ['test', 'release']) && !empty($meta['override_schema']);
-      $raw_schema = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
-      $schema = !empty($raw_schema) ? json_decode($raw_schema, true) : array();
-
-      $use_override_impl = in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data']);
-      $raw_impl = $use_override_impl ? $meta['override_implementation_data'] : $meta['implementation_data'];
-      $impl_data = !empty($raw_impl) ? json_decode($raw_impl, true) : array();
-
-      $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
-
-      // [v3.13.27] Skip htaccess for PHP Functions features (use hook instead)
-      if ($driver === 'htaccess' && !empty($schema['enforcement']['mappings'])) {
-        $mappings = $schema['enforcement']['mappings'];
-        foreach ($mappings as $key => $value) {
-          $val_to_test = is_string($value) ? $value : '';
-          if (strpos($val_to_test, 'add_action(') !== false ||
-              strpos($val_to_test, 'add_filter(') !== false ||
-              strpos($val_to_test, 'function ') !== false) {
-            error_log("VAPT: Skipping htaccess for $feature_key - using hook driver instead");
-            $driver = 'hook';
-            $schema['enforcement']['driver'] = 'hook';
-            break;
-          }
+        ", ARRAY_A
+                );
+            } else {
+                // [v3.13.20] Global is OFF: Total Kill Switch (Return Nothing)
+                $enforced = array();
+            }
+            set_transient($cache_key, $enforced, HOUR_IN_SECONDS);
         }
-      }
 
-      // Hook driver is universally shared for PHP-based fallback rules
-      // [v2.0.5] Include config/wp-config to ensure enforcement markers (headers) are registered
-      if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess' || $driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
-        if (class_exists('VAPTSECURE_Hook_Driver')) {
-          VAPTSECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
+        if (empty($enforced)) { return;
         }
-      }
-    }
-  }
 
-  /**
-   * [v3.13.27] Load external PHP functions file if it exists
-   * Handles php_functions enforcer which writes to external files
-   */
-  private static function load_php_functions_file()
-  {
-    // Check for local bundled version
-    $bundled_path = VAPTSECURE_PATH . 'vapt-functions.php';
-    if (file_exists($bundled_path)) {
-        require_once $bundled_path;
-        error_log("VAPT: Loaded bundled vapt-functions.php");
-    }
-  }
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-hook-driver.php';
 
-  /**
-   * Entry point for enforcement after a feature is saved.
-   * Always triggers a rebuild so toggling OFF also removes rules from config files.
-   */
-  public static function dispatch_enforcement($key, $data)
-  {
-    // Clear runtime cache so changes apply instantly
-    delete_transient('vaptsecure_active_enforcements');
+        // [v3.13.27] Load external PHP functions files for php_functions enforcer
+        self::load_php_functions_file();
 
-    $meta = VAPTSECURE_DB::get_feature_meta($key);
-    if (!$meta) return;
+        foreach ($enforced as $meta) {
+            $status = isset($meta['status']) ? strtolower($meta['status']) : 'draft';
 
-    // Fetch Status for Context
-    global $wpdb;
-    $status_row = $wpdb->get_row($wpdb->prepare("SELECT status FROM {$wpdb->prefix}vaptsecure_feature_status WHERE feature_key = %s", $key));
-    $status = $status_row ? strtolower($status_row->status) : 'draft';
+            // Override Logic
+            $use_override_schema = in_array($status, ['test', 'release']) && !empty($meta['override_schema']);
+            $raw_schema = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
+            $schema = !empty($raw_schema) ? json_decode($raw_schema, true) : array();
 
-    // Override Logic
-    $use_override_schema = in_array($status, ['test', 'release']) && !empty($meta['override_schema']);
-    $raw_schema = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
-    $schema = !empty($raw_schema) ? json_decode($raw_schema, true) : array();
+            $use_override_impl = in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data']);
+            $raw_impl = $use_override_impl ? $meta['override_implementation_data'] : $meta['implementation_data'];
+            $impl_data = !empty($raw_impl) ? json_decode($raw_impl, true) : array();
 
-    // [FIX v1.4.0] Always rebuild even if this feature has no enforcement block.
-    // This ensures that toggling OFF removes previously written rules from config files.
-    if (empty($schema['enforcement'])) {
-      $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
-      if (strpos($server, 'nginx') !== false) {
-        self::rebuild_nginx();
-      } else {
-        self::rebuild_htaccess();
-      }
-      self::rebuild_config();
-      return;
+            $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
+
+            // [v3.13.27] Skip htaccess for PHP Functions features (use hook instead)
+            if ($driver === 'htaccess' && !empty($schema['enforcement']['mappings'])) {
+                $mappings = $schema['enforcement']['mappings'];
+                foreach ($mappings as $key => $value) {
+                    $val_to_test = is_string($value) ? $value : '';
+                    if (strpos($val_to_test, 'add_action(') !== false 
+                        || strpos($val_to_test, 'add_filter(') !== false 
+                        || strpos($val_to_test, 'function ') !== false
+                    ) {
+                        error_log("VAPT: Skipping htaccess for $feature_key - using hook driver instead");
+                        $driver = 'hook';
+                        $schema['enforcement']['driver'] = 'hook';
+                        break;
+                    }
+                }
+            }
+
+            // Hook driver is universally shared for PHP-based fallback rules
+            // [v2.0.5] Include config/wp-config to ensure enforcement markers (headers) are registered
+            if ($driver === 'hook' || $driver === 'universal' || $driver === 'htaccess' || $driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
+                if (class_exists('VAPTSECURE_Hook_Driver')) {
+                    VAPTSECURE_Hook_Driver::apply($impl_data, $schema, $meta['feature_key']);
+                }
+            }
+        }
     }
 
-    // [v4.0.0] Adaptive Deployment Orchestration
-    if (!empty($meta['is_adaptive_deployment'])) {
-      require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-deployment-orchestrator.php';
-      $orchestrator = new VAPTSECURE_Deployment_Orchestrator();
-
-      // Resolve implementation data for toggle intelligence
-      $impl_data = self::resolve_impl($meta);
-
-      // Use profile from settings if available, else default to auto_detect
-      $profile = get_option('vaptsecure_deployment_profile', 'auto_detect');
-      $results = $orchestrator->orchestrate($key, $schema, $profile, $impl_data);
-
-      error_log("VAPT: Adaptive Deployment for {$key} results: " . json_encode($results));
-      return;
+    /**
+     * [v3.13.27] Load external PHP functions file if it exists
+     * Handles php_functions enforcer which writes to external files
+     */
+    private static function load_php_functions_file()
+    {
+        // Check for local bundled version
+        $bundled_path = VAPTSECURE_PATH . 'vapt-functions.php';
+        if (file_exists($bundled_path)) {
+            include_once $bundled_path;
+            error_log("VAPT: Loaded bundled vapt-functions.php");
+        }
     }
 
-    $driver_name = $schema['enforcement']['driver'];
+    /**
+     * Entry point for enforcement after a feature is saved.
+     * Always triggers a rebuild so toggling OFF also removes rules from config files.
+     */
+    public static function dispatch_enforcement($key, $data)
+    {
+        // Clear runtime cache so changes apply instantly
+        delete_transient('vaptsecure_active_enforcements');
 
-    // Dispatch to the correct driver
-    if ($driver_name === 'htaccess') {
-      // UNIVERSAL FIX: Rebuild based on Server Type
-      $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
+        $meta = VAPTSECURE_DB::get_feature_meta($key);
+        if (!$meta) { return;
+        }
 
-      if (strpos($server, 'nginx') !== false) {
-        self::rebuild_nginx();
-      } elseif (strpos($server, 'iis') !== false || strpos($server, 'windows') !== false) {
-        self::rebuild_iis();
-      } else {
-        // Default to Apache/.htaccess
-        self::rebuild_htaccess();
-      }
-      self::rebuild_config();
-    } elseif ($driver_name === 'nginx') {
-      self::rebuild_nginx();
-    } elseif ($driver_name === 'iis') {
-      self::rebuild_iis();
-    } elseif ($driver_name === 'caddy') {
-      self::rebuild_caddy();
-    } elseif ($driver_name === 'cloudflare') {
-      self::rebuild_cloudflare();
-    } elseif ($driver_name === 'config' || $driver_name === 'wp_config' || $driver_name === 'wp-config') {
-      self::rebuild_config();
-    } else {
-      // For hooks, we now trigger a physical rebuild of vapt-functions.php
-      // [v3.13.27] Centralized PHP Functions
-      self::rebuild_php_functions();
-    }
-  }
+        // Fetch Status for Context
+        global $wpdb;
+        $status_row = $wpdb->get_row($wpdb->prepare("SELECT status FROM {$wpdb->prefix}vaptsecure_feature_status WHERE feature_key = %s", $key));
+        $status = $status_row ? strtolower($status_row->status) : 'draft';
 
-  /**
-   * Rebuilds Nginx Rules File
-   */
-  private static function rebuild_nginx()
-  {
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-nginx-driver.php';
+        // Override Logic
+        $use_override_schema = in_array($status, ['test', 'release']) && !empty($meta['override_schema']);
+        $raw_schema = $use_override_schema ? $meta['override_schema'] : $meta['generated_schema'];
+        $schema = !empty($raw_schema) ? json_decode($raw_schema, true) : array();
 
-    $features = self::get_enforced_features();
-    $all_rules = [];
+        // [FIX v1.4.0] Always rebuild even if this feature has no enforcement block.
+        // This ensures that toggling OFF removes previously written rules from config files.
+        if (empty($schema['enforcement'])) {
+            $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
+            if (strpos($server, 'nginx') !== false) {
+                self::rebuild_nginx();
+            } else {
+                self::rebuild_htaccess();
+            }
+            self::rebuild_config();
+            return;
+        }
 
-    foreach ($features as $meta) {
-      $schema = self::resolve_schema($meta);
-      $impl = self::resolve_impl($meta);
+        // [v4.0.0] Adaptive Deployment Orchestration
+        if (!empty($meta['is_adaptive_deployment'])) {
+            include_once VAPTSECURE_PATH . 'includes/class-vaptsecure-deployment-orchestrator.php';
+            $orchestrator = new VAPTSECURE_Deployment_Orchestrator();
 
-      if (($schema['enforcement']['driver'] ?? '') === 'htaccess') {
-        $rules = VAPTSECURE_Nginx_Driver::generate_rules($impl, $schema);
-        if ($rules) $all_rules = array_merge($all_rules, $rules);
-      }
-    }
+            // Resolve implementation data for toggle intelligence
+            $impl_data = self::resolve_impl($meta);
 
-    VAPTSECURE_Nginx_Driver::write_batch($all_rules);
-  }
+            // Use profile from settings if available, else default to auto_detect
+            $profile = get_option('vaptsecure_deployment_profile', 'auto_detect');
+            $results = $orchestrator->orchestrate($key, $schema, $profile, $impl_data);
 
-  /**
-   * Rebuilds IIS Config
-   */
-  private static function rebuild_iis()
-  {
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-iis-driver.php';
-    if (!class_exists('VAPTSECURE_IIS_Driver')) return;
+            error_log("VAPT: Adaptive Deployment for {$key} results: " . json_encode($results));
+            return;
+        }
 
-    $features = self::get_enforced_features();
-    $all_rules = [];
+        $driver_name = $schema['enforcement']['driver'];
 
-    foreach ($features as $meta) {
-      $schema = self::resolve_schema($meta);
-      $impl = self::resolve_impl($meta);
-      $driver = $schema['enforcement']['driver'] ?? '';
+        // Dispatch to the correct driver
+        if ($driver_name === 'htaccess') {
+            // UNIVERSAL FIX: Rebuild based on Server Type
+            $server = isset($_SERVER['SERVER_SOFTWARE']) ? strtolower($_SERVER['SERVER_SOFTWARE']) : '';
 
-      if ($driver === 'iis' || $driver === 'htaccess') {
-        $rules = VAPTSECURE_IIS_Driver::generate_rules($impl, $schema);
-        if ($rules) $all_rules = array_merge($all_rules, $rules);
-      }
-    }
-
-    VAPTSECURE_IIS_Driver::write_batch($all_rules);
-  }
-
-  /**
-   * Rebuilds Caddy Rules File
-   */
-  private static function rebuild_caddy()
-  {
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-caddy-driver.php';
-    if (!class_exists('VAPTSECURE_Caddy_Driver')) return;
-
-    $features = self::get_enforced_features();
-    $all_rules = [];
-
-    foreach ($features as $meta) {
-      $schema = self::resolve_schema($meta);
-      $impl = self::resolve_impl($meta);
-      $driver = $schema['enforcement']['driver'] ?? '';
-
-      if ($driver === 'caddy' || $driver === 'htaccess') {
-        $rules = VAPTSECURE_Caddy_Driver::generate_rules($impl, $schema);
-        if ($rules) $all_rules = array_merge($all_rules, $rules);
-      }
+            if (strpos($server, 'nginx') !== false) {
+                self::rebuild_nginx();
+            } elseif (strpos($server, 'iis') !== false || strpos($server, 'windows') !== false) {
+                self::rebuild_iis();
+            } else {
+                // Default to Apache/.htaccess
+                self::rebuild_htaccess();
+            }
+            self::rebuild_config();
+        } elseif ($driver_name === 'nginx') {
+            self::rebuild_nginx();
+        } elseif ($driver_name === 'iis') {
+            self::rebuild_iis();
+        } elseif ($driver_name === 'caddy') {
+            self::rebuild_caddy();
+        } elseif ($driver_name === 'cloudflare') {
+            self::rebuild_cloudflare();
+        } elseif ($driver_name === 'config' || $driver_name === 'wp_config' || $driver_name === 'wp-config') {
+            self::rebuild_config();
+        } else {
+            // For hooks, we now trigger a physical rebuild of vapt-functions.php
+            // [v3.13.27] Centralized PHP Functions
+            self::rebuild_php_functions();
+        }
     }
 
-    VAPTSECURE_Caddy_Driver::write_batch($all_rules);
-  }
+    /**
+     * Rebuilds Nginx Rules File
+     */
+    private static function rebuild_nginx()
+    {
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-nginx-driver.php';
 
-  /**
-   * Rebuilds Cloudflare (Interface/API Meta)
-   */
-  private static function rebuild_cloudflare()
-  {
-    // Cloudflare enforcement is currently informational/manual via the dashboard instructions.
-    // In future versions, this would trigger an API sync.
-    error_log('VAPT: Cloudflare rebuild triggered (Informational - Manual Action required in Dashboard)');
-  }
+        $features = self::get_enforced_features();
+        $all_rules = [];
 
-  // Helper to fetch enforced features (DRY)
-  private static function get_enforced_features()
-  {
-    global $wpdb;
-    $table = $wpdb->prefix . 'vaptsecure_feature_meta';
-    $is_global = VAPTSECURE_DB::get_global_enforcement();
+        foreach ($features as $meta) {
+            $schema = self::resolve_schema($meta);
+            $impl = self::resolve_impl($meta);
 
-    if ($is_global) {
-      // Plus explicitly enforced ones (is_enforced = 1)
-      return $wpdb->get_results("
+            if (($schema['enforcement']['driver'] ?? '') === 'htaccess') {
+                $rules = VAPTSECURE_Nginx_Driver::generate_rules($impl, $schema);
+                if ($rules) { $all_rules = array_merge($all_rules, $rules);
+                }
+            }
+        }
+
+        VAPTSECURE_Nginx_Driver::write_batch($all_rules);
+    }
+
+    /**
+     * Rebuilds IIS Config
+     */
+    private static function rebuild_iis()
+    {
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-iis-driver.php';
+        if (!class_exists('VAPTSECURE_IIS_Driver')) { return;
+        }
+
+        $features = self::get_enforced_features();
+        $all_rules = [];
+
+        foreach ($features as $meta) {
+            $schema = self::resolve_schema($meta);
+            $impl = self::resolve_impl($meta);
+            $driver = $schema['enforcement']['driver'] ?? '';
+
+            if ($driver === 'iis' || $driver === 'htaccess') {
+                $rules = VAPTSECURE_IIS_Driver::generate_rules($impl, $schema);
+                if ($rules) { $all_rules = array_merge($all_rules, $rules);
+                }
+            }
+        }
+
+        VAPTSECURE_IIS_Driver::write_batch($all_rules);
+    }
+
+    /**
+     * Rebuilds Caddy Rules File
+     */
+    private static function rebuild_caddy()
+    {
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-caddy-driver.php';
+        if (!class_exists('VAPTSECURE_Caddy_Driver')) { return;
+        }
+
+        $features = self::get_enforced_features();
+        $all_rules = [];
+
+        foreach ($features as $meta) {
+            $schema = self::resolve_schema($meta);
+            $impl = self::resolve_impl($meta);
+            $driver = $schema['enforcement']['driver'] ?? '';
+
+            if ($driver === 'caddy' || $driver === 'htaccess') {
+                $rules = VAPTSECURE_Caddy_Driver::generate_rules($impl, $schema);
+                if ($rules) { $all_rules = array_merge($all_rules, $rules);
+                }
+            }
+        }
+
+        VAPTSECURE_Caddy_Driver::write_batch($all_rules);
+    }
+
+    /**
+     * Rebuilds Cloudflare (Interface/API Meta)
+     */
+    private static function rebuild_cloudflare()
+    {
+        // Cloudflare enforcement is currently informational/manual via the dashboard instructions.
+        // In future versions, this would trigger an API sync.
+        error_log('VAPT: Cloudflare rebuild triggered (Informational - Manual Action required in Dashboard)');
+    }
+
+    // Helper to fetch enforced features (DRY)
+    private static function get_enforced_features()
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'vaptsecure_feature_meta';
+        $is_global = VAPTSECURE_DB::get_global_enforcement();
+
+        if ($is_global) {
+            // Plus explicitly enforced ones (is_enforced = 1)
+            return $wpdb->get_results(
+                "
         SELECT m.*, s.status 
         FROM $table m 
         LEFT JOIN {$wpdb->prefix}vaptsecure_feature_status s ON m.feature_key = s.feature_key 
         WHERE s.status IN ('develop', 'release', 'test')
-      ", ARRAY_A);
-    } else {
-      // [v3.13.20] Global is OFF: Total Kill Switch
-      return array();
-    }
-  }
-
-  // Helpers for Schema/Impl Resolution
-  private static function resolve_schema($meta)
-  {
-    $status = $meta['status'] ?? 'draft';
-    $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
-    $schema = $raw ? json_decode($raw, true) : [];
-
-    // [v4.0.0] Adaptive Schema Resolution
-    if (!isset($schema['enforcement']) || (isset($schema['enforcement']['driver']) && $schema['enforcement']['driver'] === 'hook' && empty($schema['enforcement']['mappings']))) {
-      if (isset($schema['client_deployment']['enforcement'])) {
-        $schema['enforcement'] = $schema['client_deployment']['enforcement'];
-      }
-    }
-
-    // [v3.12.5] Inject feature key if missing
-    if (!isset($schema['feature_key']) && isset($meta['feature_key'])) {
-      $schema['feature_key'] = $meta['feature_key'];
-    }
-
-    return $schema;
-  }
-
-  private static function resolve_impl($meta)
-  {
-    $status = $meta['status'] ?? 'draft';
-    $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
-    return $raw ? json_decode($raw, true) : [];
-  }
-
-  /**
-   * Rebuilds .htaccess files by aggregating rules from ALL enabled features.
-   */
-  private static function rebuild_htaccess()
-  {
-    error_log('VAPT DEBUG rebuild_htaccess - Function called');
-    $enforced_features = self::get_enforced_features();
-
-    // [ENHANCEMENT] Filter by Active Data Files (v3.12.0)
-    // [FIX v1.4.0] Only apply key filter when we actually have active keys - prevents
-    // silently dropping all features when the active file resolves to an empty key list.
-    $active_keys = self::get_active_file_keys();
-    if (!empty($active_keys)) {
-      $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
-        // [FIX] Always allow XML-RPC regardless of key mismatch (v3.12.13)
-        if (strpos($feat['feature_key'], 'xml-rpc') !== false || strpos($feat['feature_key'], 'xmlrpc') !== false || $feat['feature_key'] === 'RISK-016-001') {
-          return true;
+      ", ARRAY_A
+            );
+        } else {
+            // [v3.13.20] Global is OFF: Total Kill Switch
+            return array();
         }
-        return in_array($feat['feature_key'], $active_keys);
-      });
     }
 
-    error_log('VAPT DEBUG rebuild_htaccess - Found ' . count($enforced_features) . ' enforced features after filtering');
+    // Helpers for Schema/Impl Resolution
+    private static function resolve_schema($meta)
+    {
+        $status = $meta['status'] ?? 'draft';
+        $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
+        $schema = $raw ? json_decode($raw, true) : [];
 
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-htaccess-driver.php';
-    if (!class_exists('VAPTSECURE_Htaccess_Driver')) return;
-
-    // Group rules by target
-    $targets_rules = array(
-      'root' => array(),
-      'uploads' => array()
-    );
-
-    foreach ($enforced_features as $meta) {
-      $schema = self::resolve_schema($meta);
-      $impl_data = self::resolve_impl($meta);
-      $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
-      $target = isset($schema['enforcement']['target']) ? $schema['enforcement']['target'] : 'root';
-
-      // 🛡️ Map common alias ".htaccess" to standard "root" target (v3.13.15)
-      if ($target === '.htaccess') {
-        $target = 'root';
-      }
-
-      if ($driver === 'htaccess') {
-        $feature_rules = VAPTSECURE_Htaccess_Driver::generate_rules($impl_data, $schema);
-        if (!empty($feature_rules)) {
-          if (!isset($targets_rules[$target])) {
-            $targets_rules[$target] = array();
-          }
-          $targets_rules[$target] = array_merge($targets_rules[$target], $feature_rules);
+        // [v4.0.0] Adaptive Schema Resolution
+        if (!isset($schema['enforcement']) || (isset($schema['enforcement']['driver']) && $schema['enforcement']['driver'] === 'hook' && empty($schema['enforcement']['mappings']))) {
+            if (isset($schema['client_deployment']['enforcement'])) {
+                $schema['enforcement'] = $schema['client_deployment']['enforcement'];
+            }
         }
-      }
-    }
 
-    // Write batch for each target
-    foreach ($targets_rules as $target => $rules) {
-      VAPTSECURE_Htaccess_Driver::write_batch($rules, $target);
-    }
-  }
-
-  /**
-   * Rebuilds all wp-config.php rules across active features
-   */
-  public static function rebuild_config()
-  {
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-config-driver.php';
-
-    $enforced_features = self::get_enforced_features();
-
-    // [ENHANCEMENT] Filter by Active Data Files (v3.12.0)
-    // [FIX v1.4.0] Only apply key filter when we actually have active keys.
-    $active_keys = self::get_active_file_keys();
-    if (!empty($active_keys)) {
-      $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
-        return in_array($feat['feature_key'], $active_keys);
-      });
-    }
-
-    $all_rules = array();
-
-    if (!empty($enforced_features)) {
-      foreach ($enforced_features as $meta) {
-        $schema = self::resolve_schema($meta);
-        $impl_data = self::resolve_impl($meta);
-        $driver = $schema['enforcement']['driver'] ?? '';
-
-        if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
-          $feature_rules = VAPTSECURE_Config_Driver::generate_rules($impl_data, $schema);
-          if (!empty($feature_rules)) {
-            $all_rules[] = "// Rule for: " . ($meta['feature_key']);
-            $all_rules = array_merge($all_rules, $feature_rules);
-          }
+        // [v3.12.5] Inject feature key if missing
+        if (!isset($schema['feature_key']) && isset($meta['feature_key'])) {
+            $schema['feature_key'] = $meta['feature_key'];
         }
-      }
+
+        return $schema;
     }
 
-    return VAPTSECURE_Config_Driver::write_batch($all_rules);
-  }
+    private static function resolve_impl($meta)
+    {
+        $status = $meta['status'] ?? 'draft';
+        $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_implementation_data'])) ? $meta['override_implementation_data'] : $meta['implementation_data'];
+        return $raw ? json_decode($raw, true) : [];
+    }
 
-  /**
-   * Rebuilds all enforcements across all active drivers
-   */
-  public static function rebuild_all()
-  {
-    // [v4.0.1] Always purge the enforcement cache FIRST so get_enforced_features()
-    // reads fresh DB data — especially critical when called from transition_feature on reset.
-    delete_transient('vaptsecure_active_enforcements');
+    /**
+     * Rebuilds .htaccess files by aggregating rules from ALL enabled features.
+     */
+    private static function rebuild_htaccess()
+    {
+        error_log('VAPT DEBUG rebuild_htaccess - Function called');
+        $enforced_features = self::get_enforced_features();
 
-    self::rebuild_htaccess();
-    self::rebuild_config();
-    self::rebuild_nginx();
-    self::rebuild_iis();
-    self::rebuild_caddy();
-    self::rebuild_php_functions();
-    delete_transient('vaptsecure_active_enforcements');
-  }
+        // [ENHANCEMENT] Filter by Active Data Files (v3.12.0)
+        // [FIX v1.4.0] Only apply key filter when we actually have active keys - prevents
+        // silently dropping all features when the active file resolves to an empty key list.
+        $active_keys = self::get_active_file_keys();
+        if (!empty($active_keys)) {
+            $enforced_features = array_filter(
+                $enforced_features, function ($feat) use ($active_keys) {
+                    // [FIX] Always allow XML-RPC regardless of key mismatch (v3.12.13)
+                    if (strpos($feat['feature_key'], 'xml-rpc') !== false || strpos($feat['feature_key'], 'xmlrpc') !== false || $feat['feature_key'] === 'RISK-016-001') {
+                        return true;
+                    }
+                    return in_array($feat['feature_key'], $active_keys);
+                }
+            );
+        }
 
-  /**
-   * [v4.0.1] Rebuilds vapt-functions.php via VAPTSECURE_PHP_Driver
-   */
-  public static function rebuild_php_functions()
-  {
-    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-php-driver.php';
+        error_log('VAPT DEBUG rebuild_htaccess - Found ' . count($enforced_features) . ' enforced features after filtering');
 
-    $enforced_features = self::get_enforced_features();
-    $active_keys = self::get_active_file_keys();
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-htaccess-driver.php';
+        if (!class_exists('VAPTSECURE_Htaccess_Driver')) { return;
+        }
+
+        // Group rules by target
+        $targets_rules = array(
+        'root' => array(),
+        'uploads' => array()
+        );
+
+        foreach ($enforced_features as $meta) {
+            $schema = self::resolve_schema($meta);
+            $impl_data = self::resolve_impl($meta);
+            $driver = isset($schema['enforcement']['driver']) ? $schema['enforcement']['driver'] : '';
+            $target = isset($schema['enforcement']['target']) ? $schema['enforcement']['target'] : 'root';
+
+            // 🛡️ Map common alias ".htaccess" to standard "root" target (v3.13.15)
+            if ($target === '.htaccess') {
+                $target = 'root';
+            }
+
+            if ($driver === 'htaccess') {
+                $feature_rules = VAPTSECURE_Htaccess_Driver::generate_rules($impl_data, $schema);
+                if (!empty($feature_rules)) {
+                    if (!isset($targets_rules[$target])) {
+                        $targets_rules[$target] = array();
+                    }
+                    $targets_rules[$target] = array_merge($targets_rules[$target], $feature_rules);
+                }
+            }
+        }
+
+        // Write batch for each target
+        foreach ($targets_rules as $target => $rules) {
+            VAPTSECURE_Htaccess_Driver::write_batch($rules, $target);
+        }
+    }
+
+    /**
+     * Rebuilds all wp-config.php rules across active features
+     */
+    public static function rebuild_config()
+    {
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-config-driver.php';
+
+        $enforced_features = self::get_enforced_features();
+
+        // [ENHANCEMENT] Filter by Active Data Files (v3.12.0)
+        // [FIX v1.4.0] Only apply key filter when we actually have active keys.
+        $active_keys = self::get_active_file_keys();
+        if (!empty($active_keys)) {
+            $enforced_features = array_filter(
+                $enforced_features, function ($feat) use ($active_keys) {
+                    return in_array($feat['feature_key'], $active_keys);
+                }
+            );
+        }
+
+        $all_rules = array();
+
+        if (!empty($enforced_features)) {
+            foreach ($enforced_features as $meta) {
+                $schema = self::resolve_schema($meta);
+                $impl_data = self::resolve_impl($meta);
+                $driver = $schema['enforcement']['driver'] ?? '';
+
+                if ($driver === 'config' || $driver === 'wp-config' || $driver === 'wp_config') {
+                    $feature_rules = VAPTSECURE_Config_Driver::generate_rules($impl_data, $schema);
+                    if (!empty($feature_rules)) {
+                        $all_rules[] = "// Rule for: " . ($meta['feature_key']);
+                        $all_rules = array_merge($all_rules, $feature_rules);
+                    }
+                }
+            }
+        }
+
+        return VAPTSECURE_Config_Driver::write_batch($all_rules);
+    }
+
+    /**
+     * Rebuilds all enforcements across all active drivers
+     */
+    public static function rebuild_all()
+    {
+        // [v4.0.1] Always purge the enforcement cache FIRST so get_enforced_features()
+        // reads fresh DB data — especially critical when called from transition_feature on reset.
+        delete_transient('vaptsecure_active_enforcements');
+
+        self::rebuild_htaccess();
+        self::rebuild_config();
+        self::rebuild_nginx();
+        self::rebuild_iis();
+        self::rebuild_caddy();
+        self::rebuild_php_functions();
+        delete_transient('vaptsecure_active_enforcements');
+    }
+
+    /**
+     * [v4.0.1] Rebuilds vapt-functions.php via VAPTSECURE_PHP_Driver
+     */
+    public static function rebuild_php_functions()
+    {
+        include_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-php-driver.php';
+
+        $enforced_features = self::get_enforced_features();
+        $active_keys = self::get_active_file_keys();
     
-    if (!empty($active_keys)) {
-      $enforced_features = array_filter($enforced_features, function ($feat) use ($active_keys) {
-        return in_array($feat['feature_key'], $active_keys);
-      });
-    }
-
-    $all_rules = array();
-    foreach ($enforced_features as $meta) {
-      $schema = self::resolve_schema($meta);
-      $impl_data = self::resolve_impl($meta);
-      $driver = $schema['enforcement']['driver'] ?? '';
-
-      if ($driver === 'php_functions' || $driver === 'hook') {
-        $feature_rules = VAPTSECURE_PHP_Driver::generate_rules($impl_data, $schema);
-        if (!empty($feature_rules)) {
-          $all_rules = array_merge($all_rules, $feature_rules);
+        if (!empty($active_keys)) {
+            $enforced_features = array_filter(
+                $enforced_features, function ($feat) use ($active_keys) {
+                    return in_array($feat['feature_key'], $active_keys);
+                }
+            );
         }
-      }
-    }
 
-    return VAPTSECURE_PHP_Driver::write_batch($all_rules);
-  }
+        $all_rules = array();
+        foreach ($enforced_features as $meta) {
+            $schema = self::resolve_schema($meta);
+            $impl_data = self::resolve_impl($meta);
+            $driver = $schema['enforcement']['driver'] ?? '';
 
-  /**
-   * Helper to fetch all feature keys present in the currently active data files.
-   */
-  private static function get_active_file_keys()
-  {
-    $active_files_raw = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : get_option('vaptsecure_active_feature_file', '');
-    $files = array_filter(explode(',', $active_files_raw));
-    $keys = [];
-
-    foreach ($files as $file) {
-      $path = VAPTSECURE_PATH . 'data/' . sanitize_file_name(trim($file));
-      if (file_exists($path)) {
-        $content = file_get_contents($path);
-        $data = json_decode($content, true);
-        if ($data) {
-          $features = $data['risk_catalog'] ?? $data['features'] ?? $data['wordpress_vapt'] ?? $data['risk_interfaces'] ?? null;
-
-          if ($features && (is_array($features) || is_object($features))) {
-            foreach ($features as $k => $v) {
-              if (is_array($v) || is_object($v)) {
-                $keys[] = $v['risk_id'] ?? $v['id'] ?? $v['key'] ?? (is_string($k) ? $k : '');
-              }
+            if ($driver === 'php_functions' || $driver === 'hook') {
+                $feature_rules = VAPTSECURE_PHP_Driver::generate_rules($impl_data, $schema);
+                if (!empty($feature_rules)) {
+                    $all_rules = array_merge($all_rules, $feature_rules);
+                }
             }
-          } else {
-            // Flat Object structure (v1.1)
-            foreach ($data as $k => $v) {
-              if (is_array($v) && (isset($v['risk_id']) || isset($v['id']) || isset($v['key']))) {
-                $keys[] = $v['risk_id'] ?? $v['id'] ?? $v['key'] ?? $k;
-              } else if (preg_match('/^RISK-\d+/', $k)) {
-                // Heuristic: If key looks like RISK-NNN, it's a feature
-                $keys[] = $k;
-              }
+        }
+
+        return VAPTSECURE_PHP_Driver::write_batch($all_rules);
+    }
+
+    /**
+     * Helper to fetch all feature keys present in the currently active data files.
+     */
+    private static function get_active_file_keys()
+    {
+        $active_files_raw = defined('VAPTSECURE_ACTIVE_DATA_FILE') ? VAPTSECURE_ACTIVE_DATA_FILE : get_option('vaptsecure_active_feature_file', '');
+        $files = array_filter(explode(',', $active_files_raw));
+        $keys = [];
+
+        foreach ($files as $file) {
+            $path = VAPTSECURE_PATH . 'data/' . sanitize_file_name(trim($file));
+            if (file_exists($path)) {
+                $content = file_get_contents($path);
+                $data = json_decode($content, true);
+                if ($data) {
+                    $features = $data['risk_catalog'] ?? $data['features'] ?? $data['wordpress_vapt'] ?? $data['risk_interfaces'] ?? null;
+
+                    if ($features && (is_array($features) || is_object($features))) {
+                        foreach ($features as $k => $v) {
+                            if (is_array($v) || is_object($v)) {
+                                  $keys[] = $v['risk_id'] ?? $v['id'] ?? $v['key'] ?? (is_string($k) ? $k : '');
+                            }
+                        }
+                    } else {
+                        // Flat Object structure (v1.1)
+                        foreach ($data as $k => $v) {
+                            if (is_array($v) && (isset($v['risk_id']) || isset($v['id']) || isset($v['key']))) {
+                                $keys[] = $v['risk_id'] ?? $v['id'] ?? $v['key'] ?? $k;
+                            } else if (preg_match('/^RISK-\d+/', $k)) {
+                                // Heuristic: If key looks like RISK-NNN, it's a feature
+                                $keys[] = $k;
+                            }
+                        }
+                    }
+                }
             }
-          }
         }
-      }
-    }
-    return array_unique(array_filter($keys));
-  }
-
-  /**
-   * Robustly extract implementation code from a mapping.
-   * Handles strings, arrays, and JSON-encoded platform objects.
-   * 
-   * [v1.4.0] Support for v1.2/v2.0 Schema-First Architecture Platform Objects.
-   */
-  public static function extract_code_from_mapping($directive, $platform = 'htaccess')
-  {
-    if (empty($directive)) return '';
-
-    // If it's a JSON string, decode it first
-    if (is_string($directive) && strpos(trim($directive), '{') === 0) {
-      $decoded = json_decode($directive, true);
-      if (json_last_error() === JSON_ERROR_NONE) {
-        $directive = $decoded;
-      }
+        return array_unique(array_filter($keys));
     }
 
-    if (is_array($directive)) {
-      // 1. Check for specific platform keys
-      $platform_keys = [
-        $platform,
-        '.' . ltrim($platform, '.'), // .htaccess
-        str_replace('-', '_', $platform), // wp_config
-        str_replace('_', '-', $platform), // wp-config
-      ];
-
-      foreach ($platform_keys as $pK) {
-        if (isset($directive[$pK])) {
-          $inner = $directive[$pK];
-          return is_array($inner) ? ($inner['code'] ?? '') : $inner;
+    /**
+     * Robustly extract implementation code from a mapping.
+     * Handles strings, arrays, and JSON-encoded platform objects.
+     * 
+     * [v1.4.0] Support for v1.2/v2.0 Schema-First Architecture Platform Objects.
+     */
+    public static function extract_code_from_mapping($directive, $platform = 'htaccess')
+    {
+        if (empty($directive)) { return '';
         }
-      }
 
-      // 1b. Robust Iteration (Handle leading/trailing whitespace in keys)
-      foreach ($directive as $k => $v) {
-        $tk = trim((string)$k);
-        foreach ($platform_keys as $pK) {
-          if ($tk === $pK) {
-            return is_array($v) ? ($v['code'] ?? '') : $v;
-          }
+        // If it's a JSON string, decode it first
+        if (is_string($directive) && strpos(trim($directive), '{') === 0) {
+            $decoded = json_decode($directive, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $directive = $decoded;
+            }
         }
-      }
 
-      // 2. Fallback to generic 'code' field
-      if (isset($directive['code'])) {
-        return $directive['code'];
-      }
+        if (is_array($directive)) {
+            // 1. Check for specific platform keys
+            $platform_keys = [
+            $platform,
+            '.' . ltrim($platform, '.'), // .htaccess
+            str_replace('-', '_', $platform), // wp_config
+            str_replace('_', '-', $platform), // wp-config
+            ];
 
-      // 3. Fallback to first non-array element (v3.12.5 legacy)
-      foreach ($directive as $v) {
-        if (is_string($v) && strlen($v) > 0) return $v;
-      }
+            foreach ($platform_keys as $pK) {
+                if (isset($directive[$pK])) {
+                    $inner = $directive[$pK];
+                    return is_array($inner) ? ($inner['code'] ?? '') : $inner;
+                }
+            }
+
+            // 1b. Robust Iteration (Handle leading/trailing whitespace in keys)
+            foreach ($directive as $k => $v) {
+                $tk = trim((string)$k);
+                foreach ($platform_keys as $pK) {
+                    if ($tk === $pK) {
+                        return is_array($v) ? ($v['code'] ?? '') : $v;
+                    }
+                }
+            }
+
+            // 2. Fallback to generic 'code' field
+            if (isset($directive['code'])) {
+                return $directive['code'];
+            }
+
+            // 3. Fallback to first non-array element (v3.12.5 legacy)
+            foreach ($directive as $v) {
+                if (is_string($v) && strlen($v) > 0) { return $v;
+                }
+            }
+        }
+
+        return is_string($directive) ? $directive : '';
     }
-
-    return is_string($directive) ? $directive : '';
-  }
 }

@@ -90,11 +90,10 @@ class VAPTSECURE_Hook_Driver
             // Check mapped toggles (v3.13.20)
             $mappings = $schema["enforcement"]["mappings"] ?? [];
             foreach ($mappings as $mapped_key => $directive) {
-                if (
-                    isset($resolved_data[$mapped_key]) &&
-                    ($resolved_data[$mapped_key] === false ||
-                        $resolved_data[$mapped_key] === 0 ||
-                        $resolved_data[$mapped_key] === "0")
+                if (isset($resolved_data[$mapped_key]) 
+                    && ($resolved_data[$mapped_key] === false 
+                    || $resolved_data[$mapped_key] === 0 
+                    || $resolved_data[$mapped_key] === "0")
                 ) {
                     $is_enabled = false;
                     break;
@@ -139,10 +138,9 @@ class VAPTSECURE_Hook_Driver
         if (empty($mappings)) {
             // Dynamic Fallback
             foreach ($resolved_data as $k => $v) {
-                if (
-                    $v == true ||
-                    $v === "1" ||
-                    (is_string($v) && strlen($v) > 0)
+                if ($v == true 
+                    || $v === "1" 
+                    || (is_string($v) && strlen($v) > 0)
                 ) {
                     $method = self::resolve_dynamic_method($k, $key);
                     if ($method) {
@@ -181,46 +179,46 @@ class VAPTSECURE_Hook_Driver
             if (method_exists(__CLASS__, $method)) {
                 try {
                     switch ($method) {
-                        case "block_xmlrpc":
-                            self::block_xmlrpc($key);
-                            break;
-                        case "add_security_headers":
-                            self::add_security_headers($key);
-                            break;
-                        case "disable_directory_browsing":
-                            self::disable_directory_browsing($key);
-                            break;
-                        case "limit_login_attempts":
-                            self::limit_login_attempts(
-                                $value,
-                                $resolved_data,
-                                $key,
-                            );
-                            break;
-                        case "block_null_byte_injection":
-                            self::block_null_byte_injection($key);
-                            break;
-                        case "hide_wp_version":
-                            self::hide_wp_version($key);
-                            break;
-                        case "block_debug_exposure":
-                            self::block_debug_exposure($value, $key);
-                            break;
-                        case "block_author_enumeration":
-                            self::block_author_enumeration($key);
-                            break;
-                        case "disable_xmlrpc_pingback":
-                            self::disable_xmlrpc_pingback($key);
-                            break;
-                        case "block_sensitive_files":
-                            self::block_sensitive_files($key);
-                            break;
-                        case "block_wp_cron":
-                            self::block_wp_cron($key);
-                            break;
-                        case "block_rest_api":
-                            self::block_rest_api($key);
-                            break;
+                    case "block_xmlrpc":
+                        self::block_xmlrpc($key);
+                        break;
+                    case "add_security_headers":
+                        self::add_security_headers($key);
+                        break;
+                    case "disable_directory_browsing":
+                        self::disable_directory_browsing($key);
+                        break;
+                    case "limit_login_attempts":
+                        self::limit_login_attempts(
+                            $value,
+                            $resolved_data,
+                            $key,
+                        );
+                        break;
+                    case "block_null_byte_injection":
+                        self::block_null_byte_injection($key);
+                        break;
+                    case "hide_wp_version":
+                        self::hide_wp_version($key);
+                        break;
+                    case "block_debug_exposure":
+                        self::block_debug_exposure($value, $key);
+                        break;
+                    case "block_author_enumeration":
+                        self::block_author_enumeration($key);
+                        break;
+                    case "disable_xmlrpc_pingback":
+                        self::disable_xmlrpc_pingback($key);
+                        break;
+                    case "block_sensitive_files":
+                        self::block_sensitive_files($key);
+                        break;
+                    case "block_wp_cron":
+                        self::block_wp_cron($key);
+                        break;
+                    case "block_rest_api":
+                        self::block_rest_api($key);
+                        break;
                     }
                 } catch (Exception $e) {
                     file_put_contents(
@@ -256,24 +254,21 @@ class VAPTSECURE_Hook_Driver
 
         // [v2.0.5] Check for wp-config constants
         $driver = $schema["enforcement"]["driver"] ?? "";
-        if (
-            $driver === "config" ||
-            $driver === "wp-config" ||
-            $driver === "wp_config"
+        if ($driver === "config" 
+            || $driver === "wp-config" 
+            || $driver === "wp_config"
         ) {
             foreach ($mappings as $key => $constant) {
-                if (
-                    defined((string) $constant) &&
-                    constant((string) $constant)
+                if (defined((string) $constant) 
+                    && constant((string) $constant)
                 ) {
                     return true;
                 }
             }
         }
 
-        if (
-            isset($mappings["headers"]) ||
-            isset($mappings["X-Frame-Options"])
+        if (isset($mappings["headers"]) 
+            || isset($mappings["X-Frame-Options"])
         ) {
             // Check if headers filter is added
             return has_filter("wp_headers");
@@ -316,8 +311,9 @@ class VAPTSECURE_Hook_Driver
             if (file_exists($file_path)) {
                 $content = file_get_contents($file_path);
                 // Look for the specific feature marker or function
-                if (strpos($content, '// BEGIN VAPT RISK-004') !== false ||
-                    strpos($content, 'vapt_rate_limit_password_reset') !== false) {
+                if (strpos($content, '// BEGIN VAPT RISK-004') !== false 
+                    || strpos($content, 'vapt_rate_limit_password_reset') !== false
+                ) {
                     return true;
                 }
             }
@@ -378,11 +374,10 @@ class VAPTSECURE_Hook_Driver
         if (self::$catalog_data && is_array(self::$catalog_data)) {
             foreach (self::$catalog_data as $item) {
                 // Match by Feature Key (if present) or ID or Title similarity
-                if (
-                    (isset($item["risk_id"]) && $item["risk_id"] === $key) ||
-                    (isset($item["title"]) &&
-                        sanitize_title($item["title"]) === $key) ||
-                    strpos(
+                if ((isset($item["risk_id"]) && $item["risk_id"] === $key) 
+                    || (isset($item["title"]) 
+                    && sanitize_title($item["title"]) === $key) 
+                    || strpos(
                         $key,
                         sanitize_title(
                             isset($item["title"]) ? $item["title"] : "",
@@ -433,9 +428,8 @@ class VAPTSECURE_Hook_Driver
             999,
         );
 
-        if (
-            !headers_sent() &&
-            (!function_exists("wp_doing_ajax") || !wp_doing_ajax())
+        if (!headers_sent() 
+            && (!function_exists("wp_doing_ajax") || !wp_doing_ajax())
         ) {
             header("X-VAPT-Enforced: php-headers");
             header("X-VAPT-Feature: " . implode(",", self::$enforced_keys));
@@ -581,9 +575,8 @@ class VAPTSECURE_Hook_Driver
         $scope = "global"; // default
         if (isset($all_data["scope"])) {
             $scope = $all_data["scope"];
-        } elseif (
-            strpos($feature_key, "login") !== false ||
-            strpos($feature_key, "brute") !== false
+        } elseif (strpos($feature_key, "login") !== false 
+            || strpos($feature_key, "brute") !== false
         ) {
             $scope = "login";
         }
@@ -605,15 +598,13 @@ class VAPTSECURE_Hook_Driver
         add_action(
             "init",
             function () {
-                if (
-                    strpos($_SERVER["REQUEST_URI"], "reset-limit") !== false ||
-                    isset($_GET["vaptsecure_action"])
+                if (strpos($_SERVER["REQUEST_URI"], "reset-limit") !== false 
+                    || isset($_GET["vaptsecure_action"])
                 ) {
                     return;
                 }
-                if (
-                    current_user_can("manage_options") &&
-                    !isset($_GET["vaptsecure_test_spike"])
+                if (current_user_can("manage_options") 
+                    && !isset($_GET["vaptsecure_test_spike"])
                 ) {
                     return;
                 }
@@ -656,9 +647,8 @@ class VAPTSECURE_Hook_Driver
                             }
 
                             // Expiry Check
-                            if (
-                                file_exists($lock_file) &&
-                                time() - filemtime($lock_file) > $duration
+                            if (file_exists($lock_file) 
+                                && time() - filemtime($lock_file) > $duration
                             ) {
                                 $current = 0;
                             }
@@ -762,28 +752,31 @@ class VAPTSECURE_Hook_Driver
      */
     private static function disable_directory_browsing($key = "unknown")
     {
-        add_action("wp_loaded", function () use ($key) {
-            $uri = $_SERVER["REQUEST_URI"];
-            if (
-                strpos($uri, "/wp-content/uploads/") !== false &&
-                substr($uri, -1) === "/"
-            ) {
-                $path = ABSPATH . ltrim($uri, "/");
-                if (is_dir($path)) {
-                    status_header(403);
-                    header("X-VAPT-Enforced: php-dir");
-                    header("X-VAPT-Feature: " . $key);
-                    header(
-                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                    );
-                    VAPTSECURE_DB::log_security_event($key, "Block", [
-                        "type" => "Directory Browsing",
-                        "uri" => $uri,
-                    ]);
-                    wp_die("VAPT: Directory Browsing is Blocked for Security.");
+        add_action(
+            "wp_loaded", function () use ($key) {
+                $uri = $_SERVER["REQUEST_URI"];
+                if (strpos($uri, "/wp-content/uploads/") !== false 
+                    && substr($uri, -1) === "/"
+                ) {
+                    $path = ABSPATH . ltrim($uri, "/");
+                    if (is_dir($path)) {
+                        status_header(403);
+                        header("X-VAPT-Enforced: php-dir");
+                        header("X-VAPT-Feature: " . $key);
+                        header(
+                            "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                        );
+                        VAPTSECURE_DB::log_security_event(
+                            $key, "Block", [
+                            "type" => "Directory Browsing",
+                            "uri" => $uri,
+                            ]
+                        );
+                        wp_die("VAPT: Directory Browsing is Blocked for Security.");
+                    }
                 }
             }
-        });
+        );
     }
 
     /**
@@ -799,9 +792,11 @@ class VAPTSECURE_Hook_Driver
                 "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
             );
             header("Content-Type: text/plain");
-            VAPTSECURE_DB::log_security_event($key, "Block", [
+            VAPTSECURE_DB::log_security_event(
+                $key, "Block", [
                 "type" => "XML-RPC",
-            ]);
+                ]
+            );
             wp_die("VAPT: XML-RPC Access is Blocked for Security.");
         }
     }
@@ -812,9 +807,8 @@ class VAPTSECURE_Hook_Driver
     private static function block_null_byte_injection($key = "unknown")
     {
         $query = $_SERVER["QUERY_STRING"] ?? "";
-        if (
-            strpos($query, "%00") !== false ||
-            strpos(urldecode($query), "\0") !== false
+        if (strpos($query, "%00") !== false 
+            || strpos(urldecode($query), "\0") !== false
         ) {
             status_header(403);
             header("X-VAPT-Enforced: php-null-byte");
@@ -822,10 +816,12 @@ class VAPTSECURE_Hook_Driver
             header(
                 "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
             );
-            VAPTSECURE_DB::log_security_event($key, "Block", [
+            VAPTSECURE_DB::log_security_event(
+                $key, "Block", [
                 "type" => "Null Byte Injection",
                 "query" => $query,
-            ]);
+                ]
+            );
             wp_die("VAPT: Null Byte Injection Attempt Blocked.");
         }
     }
@@ -844,32 +840,36 @@ class VAPTSECURE_Hook_Driver
 
         // 2. Add Enforcement Headers (Robust)
         // 2. Add Enforcement Headers (Robust)
-        add_filter("wp_headers", function ($headers) use ($key) {
-            if (function_exists("wp_doing_ajax") && wp_doing_ajax()) {
+        add_filter(
+            "wp_headers", function ($headers) use ($key) {
+                if (function_exists("wp_doing_ajax") && wp_doing_ajax()) {
+                    return $headers;
+                }
+
+                $headers["X-VAPT-Enforced"] = "php-version-hide";
+                $headers["X-VAPT-Feature"] = $key;
+                $headers["Access-Control-Expose-Headers"] =
+                "X-VAPT-Enforced, X-VAPT-Feature";
                 return $headers;
             }
-
-            $headers["X-VAPT-Enforced"] = "php-version-hide";
-            $headers["X-VAPT-Feature"] = $key;
-            $headers["Access-Control-Expose-Headers"] =
-                "X-VAPT-Enforced, X-VAPT-Feature";
-            return $headers;
-        });
+        );
 
         // 3. Fallback for headers (if not filtered)
-        add_action("init", function () use ($key) {
-            if (function_exists("wp_doing_ajax") && wp_doing_ajax()) {
-                return;
-            }
+        add_action(
+            "init", function () use ($key) {
+                if (function_exists("wp_doing_ajax") && wp_doing_ajax()) {
+                    return;
+                }
 
-            if (!headers_sent()) {
-                header("X-VAPT-Enforced: php-version-hide");
-                header("X-VAPT-Feature: " . $key);
-                header(
-                    "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                );
+                if (!headers_sent()) {
+                    header("X-VAPT-Enforced: php-version-hide");
+                    header("X-VAPT-Feature: " . $key);
+                    header(
+                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                    );
+                }
             }
-        });
+        );
     }
 
     /**
@@ -877,36 +877,42 @@ class VAPTSECURE_Hook_Driver
      */
     private static function block_debug_exposure($config, $key = "unknown")
     {
-        add_action("init", function () use ($key) {
-            if (function_exists("wp_doing_ajax") && wp_doing_ajax()) {
-                return;
-            }
+        add_action(
+            "init", function () use ($key) {
+                if (function_exists("wp_doing_ajax") && wp_doing_ajax()) {
+                    return;
+                }
 
-            if (!headers_sent()) {
-                header("X-VAPT-Enforced: php-debug-exposure");
-                header("X-VAPT-Feature: " . $key);
-                header(
-                    "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                );
+                if (!headers_sent()) {
+                    header("X-VAPT-Enforced: php-debug-exposure");
+                    header("X-VAPT-Feature: " . $key);
+                    header(
+                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                    );
+                }
             }
-        });
+        );
 
-        add_action("wp_loaded", function () use ($key) {
-            $uri = $_SERVER["REQUEST_URI"];
-            if (strpos($uri, "debug.log") !== false) {
-                status_header(403);
-                header("X-VAPT-Enforced: php-debug-log-block");
-                header("X-VAPT-Feature: " . $key);
-                header(
-                    "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                );
-                VAPTSECURE_DB::log_security_event($key, "Block", [
-                    "type" => "Debug Log Exposure",
-                    "uri" => $uri,
-                ]);
-                wp_die("VAPT: Access to debug.log is Blocked for Security.");
+        add_action(
+            "wp_loaded", function () use ($key) {
+                $uri = $_SERVER["REQUEST_URI"];
+                if (strpos($uri, "debug.log") !== false) {
+                    status_header(403);
+                    header("X-VAPT-Enforced: php-debug-log-block");
+                    header("X-VAPT-Feature: " . $key);
+                    header(
+                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                    );
+                    VAPTSECURE_DB::log_security_event(
+                        $key, "Block", [
+                        "type" => "Debug Log Exposure",
+                        "uri" => $uri,
+                        ]
+                    );
+                    wp_die("VAPT: Access to debug.log is Blocked for Security.");
+                }
             }
-        });
+        );
     }
 
     /**
@@ -933,9 +939,8 @@ class VAPTSECURE_Hook_Driver
             999,
         );
 
-        if (
-            !headers_sent() &&
-            (!function_exists("wp_doing_ajax") || !wp_doing_ajax())
+        if (!headers_sent() 
+            && (!function_exists("wp_doing_ajax") || !wp_doing_ajax())
         ) {
             header("X-Frame-Options: SAMEORIGIN");
             header("X-Content-Type-Options: nosniff");
@@ -954,35 +959,41 @@ class VAPTSECURE_Hook_Driver
     private static function block_author_enumeration($key = "unknown")
     {
         // 1. Block Standard ?author=N
-        add_action("init", function () use ($key) {
-            if (isset($_GET["author"]) && is_numeric($_GET["author"])) {
-                status_header(403);
-                header("X-VAPT-Enforced: php-author-enum");
-                header("X-VAPT-Feature: " . $key);
-                header(
-                    "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                );
-                VAPTSECURE_DB::log_security_event($key, "Block", [
-                    "type" => "Author Enumeration",
-                    "author" => $_GET["author"],
-                ]);
-                wp_die("VAPT: Author Enumeration is Blocked for Security.");
+        add_action(
+            "init", function () use ($key) {
+                if (isset($_GET["author"]) && is_numeric($_GET["author"])) {
+                    status_header(403);
+                    header("X-VAPT-Enforced: php-author-enum");
+                    header("X-VAPT-Feature: " . $key);
+                    header(
+                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                    );
+                    VAPTSECURE_DB::log_security_event(
+                        $key, "Block", [
+                        "type" => "Author Enumeration",
+                        "author" => $_GET["author"],
+                        ]
+                    );
+                    wp_die("VAPT: Author Enumeration is Blocked for Security.");
+                }
             }
-        });
+        );
 
         // 2. Block REST API User Enumeration (v3.6.19 Fix)
         // Allow /me endpoint for authenticated users while blocking enumeration
-        add_filter("rest_endpoints", function ($endpoints) {
-            // Block user listing and individual user access by ID
-            if (isset($endpoints["/wp/v2/users"])) {
-                unset($endpoints["/wp/v2/users"]);
+        add_filter(
+            "rest_endpoints", function ($endpoints) {
+                // Block user listing and individual user access by ID
+                if (isset($endpoints["/wp/v2/users"])) {
+                    unset($endpoints["/wp/v2/users"]);
+                }
+                if (isset($endpoints["/wp/v2/users/(?P<id>[\d]+)"])) {
+                    unset($endpoints["/wp/v2/users/(?P<id>[\d]+)"]);
+                }
+                // Note: /wp/v2/users/me is preserved automatically when we only remove the above
+                return $endpoints;
             }
-            if (isset($endpoints["/wp/v2/users/(?P<id>[\d]+)"])) {
-                unset($endpoints["/wp/v2/users/(?P<id>[\d]+)"]);
-            }
-            // Note: /wp/v2/users/me is preserved automatically when we only remove the above
-            return $endpoints;
-        });
+        );
 
         // 2b. Ensure only authenticated users can access /users/me endpoint
         add_filter(
@@ -999,8 +1010,7 @@ class VAPTSECURE_Hook_Driver
                     : "";
                 if (strpos($current_route, "/wp/v2/users") !== false) {
                     // Allow /users/me for authenticated users
-                    if (
-                        preg_match('#/wp/v2/users/me($|\?|/)#', $current_route)
+                    if (preg_match('#/wp/v2/users/me($|\?|/)#', $current_route)
                     ) {
                         // if (!is_user_logged_in()) {
                         //     return new WP_Error(
@@ -1027,21 +1037,25 @@ class VAPTSECURE_Hook_Driver
      */
     private static function disable_xmlrpc_pingback($key = "unknown")
     {
-        add_filter("xmlrpc_methods", function ($methods) use ($key) {
-            unset($methods["pingback.ping"]);
-            unset($methods["pingback.extensions.getPingbacks"]);
-            return $methods;
-        });
-
-        add_action("init", function () use ($key) {
-            if (strpos($_SERVER["REQUEST_URI"], "xmlrpc.php") !== false) {
-                header("X-VAPT-Enforced: php-pingback");
-                header("X-VAPT-Feature: " . $key);
-                header(
-                    "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                );
+        add_filter(
+            "xmlrpc_methods", function ($methods) use ($key) {
+                unset($methods["pingback.ping"]);
+                unset($methods["pingback.extensions.getPingbacks"]);
+                return $methods;
             }
-        });
+        );
+
+        add_action(
+            "init", function () use ($key) {
+                if (strpos($_SERVER["REQUEST_URI"], "xmlrpc.php") !== false) {
+                    header("X-VAPT-Enforced: php-pingback");
+                    header("X-VAPT-Feature: " . $key);
+                    header(
+                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                    );
+                }
+            }
+        );
     }
 
     /**
@@ -1049,9 +1063,10 @@ class VAPTSECURE_Hook_Driver
      */
     private static function block_sensitive_files($key = "unknown")
     {
-        add_action("plugins_loaded", function () use ($key) {
-            $uri = strtolower($_SERVER["REQUEST_URI"] ?? "");
-            $sensitive_files = [
+        add_action(
+            "plugins_loaded", function () use ($key) {
+                $uri = strtolower($_SERVER["REQUEST_URI"] ?? "");
+                $sensitive_files = [
                 "/readme.html",
                 "/license.txt",
                 "/wp-config.php.bak",
@@ -1059,26 +1074,29 @@ class VAPTSECURE_Hook_Driver
                 "/.env",
                 "/xmlrpc.php",
                 "/wp-links-opml.php",
-            ];
+                ];
 
-            foreach ($sensitive_files as $file) {
-                if (strpos($uri, $file) !== false) {
-                    status_header(403);
-                    header("X-VAPT-Enforced: php-sensitive-file");
-                    header("X-VAPT-Feature: " . $key);
-                    header(
-                        "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
-                    );
-                    VAPTSECURE_DB::log_security_event($key, "Block", [
-                        "type" => "Sensitive File Access",
-                        "file" => $file,
-                    ]);
-                    wp_die(
-                        "VAPT: Access to this file is Blocked for Security.",
-                    );
+                foreach ($sensitive_files as $file) {
+                    if (strpos($uri, $file) !== false) {
+                        status_header(403);
+                        header("X-VAPT-Enforced: php-sensitive-file");
+                        header("X-VAPT-Feature: " . $key);
+                        header(
+                            "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
+                        );
+                        VAPTSECURE_DB::log_security_event(
+                            $key, "Block", [
+                            "type" => "Sensitive File Access",
+                            "file" => $file,
+                            ]
+                        );
+                        wp_die(
+                            "VAPT: Access to this file is Blocked for Security.",
+                        );
+                    }
                 }
             }
-        });
+        );
     }
     /**
      * 🌐 PROXY-AWARE IP DETECTION (v3.6.19)
@@ -1115,9 +1133,11 @@ class VAPTSECURE_Hook_Driver
                     header(
                         "Access-Control-Expose-Headers: X-VAPT-Enforced, X-VAPT-Feature",
                     );
-                    VAPTSECURE_DB::log_security_event($key, "Block", [
+                    VAPTSECURE_DB::log_security_event(
+                        $key, "Block", [
                         "type" => "WP-Cron Access",
-                    ]);
+                        ]
+                    );
                     wp_die("VAPT: WP-Cron is Blocked for Security.");
                 }
             },

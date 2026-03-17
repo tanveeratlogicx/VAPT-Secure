@@ -5,100 +5,102 @@
  */
 
 if (! defined('ABSPATH')) {
-  exit;
+    exit;
 }
 
 class VAPTSECURE_Auth
 {
-  public function __construct()
-  {
-    add_action('admin_init', array($this, 'handle_otp_verification'));
-  }
-
-  /**
-   * Check if the current user is authenticated
-   */
-  public static function is_authenticated()
-  {
-    $user_id = get_current_user_id();
-    if (!$user_id) {
-      return false;
+    public function __construct()
+    {
+        add_action('admin_init', array($this, 'handle_otp_verification'));
     }
 
-    $session = get_transient('vaptsecure_auth_' . $user_id);
-    if (!$session) {
-      return false;
+    /**
+     * Check if the current user is authenticated
+     */
+    public static function is_authenticated()
+    {
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            return false;
+        }
+
+        $session = get_transient('vaptsecure_auth_' . $user_id);
+        if (!$session) {
+            return false;
+        }
+
+        return true;
     }
 
-    return true;
-  }
+    /**
+     * Send OTP to the superadmin email
+     */
+    public static function send_otp()
+    {
+        $identity = vaptsecure_get_superadmin_identity();
+        $otp = wp_generate_password(6, false, false);
+        $hashed_otp = wp_hash_password($otp);
 
-  /**
-   * Send OTP to the superadmin email
-   */
-  public static function send_otp()
-  {
-    $identity = vaptsecure_get_superadmin_identity();
-    $otp = wp_generate_password(6, false, false);
-    $hashed_otp = wp_hash_password($otp);
+        // Store OTP in transient for 10 minutes
+        // Email Only per user request
+        set_transient('vaptsecure_otp_email_' . $identity['user'], $hashed_otp, 10 * MINUTE_IN_SECONDS);
 
-    // Store OTP in transient for 10 minutes
-    // Email Only per user request
-    set_transient('vaptsecure_otp_email_' . $identity['user'], $hashed_otp, 10 * MINUTE_IN_SECONDS);
-
-    // 1. Send Email
-    $message = sprintf(
-      __('Your VAPT Secure verification code is: %s. This code will expire in 10 minutes.', 'vaptsecure'),
-      $otp
-    );
-    wp_mail($identity['email'], __('VAPT Secure - Verification Code', 'vaptsecure'), $message);
-  }
-
-  /**
-   * Handle OTP verification from the form
-   */
-  public function handle_otp_verification()
-  {
-    if (! isset($_POST['vaptsecure_otp_nonce']) || ! wp_verify_nonce($_POST['vaptsecure_otp_nonce'], 'vaptsecure_verify_otp')) {
-      return;
+        // 1. Send Email
+        $message = sprintf(
+            __('Your VAPT Secure verification code is: %s. This code will expire in 10 minutes.', 'vaptsecure'),
+            $otp
+        );
+        wp_mail($identity['email'], __('VAPT Secure - Verification Code', 'vaptsecure'), $message);
     }
 
-    if (! is_vaptsecure_superadmin(false)) {
-      return;
+    /**
+     * Handle OTP verification from the form
+     */
+    public function handle_otp_verification()
+    {
+        if (! isset($_POST['vaptsecure_otp_nonce']) || ! wp_verify_nonce($_POST['vaptsecure_otp_nonce'], 'vaptsecure_verify_otp')) {
+            return;
+        }
+
+        if (! is_vaptsecure_superadmin(false)) {
+            return;
+        }
+
+        if (! isset($_POST['vaptsecure_email_otp'])) {
+            return;
+        }
+
+        $identity = vaptsecure_get_superadmin_identity();
+        $submitted_otp = sanitize_text_field($_POST['vaptsecure_email_otp']);
+        $stored_otp = get_transient('vaptsecure_otp_email_' . $identity['user']);
+
+        if ($stored_otp && wp_check_password($submitted_otp, $stored_otp)) {
+            // Successful verification
+            $user_id = get_current_user_id();
+            set_transient(
+                'vaptsecure_auth_' . $user_id, array(
+                'user' => $identity['user'],
+                'time' => time()
+                ), 2 * HOUR_IN_SECONDS
+            );
+
+            delete_transient('vaptsecure_otp_email_' . $identity['user']);
+
+            wp_safe_redirect(admin_url('admin.php?page=vaptsecure-domain-admin'));
+            exit;
+        }
     }
 
-    if (! isset($_POST['vaptsecure_email_otp'])) {
-      return;
-    }
-
-    $identity = vaptsecure_get_superadmin_identity();
-    $submitted_otp = sanitize_text_field($_POST['vaptsecure_email_otp']);
-    $stored_otp = get_transient('vaptsecure_otp_email_' . $identity['user']);
-
-    if ($stored_otp && wp_check_password($submitted_otp, $stored_otp)) {
-      // Successful verification
-      $user_id = get_current_user_id();
-      set_transient('vaptsecure_auth_' . $user_id, array(
-        'user' => $identity['user'],
-        'time' => time()
-      ), 2 * HOUR_IN_SECONDS);
-
-      delete_transient('vaptsecure_otp_email_' . $identity['user']);
-
-      wp_safe_redirect(admin_url('admin.php?page=vaptsecure-domain-admin'));
-      exit;
-    }
-  }
-
-  /**
-   * Render the OTP verification form
-   */
-  public static function render_otp_form()
-  {
-    if (isset($_GET['resend_otp'])) {
-      self::send_otp();
-    }
-?>
+    /**
+     * Render the OTP verification form
+     */
+    public static function render_otp_form()
+    {
+        if (isset($_GET['resend_otp'])) {
+            self::send_otp();
+        }
+        ?>
     <style>
       .vapt-otp-overlay {
         position: fixed;
@@ -211,10 +213,10 @@ class VAPTSECURE_Auth
                 </form>
                 <?php
                 if (isset($_POST['vaptsecure_otp_submit'])) {
-                  echo '<div class="vapt-otp-error">' . __('Invalid or expired code. Please try again.', 'vaptsecure') . '</div>';
+                    echo '<div class="vapt-otp-error">' . __('Invalid or expired code. Please try again.', 'vaptsecure') . '</div>';
                 }
                 if (isset($_GET['resend_otp'])) {
-                  echo '<div style="margin-top:10px; color:#00e676;">' . __('A new code has been sent!', 'vaptsecure') . '</div>';
+                    echo '<div style="margin-top:10px; color:#00e676;">' . __('A new code has been sent!', 'vaptsecure') . '</div>';
                 }
                 ?>
                 <a href="<?php echo esc_url(add_query_arg('resend_otp', '1')); ?>" class="vapt-resend"><?php _e('Didn\'t receive the code? Resend', 'vaptsecure'); ?></a>
@@ -224,6 +226,6 @@ class VAPTSECURE_Auth
         </div>
       </div>
     </div>
-<?php
-  }
+        <?php
+    }
 }

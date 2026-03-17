@@ -4,13 +4,15 @@
  * VAPT Secure: Centralized PHP Protections
  */
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) { exit;
+}
 
 // BEGIN VAPT SECURITY RULES
 // BEGIN VAPT RISK-004
 
 add_action('login_init', 'vapt_rate_limit_password_reset');
-function vapt_rate_limit_password_reset() {
+function vapt_rate_limit_password_reset()
+{
     if ($_POST['user_login'] ?? false) {
         $ip = $_SERVER['REMOTE_ADDR'];
         $transient = 'pwd_reset_' . md5($ip);

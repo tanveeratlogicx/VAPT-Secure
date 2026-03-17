@@ -1,0 +1,26 @@
+
+FILE: ...net\app\public\wp-content\plugins\VAPT-Secure\vapt-functions.php
+----------------------------------------------------------------------
+FOUND 9 ERRORS AND 2 WARNINGS AFFECTING 4 LINES
+----------------------------------------------------------------------
+  1 | WARNING | File has mixed line endings; this may cause incorrect
+    |         | results
+  5 | WARNING | PHP version not specified
+  5 | ERROR   | Missing @category tag in file comment
+  5 | ERROR   | Missing @package tag in file comment
+  5 | ERROR   | Missing @author tag in file comment
+  5 | ERROR   | Missing @license tag in file comment
+  5 | ERROR   | Missing @link tag in file comment
+  7 | ERROR   | Expected "if (...) {\n"; found "if (...) { "
+ 14 | ERROR   | Missing doc comment for function
+    |         | vapt_rate_limit_password_reset()
+ 14 | ERROR   | Function name "vapt_rate_limit_password_reset" is
+    |         | prefixed with a package name but does not begin with
+    |         | a capital letter
+ 14 | ERROR   | Function name "vapt_rate_limit_password_reset" is
+    |         | invalid; consider "Vapt_Rate_Limit_Password_reset"
+    |         | instead
+----------------------------------------------------------------------
+
+Time: 424ms; Memory: 6MB
+

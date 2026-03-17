@@ -1,0 +1,34 @@
+
+PHP CODE SNIFFER REPORT SUMMARY
+----------------------------------------------------------------------
+FILE                                                  ERRORS  WARNINGS
+----------------------------------------------------------------------
+...wp-content\plugins\VAPT-Secure\vapt-functions.php  9       2
+...ugins\VAPT-Secure\vapt-hermasnet-config-1.0.1.php  6       2
+...lic\wp-content\plugins\VAPT-Secure\vaptsecure.php  77      92
+...s\VAPT-Secure\includes\class-vaptsecure-admin.php  17      10
+...ns\VAPT-Secure\includes\class-vaptsecure-auth.php  15      14
+...s\VAPT-Secure\includes\class-vaptsecure-build.php  28      56
+...gins\VAPT-Secure\includes\class-vaptsecure-db.php  77      37
+...udes\class-vaptsecure-deployment-orchestrator.php  29      19
+...APT-Secure\includes\class-vaptsecure-enforcer.php  64      60
+...ncludes\class-vaptsecure-environment-detector.php  55      23
+...ns\VAPT-Secure\includes\class-vaptsecure-rest.php  195     315
+...APT-Secure\includes\class-vaptsecure-workflow.php  30      25
+...es\enforcers\class-vaptsecure-apache-deployer.php  33      23
+...ludes\enforcers\class-vaptsecure-caddy-driver.php  19      9
+...es\enforcers\class-vaptsecure-config-deployer.php  11      6
+...udes\enforcers\class-vaptsecure-config-driver.php  14      16
+...cludes\enforcers\class-vaptsecure-hook-driver.php  103     30
+...es\enforcers\class-vaptsecure-htaccess-driver.php  41      63
+...ncludes\enforcers\class-vaptsecure-iis-driver.php  22      10
+...des\enforcers\class-vaptsecure-nginx-deployer.php  25      14
+...ludes\enforcers\class-vaptsecure-nginx-driver.php  22      10
+...ludes\enforcers\class-vaptsecure-php-deployer.php  17      7
+...ncludes\enforcers\class-vaptsecure-php-driver.php  27      21
+----------------------------------------------------------------------
+A TOTAL OF 936 ERRORS AND 864 WARNINGS WERE FOUND IN 23 FILES
+----------------------------------------------------------------------
+
+Time: 1.76 secs; Memory: 28MB
+
