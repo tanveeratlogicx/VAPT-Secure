@@ -156,13 +156,13 @@
       });
 
       const configMap = {
-        critical: { label: __('Critical', 'vaptsecure'), icon: 'warning', color: '#dc2626' },
+        critical: { label: __('Critical Severity', 'vaptsecure'), icon: 'warning', color: '#dc2626' },
         high: { label: __('High Severity', 'vaptsecure'), icon: 'warning', color: '#ea580c' },
-        medium: { label: __('Medium', 'vaptsecure'), icon: 'flag', color: '#2271b1' },
+        medium: { label: __('Medium Severity', 'vaptsecure'), icon: 'flag', color: '#2271b1' },
         low: { label: __('Low Severity', 'vaptsecure'), icon: 'yes-alt', color: '#64748b' }
       };
 
-      const items = [{ id: 'all', label: __('All Features', 'vaptsecure'), icon: 'shield', count: counts.all }];
+      const items = [{ id: 'all', label: __('All Severity Levels', 'vaptsecure'), icon: 'shield', count: counts.all }];
 
       // Add existing severities dynamically
       ['critical', 'high', 'medium', 'low'].forEach(key => {
@@ -263,11 +263,7 @@
 
         el('div', { className: 'sidebar-menu', style: { padding: '25px', flexGrow: 1 } }, [
           el('div', { style: { fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px', paddingLeft: '10px' } }, __('Protection Status')),
-          [
-            { id: 'all', label: __('All Features'), icon: 'shield', count: features.length },
-            { id: 'high', label: __('High Severity'), icon: 'warning', count: features.filter(f => f.severity === 'HIGH').length, color: '#ef4444' },
-            { id: 'medium', label: __('Medium'), icon: 'flag', count: features.filter(f => f.severity === 'MEDIUM').length, color: '#f59e0b' }
-          ].map(item => el('div', {
+          severityConfigs.map(item => el('div', {
             key: item.id,
             onClick: () => setActiveTab(item.id),
             style: {
@@ -281,7 +277,8 @@
               background: activeTab === item.id ? '#f1f5f9' : 'transparent',
               color: activeTab === item.id ? '#0f172a' : '#64748b',
               fontWeight: activeTab === item.id ? 700 : 500,
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }
           }, [
             el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
@@ -432,6 +429,20 @@
   const renderFeatureCard = (f, updateFeature, setVerifFeature, globalProtection) => {
     const schema = typeof f.generated_schema === 'string' ? JSON.parse(f.generated_schema) : (f.generated_schema || { controls: [] });
 
+    // v3.14.0: Enforcement Logic
+    const isEnforced = globalProtection
+      ? ((f.normalized_status || f.status || '').toLowerCase() === 'release' ? (f.is_enforced != 0) : (f.is_enforced == 1))
+      : false;
+
+    const isInhibited = !globalProtection && ((f.normalized_status || f.status || '').toLowerCase() === 'release' || (f.is_enforced == 1));
+
+    const statusObj = isEnforced
+      ? { label: __('PROTECTION ACTIVE', 'vaptsecure'), color: '#10b981', icon: 'yes' }
+      : (isInhibited
+        ? { label: __('GLOBAL PROTECTION INHIBITED', 'vaptsecure'), color: '#94a3b8', icon: 'warning' }
+        : { label: __('PROTECTION INACTIVE', 'vaptsecure'), color: '#64748b', icon: 'no-alt' }
+      );
+
     const implControls = schema.controls ? schema.controls.filter(c =>
       !['test_action', 'risk_indicators', 'assurance_badges', 'test_checklist', 'evidence_list'].includes(c.type) &&
       !c.label?.toLowerCase().includes('notes')
@@ -443,19 +454,20 @@
 
     return el(Card, {
       key: f.key,
-      className: 'vapt-feature-card',
+      className: `vapt-feature-card ${isEnforced ? 'active' : ''} ${isInhibited ? 'inhibited' : ''}`,
       style: {
         borderRadius: '16px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0,0,0,0.02)',
+        border: isEnforced ? '2px solid #10b981' : (isInhibited ? '2px dashed #cbd5e1' : '1px solid #e2e8f0'),
+        boxShadow: isEnforced ? '0 10px 15px -3px rgba(16, 185, 129, 0.1)' : '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
         overflow: 'hidden',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+        transition: 'all 0.3s ease',
+        background: isInhibited ? '#f8fafc' : '#fff'
       }
     }, [
       el(CardHeader, { style: { borderBottom: '1px solid #f1f5f9', padding: '20px 25px', background: '#fff' } }, [
         el('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' } }, [
           el('div', null, [
-            el('h3', { style: { margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' } }, [
+            el('h3', { style: { margin: 0, fontSize: '17px', fontWeight: 800, color: isInhibited ? '#64748b' : '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' } }, [
               f.label,
               f.severity && el('span', { className: `severity-pill ${f.severity.toLowerCase()}`, style: { fontSize: '10px', fontWeight: 700 } }, f.severity),
               f.include_manual_protocol && el(Tooltip, { text: __('View Verification Protocol', 'vaptsecure') },
@@ -465,13 +477,17 @@
               )
             ]),
             f.description && el('p', { style: { margin: '6px 0 0 0', fontSize: '12px', color: '#64748b', fontWeight: 500 } }, f.description)
+          ]),
+          el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
+            el(Icon, { icon: statusObj.icon, size: 16, style: { color: statusObj.color } }),
+            el('span', { style: { fontSize: '11px', fontWeight: 800, color: statusObj.color, textTransform: 'uppercase', letterSpacing: '0.05em' } }, statusObj.label)
           ])
         ])
       ]),
       el(CardBody, { style: { padding: '0' } }, [
         el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '200px' } }, [
           // Security Configuration Column
-          el('div', { style: { padding: '25px', background: '#fcfdfd', borderRight: '1px solid #f1f5f9' } }, [
+          el('div', { style: { padding: '25px', background: isInhibited ? '#f1f5f9' : '#fcfdfd', borderRight: '1px solid #f1f5f9' } }, [
             el('h4', { style: { fontSize: '11px', fontWeight: 800, marginBottom: '20px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' } }, [
               el(Icon, { icon: 'admin-settings', size: 16 }),
               __('Functional Implementation')

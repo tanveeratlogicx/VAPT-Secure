@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.4.18
+ * Version:           2.5.2
  * Author:            Tanveer Malik
  * Author URI:        https://vapt.copilot.com
  * License:           GPL-2.0+
@@ -49,7 +49,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-  define('VAPTSECURE_VERSION', '2.4.18');
+  define('VAPTSECURE_VERSION', '2.5.2');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.0');
 }
@@ -115,7 +115,7 @@ if (! defined('VAPTSECURE_SUPERADMIN_EMAIL')) {
  *
  * @return bool True if the current user is a superadmin.
  */
-function is_vaptsecure_superadmin()
+function is_vaptsecure_superadmin($require_auth = false)
 {
   $current_user = wp_get_current_user();
   if (!$current_user->exists()) return false;
@@ -124,23 +124,23 @@ function is_vaptsecure_superadmin()
   $login = strtolower($current_user->user_login);
   $email = strtolower($current_user->user_email);
 
-  // Strict Match
-  if ($login === strtolower($identity['user']) || $email === strtolower($identity['email'])) {
-    return true;
+  // 1. 🛡️ Identity Check (Primary Firewall)
+  // MUST match the hardcoded superadmin identity login or email.
+  $is_super_identity = ($login === strtolower($identity['user']) || $email === strtolower($identity['email']));
+
+  if (!$is_super_identity) {
+    return false;
   }
 
-  // Allow Localhost for development/testing (optional, keep enabled for now)
-  /*
-  if (is_vaptsecure_localhost()) {
-    return true;
-  }
-  */
-
-  if (class_exists('VAPTSECURE_Auth') && VAPTSECURE_Auth::is_authenticated()) {
-    return true;
+  // 2. 🛡️ Authentication Check (Secondary Layer)
+  // If require_auth is true, also check if the user has a valid OTP session.
+  if ($require_auth && class_exists('VAPTSECURE_Auth')) {
+    if (!VAPTSECURE_Auth::is_authenticated()) {
+      return false;
+    }
   }
 
-  return false;
+  return true;
 }
 
 // Include core classes (new Builder includes)
@@ -246,6 +246,7 @@ function vaptsecure_activate_plugin()
         override_implementation_data LONGTEXT DEFAULT NULL,
         is_enabled TINYINT(1) DEFAULT 0,
         is_enforced TINYINT(1) DEFAULT 0,
+        active_enforcer VARCHAR(100) DEFAULT NULL,
         PRIMARY KEY  (feature_key)
     ) $charset_collate;";
   // Feature History/Audit Table
@@ -324,6 +325,12 @@ function vaptsecure_manual_db_fix()
   $column = $wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s", DB_NAME, $table_name, 'is_enforced'));
   if (empty($column)) {
     $wpdb->query("ALTER TABLE $table_name ADD COLUMN is_enforced TINYINT(1) DEFAULT 0");
+  }
+
+  // Check and add active_enforcer if missing
+  $column = $wpdb->get_results($wpdb->prepare("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s", DB_NAME, $table_name, 'active_enforcer'));
+  if (empty($column)) {
+    $wpdb->query("ALTER TABLE $table_name ADD COLUMN active_enforcer VARCHAR(100) DEFAULT NULL");
   }
 }
 
@@ -551,9 +558,9 @@ add_action('admin_menu', 'vaptsecure_add_admin_menu');
  * Terminates execution if the current user is not a superadmin.
  */
 if (! function_exists('vaptsecure_check_permissions')) {
-  function vaptsecure_check_permissions()
+  function vaptsecure_check_permissions($require_auth = false)
   {
-    if (! is_vaptsecure_superadmin()) {
+    if (! is_vaptsecure_superadmin($require_auth)) {
       wp_die(__('You do not have permission to access the VAPT Secure Dashboard.', 'vaptsecure'));
     }
   }
@@ -565,8 +572,9 @@ if (! function_exists('vaptsecure_check_permissions')) {
 if (! function_exists('vaptsecure_add_admin_menu')) {
   function vaptsecure_add_admin_menu()
   {
-    $is_superadmin = is_vaptsecure_superadmin();
-    // 1. Parent Menu
+    $is_superadmin_identity = is_vaptsecure_superadmin(false);
+
+    // 1. Parent Menu (Visible to all admins with manage_options)
     add_menu_page(
       __('VAPT Secure', 'vaptsecure'),
       __('VAPT Secure', 'vaptsecure'),
@@ -576,8 +584,9 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
       'dashicons-shield',
       80
     );
-    // 2. Sub-menus (Superadmin Only)
-    if ($is_superadmin) {
+
+    // 🛡️ Superadmin Only Sub-menus
+    if ($is_superadmin_identity) {
       // Sub-menu 1: Workbench
       add_submenu_page(
         'vaptsecure',
@@ -587,18 +596,19 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
         'vaptsecure-workbench',
         'vaptsecure_render_workbench_page'
       );
+
+      // Sub-menu 2: Domain Admin
+      add_submenu_page(
+        'vaptsecure',
+        __('VAPTSecure Domain Admin', 'vaptsecure'),
+        __('VAPTSecure Domain Admin', 'vaptsecure'),
+        'manage_options',
+        'vaptsecure-domain-admin',
+        'vaptsecure_render_admin_page'
+      );
     }
 
-    // Sub-menu 2: Domain Admin (Allowed for all admins, OTP protected)
-    add_submenu_page(
-      'vaptsecure',
-      __('VAPTSecure Domain Admin', 'vaptsecure'),
-      __('VAPTSecure Domain Admin', 'vaptsecure'),
-      'manage_options',
-      'vaptsecure-domain-admin',
-      'vaptsecure_render_admin_page'
-    );
-    // Remove the default submenu item created by WordPress
+    // Remove the default duplicate submenu item created by WordPress
     remove_submenu_page('vaptsecure', 'vaptsecure');
   }
 }
@@ -652,6 +662,18 @@ if (! function_exists('vaptsecure_render_client_status_page')) {
 if (! function_exists('vaptsecure_render_workbench_page')) {
   function vaptsecure_render_workbench_page()
   {
+    if (! is_vaptsecure_superadmin(true)) {
+      if (is_vaptsecure_superadmin(false)) {
+        $identity = vaptsecure_get_superadmin_identity();
+        if (! get_transient('vaptsecure_otp_email_' . $identity['user'])) {
+          VAPTSECURE_Auth::send_otp();
+        }
+        VAPTSECURE_Auth::render_otp_form();
+      } else {
+        wp_die(__('You do not have permission to access the VAPT Secure Dashboard.', 'vaptsecure'));
+      }
+      return;
+    }
   ?>
     <div class="wrap">
       <h1 class="wp-heading-inline"><?php _e('VAPT Secure Workbench', 'vaptsecure'); ?></h1>
@@ -677,13 +699,24 @@ if (! function_exists('vaptsecure_render_admin_page')) {
 if (! function_exists('vaptsecure_master_dashboard_page')) {
   function vaptsecure_master_dashboard_page()
   {
-    // Verify Identity
-    if (! VAPTSECURE_Auth::is_authenticated()) {
-      $identity = vaptsecure_get_superadmin_identity();
-      if (! get_transient('vaptsecure_otp_email_' . $identity['user'])) {
-        VAPTSECURE_Auth::send_otp();
+    // Verify Strict Identity AND Session
+    if (! is_vaptsecure_superadmin(true)) {
+      // If they match identity but lack auth, show OTP.
+      // If they don't match identity, they already failed is_vaptsecure_superadmin() and was blocked by parent layer?
+      // Actually vaptsecure_add_admin_menu blocks them from seeing it.
+      // But if they access via direct URL, this check will trigger.
+      
+      if (is_vaptsecure_superadmin(false)) {
+        // Identity matches, but needs auth.
+        $identity = vaptsecure_get_superadmin_identity();
+        if (! get_transient('vaptsecure_otp_email_' . $identity['user'])) {
+          VAPTSECURE_Auth::send_otp();
+        }
+        VAPTSECURE_Auth::render_otp_form();
+      } else {
+        // Identity DOES NOT match. Hard block.
+        wp_die(__('You do not have permission to access the VAPT Secure Dashboard.', 'vaptsecure'));
       }
-      VAPTSECURE_Auth::render_otp_form();
       return;
     }
   ?>
@@ -767,6 +800,9 @@ function vaptsecure_enqueue_admin_assets($hook)
     'pluginVersion' => VAPTSECURE_VERSION,
     'pluginName' => 'VAPT Secure',
     'currentDomain' => parse_url(home_url(), PHP_URL_HOST),
+    'abspath' => ABSPATH,
+    'pluginPath' => VAPTSECURE_PATH,
+    'uploadPath' => wp_upload_dir()['basedir'],
   );
 
   // 🛡️ GLOBAL REST HOTPATCH (v3.8.17) - Inline for maximum priority

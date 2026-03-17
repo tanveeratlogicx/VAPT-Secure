@@ -222,6 +222,12 @@ class VAPTSECURE_REST
       'permission_callback' => array($this, 'check_permission'),
     ));
 
+    register_rest_route('vaptsecure/v1', '/clear-cache', array(
+      'methods'             => 'POST',
+      'callback'            => array($this, 'clear_enforcement_cache'),
+      'permission_callback' => array($this, 'check_permission'),
+    ));
+
     register_rest_route('vaptsecure/v1', '/security/stats', array(
       'methods'  => 'GET',
       'callback' => array($this, 'get_security_stats'),
@@ -327,7 +333,13 @@ class VAPTSECURE_REST
       // [v1.4.2] Detected Environment Profile for dynamic enforcer mapping
       require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-environment-detector.php';
       $detector = new VAPTSECURE_Environment_Detector();
-      $environment_profile = $detector->detect();
+      
+      // Force redetect if requested or one-time for cache clearing after logic update
+      if ($request->get_param('redetect')) {
+        $environment_profile = $detector->redetect();
+      } else {
+        $environment_profile = $detector->detect();
+      }
 
       // 3. Load and process each file
       foreach ($files_to_load as $file) {
@@ -531,6 +543,7 @@ class VAPTSECURE_REST
             }
             $feature['is_enabled'] = isset($meta['is_enabled']) ? (bool)$meta['is_enabled'] : false;
             $feature['is_enforced'] = isset($meta['is_enforced']) ? (bool)$meta['is_enforced'] : false;
+            $feature['active_enforcer'] = isset($meta['active_enforcer']) ? $meta['active_enforcer'] : null;
           }
 
           $merged_features[$dedupe_key] = $feature;
@@ -723,6 +736,9 @@ class VAPTSECURE_REST
     if ($is_adaptive !== null) $meta_updates['is_adaptive_deployment'] = $is_adaptive ? 1 : 0;
 
     if ($wireframe_url !== null) $meta_updates['wireframe_url'] = $wireframe_url;
+
+    $active_enforcer = $request->get_param('active_enforcer');
+    if ($active_enforcer !== null) $meta_updates['active_enforcer'] = $active_enforcer;
 
     $dev_instruct = $request->get_param('dev_instruct');
     if ($dev_instruct !== null) $meta_updates['dev_instruct'] = $dev_instruct;
@@ -1599,11 +1615,22 @@ class VAPTSECURE_REST
   private static function analyze_enforcement_strategy($schema, $feature_key)
   {
     if (!isset($schema['enforcement'])) {
-      $schema['enforcement'] = [
-        'driver' => 'hook',
-        'mappings' => []
-      ];
+      // 🛡️ Adaptive Awareness (v4.0.0): Check for client_deployment block first
+      if (isset($schema['client_deployment']['enforcement'])) {
+        $schema['enforcement'] = $schema['client_deployment']['enforcement'];
+      } else {
+        $schema['enforcement'] = [
+          'driver' => 'hook',
+          'mappings' => []
+        ];
+      }
+    } else {
+        // [v4.0.1] Even if it exists, if it is 'hook' and empty, check for adaptive alternative
+        if (($schema['enforcement']['driver'] ?? '') === 'hook' && empty($schema['enforcement']['mappings']) && isset($schema['client_deployment']['enforcement'])) {
+             $schema['enforcement'] = $schema['client_deployment']['enforcement'];
+        }
     }
+    
     $driver = $schema['enforcement']['driver'] ?? 'hook';
     $mappings = $schema['enforcement']['mappings'] ?? array();
 

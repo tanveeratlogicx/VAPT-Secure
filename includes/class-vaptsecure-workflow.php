@@ -84,14 +84,8 @@ class VAPTSECURE_Workflow
       $wpdb->delete($table_history, array('feature_key' => $feature_key));
 
       // 2. Wipe Implementation Data (Meta)
-      // We keep the row but nullify the data fields
       $table_meta = $wpdb->prefix . 'vaptsecure_feature_meta';
-      $wpdb->update($table_meta, array(
-        'generated_schema' => null,
-        'implementation_data' => null,
-        'override_schema' => null,
-        'override_implementation_data' => null
-      ), array('feature_key' => $feature_key));
+      $wpdb->delete($table_meta, array('feature_key' => $feature_key));
 
       // 3. 🛡️ Trigger Complete Systemic Purge (v4.0.1)
       // Since meta is now null, rebuild_all() will physically remove all rules from files
@@ -157,14 +151,11 @@ class VAPTSECURE_Workflow
       ARRAY_A
     );
 
-    // 3. Get RELEASE features
-    $release_features = array();
-    if ($include_release) {
-      $release_features = $wpdb->get_results($wpdb->prepare(
-        "SELECT feature_key, implemented_at, assigned_to, 'release' as source FROM $table_status WHERE status = %s",
-        'Release'
-      ), ARRAY_A);
-    }
+    // 3. Get RELEASE features (Always fetch total for UI count)
+    $release_features = $wpdb->get_results($wpdb->prepare(
+      "SELECT feature_key, implemented_at, assigned_to, 'release' as source FROM $table_status WHERE status = %s",
+      'Release'
+    ), ARRAY_A);
 
     // 4. Merge based on flags
     $all_features = $develop_features ?: array();
@@ -285,14 +276,11 @@ class VAPTSECURE_Workflow
        WHERE s.status = 'Draft'"
     );
 
-    // 3. Get RELEASE features
-    $release_features = array();
-    if ($include_release) {
-      $release_features = $wpdb->get_col($wpdb->prepare(
-        "SELECT feature_key FROM $table_status WHERE status = %s",
-        'Release'
-      ));
-    }
+    // 3. Get RELEASE features (Always fetch total for UI count)
+    $release_features = $wpdb->get_col($wpdb->prepare(
+      "SELECT feature_key FROM $table_status WHERE status = %s",
+      'Release'
+    ));
 
     // 4. Merge based on flags
     $all_features = $develop_features ?: array();

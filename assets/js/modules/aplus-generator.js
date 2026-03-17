@@ -129,13 +129,31 @@
             const platformTargetList = [];
 
             if (feature.platform_implementations) {
+              const activeEnforcer = feature.active_enforcer;
+              const envProfile = window.vaptEnvironmentProfile; // Use global profile if available
+
               for (const [key, details] of Object.entries(feature.platform_implementations)) {
-                if (details.target_file) {
-                  platformTargetList.push(`${key} (targets ${details.target_file})`);
-                } else if (details.lib_key) {
-                  platformTargetList.push(`${key} (via ${details.lib_key})`);
-                } else {
-                  platformTargetList.push(key);
+                // Determine if this implementation is relevant to show in notes
+                let isRelevant = true;
+                
+                if (activeEnforcer) {
+                   // If user selected an enforcer, only show that one
+                   isRelevant = (key === activeEnforcer || (key === '.htaccess' && activeEnforcer === 'htaccess'));
+                } else if (envProfile && envProfile.capabilities) {
+                   // Otherwise, skip enforcers strictly incompatible with environment
+                   if (key === 'Nginx' && !envProfile.capabilities.nginx_with_config) isRelevant = false;
+                   if ((key === '.htaccess' || key === 'htaccess') && !envProfile.capabilities.apache_with_htaccess) isRelevant = false;
+                   if (key === 'fail2ban' && !envProfile.capabilities.fail2ban) isRelevant = false;
+                }
+
+                if (isRelevant) {
+                  if (details.target_file) {
+                    platformTargetList.push(`${key} (targets ${details.target_file})`);
+                  } else if (details.lib_key) {
+                    platformTargetList.push(`${key} (via ${details.lib_key})`);
+                  } else {
+                    platformTargetList.push(key);
+                  }
                 }
               }
             }
@@ -166,11 +184,7 @@
                     let previewTarget = implDetails.target_file || implTarget;
                     let previewCode = implDetails.code || 'Code snippet reference is loading...';
                     
-                    // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                    if (previewTarget.includes('wp-config') || implTarget.includes('wp-config')) {
-                      previewTarget = 'wp-config.php (Primary) + PHP Hook Driver (Adaptive Fallback)';
-                      if(previewCode) previewCode += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
-                    }
+                    // Technical preview now strictly shows the exact target and code.
                     
                     codePreview = `
                       <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; overflow-x: auto;">
@@ -307,7 +321,7 @@
       const featureKey = feature.key || feature.id || '';
 
       // 1. A+ Header Check - Verify VAPT enforcement headers
-      // [FIX v2.4.11] Add specific probe URL so it doesn't just check homepage
+      // [FIX v2.4.25] Only check x-vapt-enforced - no enforcer emits x-vapt-risk-id
       tests.push({
         type: 'test_action',
         id: `vapt-test-headers-${riskId}`,
@@ -317,11 +331,10 @@
         test_config: {
           path: '/?vapt_header_check=1',
           expected_headers: { 
-            'x-vapt-enforced': 'htaccess|nginx|php-headers',
-            'x-vapt-risk-id': riskId 
+            'x-vapt-enforced': 'htaccess|nginx|php-headers'
           }
         },
-        help: 'Verifies that A+ Adaptive headers (x-vapt-enforced, x-vapt-risk-id) are correctly injected.'
+        help: 'Verifies that A+ Adaptive headers (x-vapt-enforced) are correctly injected by the active enforcer.'
       });
 
       // 2. Specific Functional Probes

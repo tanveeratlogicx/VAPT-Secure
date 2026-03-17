@@ -35,10 +35,13 @@ class VAPTSECURE_PHP_Deployer
         }, $lines));
     }
 
+    require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
+    VAPTSECURE_Enforcer::rebuild_php_functions();
+
     return [
       'status' => 'deployed',
       'platform' => 'php_functions',
-      'note' => 'Active via runtime hooks.',
+      'note' => 'Active via vapt-functions.php',
       'code' => $code
     ];
   }

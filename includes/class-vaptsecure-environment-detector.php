@@ -60,6 +60,16 @@ class VAPTSECURE_Environment_Detector
           'capabilities' => ['url_rewrite'],
           'requirements' => ['web_config_writable']
         ],
+        'fail2ban' => [
+          'detected_by' => ['php_sapi_detection:any'], 
+          'capabilities' => ['ip_blocking', 'brute_force_protection'],
+          'requirements' => ['jail_local_writable']
+        ],
+        'server_cron' => [
+          'detected_by' => ['php_sapi_detection:any'], // Universal for Linux/Unix hosts
+          'capabilities' => ['background_tasks', 'scheduled_enforcement'],
+          'requirements' => ['crontab_access']
+        ],
         'php_functions' => [
           'detected_by' => ['php_sapi_detection:any'],
           'capabilities' => ['universal_fallback', 'application_level'],
@@ -216,6 +226,22 @@ class VAPTSECURE_Environment_Detector
       }
 
       if ($is_match || $platform === 'php_functions') {
+        // MUTUAL EXCLUSIVITY: Hard guard for IIS/Caddy false positives based on filesystem probes
+        $detected_software = $results['server_software_header']['server_software'] ?? 'unknown';
+        
+        if ($platform === 'iis_config') {
+          if (in_array($detected_software, ['apache', 'nginx', 'litespeed', 'caddy'])) {
+            continue; 
+          }
+          if (isset($profile['capabilities']['apache_htaccess']) || isset($profile['capabilities']['nginx_config'])) {
+            continue; // Final guard: don't show IIS if Apache/Nginx logic already matched
+          }
+        }
+        
+        if ($platform === 'caddy_native' && in_array($detected_software, ['apache', 'nginx', 'litespeed', 'iis'])) {
+          continue; 
+        }
+
         $profile['capabilities'][$platform] = $definition['capabilities'];
       }
     }
@@ -233,6 +259,7 @@ class VAPTSECURE_Environment_Detector
         if ($detector === 'server_software_header') return stripos($res['server_software_raw'], $value) !== false;
         if ($detector === 'filesystem_probe') return $res['filesystem_probes'][$value]['config_found'] ?? false;
         if ($detector === 'hosting_provider_detection') return ($res['hosting_provider'] === $value || $res['edge_proxy'] === $value);
+        if ($detector === 'php_sapi_detection') return ($value === 'any' || $res['php_sapi'] === $value);
       }
     }
     return false;

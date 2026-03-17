@@ -159,20 +159,46 @@
         }
       }
 
-      // [FIX v2.4.11] Check if test expects specific headers
+      // [FIX v2.4.25] Check if test expects specific headers
       const hasExpectedHeaders = control.test_config && control.test_config.expected_headers;
       
       if (hasExpectedHeaders) {
-        // This is a specific header validation test - must check if expected headers exist
-        if (!vaptEnforced || !enforcedFeature || !enforcedFeature.includes(featureKey)) {
-          // Expected VAPT headers are missing
-          return { 
-            success: false, 
-            message: `VAPT enforcement headers not found. Expected x-vapt-enforced and x-vapt-risk-id=${featureKey}.`, 
-            raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` 
+        // The reliable marker is x-vapt-enforced being present with a valid enforcer value.
+        // Note: x-vapt-feature contains DB slugs, not RISK-IDs, so we can't match featureKey directly.
+        // x-vapt-risk-id is not emitted by any enforcer today — checking x-vapt-enforced is sufficient.
+        const validEnforcers = ['htaccess', 'nginx', 'php-headers', 'php-rate-limit', 'php-xmlrpc', 'php-dir', 'php-null-byte'];
+        const isValidEnforcer = vaptEnforced && validEnforcers.some(e => vaptEnforced.toLowerCase().includes(e));
+        const isProtectionEnabled = isFeatureEnabled(featureData);
+
+        // [FIX v2.5.1] Properly validate toggle state against actual server response
+        if (isProtectionEnabled === false) {
+          // Toggle is OFF - we expect NO protection headers to be present
+          if (isValidEnforcer) {
+            // PROBLEM: Toggle is OFF but headers are still present - protection not removed!
+            return {
+              success: false,
+              message: `CRITICAL: Protection toggle is OFF but server is still enforcing headers (${vaptEnforced}). Protection was not properly removed.`,
+              raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: ${vaptEnforced}\n\n${headerStr.trim()}`
+            };
+          }
+          // SUCCESS: Toggle is OFF and no headers present - protection correctly disabled
+          return {
+            success: true,
+            message: `Protection correctly disabled. No enforcement headers detected (toggle is OFF).`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: none\n\n${headerStr.trim()}`
           };
         }
-        // Headers found - verify they match expectations
+
+        // Toggle is ON - we expect protection headers to be present
+        if (!isValidEnforcer) {
+          // PROBLEM: Toggle is ON but headers are missing - protection not active!
+          return {
+            success: false,
+            message: `Protection toggle is ON but VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Expected: A+ Headers\n\n${headerStr.trim()}`
+          };
+        }
+        // SUCCESS: Toggle is ON and headers are present - protection is active
         return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
       }
       
@@ -838,7 +864,7 @@
    */
 
 
-  const TestRunnerControl = ({ control, featureData, featureKey }) => {
+  const TestRunnerControl = ({ control, featureData, featureKey, globalProtection }) => {
     const [status, setStatus] = useState('idle');
     const [result, setResult] = useState(null);
     const [progress, setProgress] = useState(null);
@@ -910,6 +936,10 @@
           el('strong', { style: { fontSize: '12px', color: '#334155' } }, displayLabel)
         ]),
         el(Button, { isSecondary: true, isSmall: true, isBusy: status === 'running', onClick: handleClick, disabled: status === 'running' }, 'Run Verify')
+      ]),
+      !globalProtection && el('div', { style: { marginBottom: '10px', padding: '8px 12px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' } }, [
+        el(Icon, { icon: 'warning', size: 16, style: { color: '#ea580c' } }),
+        el('span', { style: { fontSize: '11px', color: '#9a3412', fontWeight: '600' } }, __('Global Protection is OFF. This real-time test will likely report "System Vulnerable".', 'vaptsecure'))
       ]),
       control.help && el('p', { style: { margin: '2px 0 0', fontSize: '11px', color: '#64748b', opacity: 0.8 } }, control.help),
 
@@ -1217,7 +1247,7 @@
 
       switch (type) {
         case 'test_action':
-          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection });
+          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection: globalProtection });
 
         case 'button':
           return el('div', { key: uniqueKey, style: { marginBottom: '15px' } }, [
@@ -1231,9 +1261,39 @@
           ]);
 
         case 'toggle':
-          const mapping = (schema.enforcement?.mappings || {})[key];
+          const mapping = (schema.enforcement?.mappings || {})[key] || (schema.client_deployment?.enforcement?.mappings || {})[key];
           const isDevelop = (feature.status || '').toLowerCase() === 'develop' || (feature.normalized_status || '').toLowerCase() === 'develop';
           const isSuperAdmin = window.vaptSecureSettings?.isSuper || false;
+          
+          // Enhanced Driver Detection for Tooltip Accuracy
+          const activeDriver = schema.enforcement?.driver || schema.client_deployment?.enforcement?.driver || 'hook';
+          const activeTarget = schema.enforcement?.target || schema.client_deployment?.enforcement?.target || 'root';
+
+          const isEnforced = toBool(value);
+          const vSettings = window.vaptSecureSettings || {};
+          
+          const getShortPath = (fullPath) => {
+              if (!fullPath) return '';
+              let path = fullPath;
+              if (vSettings.abspath && path.startsWith(vSettings.abspath)) {
+                  return './' + path.replace(vSettings.abspath, '').replace(/^[\\\/]/, '');
+              }
+              if (vSettings.pluginPath && path.startsWith(vSettings.pluginPath)) {
+                  const pluginBase = vSettings.pluginPath.split(/[\\\/]/).filter(Boolean).pop();
+                  return pluginBase + '/' + path.replace(vSettings.pluginPath, '').replace(/^[\\\/]/, '');
+              }
+              return path;
+          };
+
+          const statusHeader = isEnforced ? 
+            el('div', { style: { color: '#4ade80', fontWeight: '700', marginBottom: '8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                el(Icon, { icon: 'saved', size: 12 }),
+                __('INJECTED', 'vaptsecure')
+            ]) :
+            el('div', { style: { color: '#f87171', fontWeight: '700', marginBottom: '8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                el(Icon, { icon: 'no-alt', size: 12 }),
+                __('REMOVED', 'vaptsecure')
+            ]);
 
           return el('div', { id: control.id, key: uniqueKey, style: { marginBottom: '0' } }, [
             el(ToggleControl, {
@@ -1243,35 +1303,52 @@
                 el(Tooltip, {
                   text: el('div', { style: { padding: '8px', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto' } }, [
                     el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Technical Implementation Confirmation', 'vaptsecure')),
+                    statusHeader,
                     feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
-                      Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
+                      Object.entries(feature.platform_implementations)
+                      .filter(([name, impl]) => {
+                        const n = name.toLowerCase();
+                        const d = activeDriver.toLowerCase();
+                        if (d === 'htaccess') return n.includes('htaccess') || n.includes('apache');
+                        if (d === 'config' || d === 'wp_config' || d === 'wp-config') return n.includes('config');
+                        if (d === 'nginx') return n.includes('nginx');
+                        if (d === 'cloudflare') return n.includes('cloudflare');
+                        if (d === 'iis') return n.includes('iis');
+                        if (d === 'hook' || d === 'php_functions' || d === 'wordpress') return n.includes('hook') || n.includes('functions') || n.includes('wordpress');
+                        return true; 
+                      })
+                      .map(([name, impl], idx) => {
                         let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
                         if (!code) return null;
-                        let target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                        
+                        let targetFile = impl.target_file || (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : 'root'));
+                        if (activeDriver === 'hook' || activeDriver === 'php_functions') targetFile = 'vapt-functions.php';
+
+                        let fullPath = '';
+                        if (targetFile === 'wp-config.php') fullPath = (vSettings.abspath || '') + 'wp-config.php';
+                        else if (targetFile === '.htaccess') fullPath = (vSettings.abspath || '') + '.htaccess';
+                        else if (targetFile === 'vapt-functions.php') fullPath = (vSettings.pluginPath || '') + 'vapt-functions.php';
+                        else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
+                        else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
+                        
+                        const displayPath = getShortPath(fullPath) || targetFile;
                         let displayName = name;
                         
-                        // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                        if (target.includes('wp-config') || displayName.includes('wp-config')) {
-                          displayName = 'wp-config / PHP Hook (Adaptive)';
-                          target = 'wp-config.php / Hook Driver';
-                          // Show both the config constant and the hook behavior
-                          code += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
-                        }
-
                         return el('div', { key: idx, style: { marginBottom: '15px' } }, [
                           el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
                             el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, displayName),
-                            el('span', { style: { fontFamily: 'monospace' } }, target)
+                            el('span', { style: { fontFamily: 'monospace' } }, displayPath)
                           ]),
-                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
+                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#38bdf8' : '#64748b', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
                         ]);
                       }) : 
                       (mapping ? el('div', [
-                        el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
-                          sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.driver === 'config' ? 'wp-config.php / Hook Driver (Adaptive)' : (schema.enforcement?.target || 'root'))))
-                        ),
-                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
-                      ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
+                        el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
+                            el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, __('Adaptive Driver', 'vaptsecure')),
+                            el('span', { style: { fontFamily: 'monospace' } }, (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'vapt-functions.php' : activeTarget))))
+                        ]),
+                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: isEnforced ? '#f8fafc' : '#64748b', padding: '8px', borderRadius: '4px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
+                      ]) : el('em', null, __('No code mapping defined for this control.', 'vaptsecure')))
                   ])
                 }, el(Icon, { icon: 'info-outline', size: 14, style: { color: '#94a3b8', cursor: 'help' } }))
               ]),
@@ -1305,7 +1382,32 @@
                 timeoutsRef.current[key].push(t1);
               }
             }),
-            // 🛡️ Localized Status Pill (v3.13.12)
+            // 🛡️ Localized Status Pill (v3.13.12) / Inhibited Status (v3.14.0)
+            !globalProtection && el('div', {
+              style: {
+                marginTop: '-8px',
+                marginBottom: '8px',
+                marginLeft: '35px',
+                display: 'flex'
+              }
+            }, el('span', {
+              style: {
+                fontSize: '10px',
+                fontWeight: '600',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                background: '#f1f5f9',
+                color: '#64748b',
+                border: '1px dashed #cbd5e1',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }
+            }, [
+              el(Icon, { icon: 'warning', size: 12 }),
+              __('Inhibited (Master Switch OFF)', 'vaptsecure')
+            ])),
             statusMap[key] && el('div', {
               style: {
                 marginTop: '-8px',
@@ -1332,7 +1434,7 @@
               statusMap[key].message
             ])),
             // 🛡️ Visual Indicator for Code Addition (v3.13.15 Enhanced)
-            toBool(value) && el('div', {
+            globalProtection && toBool(value) && el('div', {
               style: {
                 display: 'inline-flex',
                 alignItems: 'center',
