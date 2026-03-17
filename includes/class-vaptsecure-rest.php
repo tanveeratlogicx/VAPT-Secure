@@ -1653,16 +1653,23 @@ class VAPTSECURE_REST
       if (is_string($value)) {
         $val_to_test = $value;
       } elseif (is_array($value)) {
-        // v1.1 rich mapping detection
-        if (isset($value['.htaccess'])) {
-          $needs_htaccess = true;
-          $val_to_test = is_array($value['.htaccess']) ? ($value['.htaccess']['code'] ?? '') : $value['.htaccess'];
+        // v1.1 rich mapping detection - Generalize for multi-server (v4.0.2)
+        $web_server_keys = ['.htaccess', 'nginx', 'iis', 'caddy', 'web_server'];
+        foreach ($web_server_keys as $server_key) {
+          if (isset($value[$server_key])) {
+            $needs_htaccess = true;
+            $inner = $value[$server_key];
+            $val_to_test = is_array($inner) ? ($inner['code'] ?? '') : $inner;
+            break;
+          }
         }
       }
 
       if (!$val_to_test) continue;
 
-      // Check for physical file mentions or Apache directives in mappings
+      // Check for physical file mentions or Apache/Nginx directives in mappings
+      $web_server_indicators = array_merge($block_indicators, ['location ', 'proxy_pass', 'fastcgi_pass', '<configuration', '<system.webServer']);
+      
       foreach ($physical_file_patterns as $file) {
         if (stripos($val_to_test, $file) !== false) {
           $needs_htaccess = true;
@@ -1670,7 +1677,7 @@ class VAPTSECURE_REST
         }
       }
 
-      foreach ($block_indicators as $indicator) {
+      foreach ($web_server_indicators as $indicator) {
         if (stripos($val_to_test, $indicator) !== false) {
           $needs_htaccess = true;
           break 2;

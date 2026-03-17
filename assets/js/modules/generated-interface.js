@@ -1286,13 +1286,13 @@
           };
 
           const statusHeader = isEnforced ? 
-            el('div', { style: { color: '#4ade80', fontWeight: '700', marginBottom: '8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
-                el(Icon, { icon: 'saved', size: 12 }),
-                __('INJECTED', 'vaptsecure')
+            el('div', { style: { color: '#22c55e', background: '#f0fdf4', padding: '6px 10px', borderRadius: '4px', fontWeight: '800', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bbf7d0' } }, [
+                el(Icon, { icon: 'saved', size: 14 }),
+                __('STATUS: ACTIVE & INJECTED', 'vaptsecure')
             ]) :
-            el('div', { style: { color: '#f87171', fontWeight: '700', marginBottom: '8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
-                el(Icon, { icon: 'no-alt', size: 12 }),
-                __('REMOVED', 'vaptsecure')
+            el('div', { style: { color: '#ef4444', background: '#fef2f2', padding: '6px 10px', borderRadius: '4px', fontWeight: '800', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #fecaca' } }, [
+                el(Icon, { icon: 'no-alt', size: 14 }),
+                __('STATUS: INACTIVE / REMOVED', 'vaptsecure')
             ]);
 
           return el('div', { id: control.id, key: uniqueKey, style: { marginBottom: '0' } }, [
@@ -1301,8 +1301,8 @@
               label: el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px' } }, [
                 el('strong', { style: { fontSize: '12px', color: '#334155' } }, safeRender(label)),
                 el(Tooltip, {
-                  text: el('div', { style: { padding: '8px', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto' } }, [
-                    el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Technical Implementation Confirmation', 'vaptsecure')),
+                  text: el('div', { style: { padding: '12px', maxWidth: '450px', maxHeight: '500px', overflowY: 'auto', background: '#1e293b', borderRadius: '8px' } }, [
+                    el('div', { style: { fontWeight: '700', marginBottom: '12px', fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #334155', paddingBottom: '6px', letterSpacing: '0.05em' } }, __('Technical Trace & Enforcement', 'vaptsecure')),
                     statusHeader,
                     feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
                       Object.entries(feature.platform_implementations)
@@ -1331,24 +1331,27 @@
                         else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
                         else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
                         
-                        const displayPath = getShortPath(fullPath) || targetFile;
+                        const displayPath = fullPath || targetFile;
                         let displayName = name;
                         
                         return el('div', { key: idx, style: { marginBottom: '15px' } }, [
-                          el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
-                            el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, displayName),
-                            el('span', { style: { fontFamily: 'monospace' } }, displayPath)
+                          el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '2px' } }, [
+                            el('div', { style: { display: 'flex', justifyContent: 'space-between' } }, [
+                                el('span', { style: { fontWeight: '700', color: '#f1f5f9' } }, displayName),
+                                el('span', { style: { fontSize: '9px', color: '#64748b' } }, targetFile)
+                            ]),
+                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '9px', wordBreak: 'break-all' } }, displayPath)
                           ]),
-                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#38bdf8' : '#64748b', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
+                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '12px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap', borderLeft: isEnforced ? '3px solid #22c55e' : '3px solid #ef4444' } }, code)
                         ]);
                       }) : 
                       (mapping ? el('div', [
-                        el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
-                            el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, __('Adaptive Driver', 'vaptsecure')),
-                            el('span', { style: { fontFamily: 'monospace' } }, (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'vapt-functions.php' : activeTarget))))
+                        el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' } }, [
+                            el('span', { style: { fontWeight: '700', color: '#f1f5f9' } }, __('Adaptive Driver', 'vaptsecure')),
+                            el('span', { style: { fontFamily: 'monospace', color: '#38bdf8' } }, (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'vapt-functions.php' : activeTarget))))
                         ]),
-                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: isEnforced ? '#f8fafc' : '#64748b', padding: '8px', borderRadius: '4px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
-                      ]) : el('em', null, __('No code mapping defined for this control.', 'vaptsecure')))
+                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
+                      ]) : el('em', { style: { color: '#64748b', fontSize: '11px' } }, __('No technical code mapping defined for this control.', 'vaptsecure')))
                   ])
                 }, el(Icon, { icon: 'info-outline', size: 14, style: { color: '#94a3b8', cursor: 'help' } }))
               ]),
