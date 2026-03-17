@@ -1261,9 +1261,39 @@
           ]);
 
         case 'toggle':
-          const mapping = (schema.enforcement?.mappings || {})[key];
+          const mapping = (schema.enforcement?.mappings || {})[key] || (schema.client_deployment?.enforcement?.mappings || {})[key];
           const isDevelop = (feature.status || '').toLowerCase() === 'develop' || (feature.normalized_status || '').toLowerCase() === 'develop';
           const isSuperAdmin = window.vaptSecureSettings?.isSuper || false;
+          
+          // Enhanced Driver Detection for Tooltip Accuracy
+          const activeDriver = schema.enforcement?.driver || schema.client_deployment?.enforcement?.driver || 'hook';
+          const activeTarget = schema.enforcement?.target || schema.client_deployment?.enforcement?.target || 'root';
+
+          const isEnforced = toBool(value);
+          const vSettings = window.vaptSecureSettings || {};
+          
+          const getShortPath = (fullPath) => {
+              if (!fullPath) return '';
+              let path = fullPath;
+              if (vSettings.abspath && path.startsWith(vSettings.abspath)) {
+                  return './' + path.replace(vSettings.abspath, '').replace(/^[\\\/]/, '');
+              }
+              if (vSettings.pluginPath && path.startsWith(vSettings.pluginPath)) {
+                  const pluginBase = vSettings.pluginPath.split(/[\\\/]/).filter(Boolean).pop();
+                  return pluginBase + '/' + path.replace(vSettings.pluginPath, '').replace(/^[\\\/]/, '');
+              }
+              return path;
+          };
+
+          const statusHeader = isEnforced ? 
+            el('div', { style: { color: '#4ade80', fontWeight: '700', marginBottom: '8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                el(Icon, { icon: 'saved', size: 12 }),
+                __('INJECTED', 'vaptsecure')
+            ]) :
+            el('div', { style: { color: '#f87171', fontWeight: '700', marginBottom: '8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                el(Icon, { icon: 'no-alt', size: 12 }),
+                __('REMOVED', 'vaptsecure')
+            ]);
 
           return el('div', { id: control.id, key: uniqueKey, style: { marginBottom: '0' } }, [
             el(ToggleControl, {
@@ -1273,36 +1303,52 @@
                 el(Tooltip, {
                   text: el('div', { style: { padding: '8px', maxWidth: '400px', maxHeight: '500px', overflowY: 'auto' } }, [
                     el('div', { style: { fontWeight: '700', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '4px' } }, __('Technical Implementation Confirmation', 'vaptsecure')),
+                    statusHeader,
                     feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
-                      Object.entries(feature.platform_implementations).map(([name, impl], idx) => {
+                      Object.entries(feature.platform_implementations)
+                      .filter(([name, impl]) => {
+                        const n = name.toLowerCase();
+                        const d = activeDriver.toLowerCase();
+                        if (d === 'htaccess') return n.includes('htaccess') || n.includes('apache');
+                        if (d === 'config' || d === 'wp_config' || d === 'wp-config') return n.includes('config');
+                        if (d === 'nginx') return n.includes('nginx');
+                        if (d === 'cloudflare') return n.includes('cloudflare');
+                        if (d === 'iis') return n.includes('iis');
+                        if (d === 'hook' || d === 'php_functions' || d === 'wordpress') return n.includes('hook') || n.includes('functions') || n.includes('wordpress');
+                        return true; 
+                      })
+                      .map(([name, impl], idx) => {
                         let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
                         if (!code) return null;
-                        let target = impl.target_file || (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.target || 'root'));
+                        
+                        let targetFile = impl.target_file || (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : 'root'));
+                        if (activeDriver === 'hook' || activeDriver === 'php_functions') targetFile = 'vapt-functions.php';
+
+                        let fullPath = '';
+                        if (targetFile === 'wp-config.php') fullPath = (vSettings.abspath || '') + 'wp-config.php';
+                        else if (targetFile === '.htaccess') fullPath = (vSettings.abspath || '') + '.htaccess';
+                        else if (targetFile === 'vapt-functions.php') fullPath = (vSettings.pluginPath || '') + 'vapt-functions.php';
+                        else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
+                        else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
+                        
+                        const displayPath = getShortPath(fullPath) || targetFile;
                         let displayName = name;
                         
-                        // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                        // Show this additional information only to the Superadmin and hide it from normal admins
-                        if ((target.includes('wp-config') || displayName.includes('wp-config')) && isSuperAdmin) {
-                          displayName = 'wp-config / PHP Hook (Adaptive)';
-                          target = 'wp-config.php / Hook Driver';
-                          // Show both the config constant and the hook behavior
-                          code += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
-                        }
-
                         return el('div', { key: idx, style: { marginBottom: '15px' } }, [
                           el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
                             el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, displayName),
-                            el('span', { style: { fontFamily: 'monospace' } }, target)
+                            el('span', { style: { fontFamily: 'monospace' } }, displayPath)
                           ]),
-                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: '#38bdf8', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
+                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#38bdf8' : '#64748b', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, code)
                         ]);
                       }) : 
                       (mapping ? el('div', [
-                        el('div', { style: { fontSize: '10px', color: '#64748b', marginBottom: '8px' } },
-                          sprintf(__('Target: %s', 'vaptsecure'), (schema.enforcement?.driver === 'htaccess' ? '.htaccess' : (schema.enforcement?.driver === 'config' ? 'wp-config.php / Hook Driver (Adaptive)' : (schema.enforcement?.target || 'root'))))
-                        ),
-                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: '#f8fafc', padding: '6px', borderRadius: '4px', overflowX: 'auto' } }, mapping)
-                      ]) : el('em', null, __('No code mapping defined.', 'vaptsecure')))
+                        el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } }, [
+                            el('span', { style: { fontWeight: '700', color: '#cbd5e1' } }, __('Adaptive Driver', 'vaptsecure')),
+                            el('span', { style: { fontFamily: 'monospace' } }, (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'vapt-functions.php' : activeTarget))))
+                        ]),
+                        el('pre', { style: { margin: 0, fontSize: '9px', background: '#1e293b', color: isEnforced ? '#f8fafc' : '#64748b', padding: '8px', borderRadius: '4px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
+                      ]) : el('em', null, __('No code mapping defined for this control.', 'vaptsecure')))
                   ])
                 }, el(Icon, { icon: 'info-outline', size: 14, style: { color: '#94a3b8', cursor: 'help' } }))
               ]),

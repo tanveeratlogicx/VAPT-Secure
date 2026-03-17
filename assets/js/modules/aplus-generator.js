@@ -184,12 +184,7 @@
                     let previewTarget = implDetails.target_file || implTarget;
                     let previewCode = implDetails.code || 'Code snippet reference is loading...';
                     
-                    // v3.6.30: Clarify Hook Driver Fallback for wp-config targets
-                    // Show this only to Superadmin
-                    if ((previewTarget.includes('wp-config') || implTarget.includes('wp-config')) && window.vaptSecureSettings?.isSuper) {
-                      previewTarget = 'wp-config.php (Primary) + PHP Hook Driver (Adaptive Fallback)';
-                      if(previewCode) previewCode += '\n\n/* Adaptive Fallback: PHP Hook Driver */\nadd_action("init", "block_wp_cron", 1);';
-                    }
+                    // Technical preview now strictly shows the exact target and code.
                     
                     codePreview = `
                       <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; overflow-x: auto;">

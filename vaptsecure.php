@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.5.1
+ * Version:           2.5.2
  * Author:            Tanveer Malik
  * Author URI:        https://vapt.copilot.com
  * License:           GPL-2.0+
@@ -49,7 +49,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-  define('VAPTSECURE_VERSION', '2.5.1');
+  define('VAPTSECURE_VERSION', '2.5.2');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
   define('VAPTSECURE_DATA_VERSION', '2.0.0');
 }
@@ -800,6 +800,9 @@ function vaptsecure_enqueue_admin_assets($hook)
     'pluginVersion' => VAPTSECURE_VERSION,
     'pluginName' => 'VAPT Secure',
     'currentDomain' => parse_url(home_url(), PHP_URL_HOST),
+    'abspath' => ABSPATH,
+    'pluginPath' => VAPTSECURE_PATH,
+    'uploadPath' => wp_upload_dir()['basedir'],
   );
 
   // 🛡️ GLOBAL REST HOTPATCH (v3.8.17) - Inline for maximum priority

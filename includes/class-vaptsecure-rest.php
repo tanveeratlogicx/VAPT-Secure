@@ -1615,11 +1615,22 @@ class VAPTSECURE_REST
   private static function analyze_enforcement_strategy($schema, $feature_key)
   {
     if (!isset($schema['enforcement'])) {
-      $schema['enforcement'] = [
-        'driver' => 'hook',
-        'mappings' => []
-      ];
+      // 🛡️ Adaptive Awareness (v4.0.0): Check for client_deployment block first
+      if (isset($schema['client_deployment']['enforcement'])) {
+        $schema['enforcement'] = $schema['client_deployment']['enforcement'];
+      } else {
+        $schema['enforcement'] = [
+          'driver' => 'hook',
+          'mappings' => []
+        ];
+      }
+    } else {
+        // [v4.0.1] Even if it exists, if it is 'hook' and empty, check for adaptive alternative
+        if (($schema['enforcement']['driver'] ?? '') === 'hook' && empty($schema['enforcement']['mappings']) && isset($schema['client_deployment']['enforcement'])) {
+             $schema['enforcement'] = $schema['client_deployment']['enforcement'];
+        }
     }
+    
     $driver = $schema['enforcement']['driver'] ?? 'hook';
     $mappings = $schema['enforcement']['mappings'] ?? array();
 

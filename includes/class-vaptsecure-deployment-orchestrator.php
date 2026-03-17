@@ -28,11 +28,13 @@ class VAPTSECURE_Deployment_Orchestrator
     require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-apache-deployer.php';
     require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-nginx-deployer.php';
     require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-php-deployer.php';
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-config-deployer.php';
 
     $this->deployers = [
       'apache_htaccess' => new VAPTSECURE_Apache_Deployer(),
       'nginx_config'    => new VAPTSECURE_Nginx_Deployer(),
-      'php_functions'   => new VAPTSECURE_PHP_Deployer()
+      'php_functions'   => new VAPTSECURE_PHP_Deployer(),
+      'wp_config'       => new VAPTSECURE_Config_Deployer()
     ];
   }
 
@@ -123,9 +125,18 @@ class VAPTSECURE_Deployment_Orchestrator
   private function derive_matrix_from_legacy($schema, $impl_data = [])
   {
     $matrix = [];
-    $driver = $schema['enforcement']['driver'] ?? 'hook';
-    $mappings = $schema['enforcement']['mappings'] ?? [];
-    $target = $schema['enforcement']['target'] ?? 'root';
+    $enforcement = $schema['enforcement'] ?? [];
+
+    // [v4.0.0] Adaptive Bridge logic
+    if (empty($enforcement) || (isset($enforcement['driver']) && $enforcement['driver'] === 'hook' && empty($enforcement['mappings']))) {
+      if (isset($schema['client_deployment']['enforcement'])) {
+        $enforcement = $schema['client_deployment']['enforcement'];
+      }
+    }
+
+    $driver = $enforcement['driver'] ?? 'hook';
+    $mappings = $enforcement['mappings'] ?? [];
+    $target = $enforcement['target'] ?? 'root';
 
     if (empty($mappings)) return $matrix;
 
@@ -160,7 +171,10 @@ class VAPTSECURE_Deployment_Orchestrator
       $rules = is_array($mappings) ? implode("\n", $mappings) : $mappings;
       $matrix['nginx_config'] = ['rules' => $rules];
       $matrix['php_functions'] = ['code' => '/* Managed via nginx config */'];
-    } elseif ($driver === 'wp-config' || $driver === 'hook') {
+    } elseif ($driver === 'wp-config' || $driver === 'config' || $driver === 'wp_config') {
+      $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
+      $matrix['wp_config'] = ['code' => $code];
+    } elseif ($driver === 'hook') {
       $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
       $matrix['php_functions'] = ['code' => $code];
     } else {

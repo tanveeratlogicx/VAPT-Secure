@@ -102,15 +102,7 @@ class VAPTSECURE_Enforcer
    */
   private static function load_php_functions_file()
   {
-    // Check for external vapt-protection-suite plugin
-    $external_path = ABSPATH . 'wp-content/plugins/vapt-protection-suite/vapt-functions.php';
-    
-    if (file_exists($external_path)) {
-        require_once $external_path;
-        error_log("VAPT: Loaded external vapt-functions.php");
-    }
-    
-    // Also check for local bundled version
+    // Check for local bundled version
     $bundled_path = VAPTSECURE_PATH . 'vapt-functions.php';
     if (file_exists($bundled_path)) {
         require_once $bundled_path;
@@ -196,8 +188,9 @@ class VAPTSECURE_Enforcer
     } elseif ($driver_name === 'config' || $driver_name === 'wp_config' || $driver_name === 'wp-config') {
       self::rebuild_config();
     } else {
-      // For hooks, we just rely on the runtime loader (next request will pick it up)
-      // No explicit action needed other than clearing cache (done above).
+      // For hooks, we now trigger a physical rebuild of vapt-functions.php
+      // [v3.13.27] Centralized PHP Functions
+      self::rebuild_php_functions();
     }
   }
 
@@ -311,6 +304,13 @@ class VAPTSECURE_Enforcer
     $status = $meta['status'] ?? 'draft';
     $raw = (in_array($status, ['test', 'release']) && !empty($meta['override_schema'])) ? $meta['override_schema'] : $meta['generated_schema'];
     $schema = $raw ? json_decode($raw, true) : [];
+
+    // [v4.0.0] Adaptive Schema Resolution
+    if (!isset($schema['enforcement']) || (isset($schema['enforcement']['driver']) && $schema['enforcement']['driver'] === 'hook' && empty($schema['enforcement']['mappings']))) {
+      if (isset($schema['client_deployment']['enforcement'])) {
+        $schema['enforcement'] = $schema['client_deployment']['enforcement'];
+      }
+    }
 
     // [v3.12.5] Inject feature key if missing
     if (!isset($schema['feature_key']) && isset($meta['feature_key'])) {
@@ -446,10 +446,12 @@ class VAPTSECURE_Enforcer
   }
 
   /**
-   * [v4.0.1] Rebuilds vapt-functions.php by aggregating rules from all enabled features.
+   * [v4.0.1] Rebuilds vapt-functions.php via VAPTSECURE_PHP_Driver
    */
   public static function rebuild_php_functions()
   {
+    require_once VAPTSECURE_PATH . 'includes/enforcers/class-vaptsecure-php-driver.php';
+
     $enforced_features = self::get_enforced_features();
     $active_keys = self::get_active_file_keys();
     
@@ -459,62 +461,21 @@ class VAPTSECURE_Enforcer
       });
     }
 
-    $all_php_code = [];
+    $all_rules = array();
     foreach ($enforced_features as $meta) {
       $schema = self::resolve_schema($meta);
       $impl_data = self::resolve_impl($meta);
       $driver = $schema['enforcement']['driver'] ?? '';
 
       if ($driver === 'php_functions' || $driver === 'hook') {
-        // Only include if it explicitly targets the functions file or has multi-platform mapping
-        $code = self::extract_code_from_mapping($schema['enforcement']['mappings'] ?? [], 'php_functions');
-        if (empty($code)) {
-            // Fallback for universal hooks that might opt-in to persistence
-            $code = self::extract_code_from_mapping($schema['enforcement']['mappings'] ?? [], 'hook');
-        }
-
-        if (!empty($code)) {
-            $feature_key = $meta['feature_key'];
-            $all_php_code[] = "// BEGIN VAPT $feature_key\n$code\n// END VAPT $feature_key";
+        $feature_rules = VAPTSECURE_PHP_Driver::generate_rules($impl_data, $schema);
+        if (!empty($feature_rules)) {
+          $all_rules = array_merge($all_rules, $feature_rules);
         }
       }
     }
 
-    $paths = [
-        ABSPATH . 'wp-content/plugins/vapt-protection-suite/vapt-functions.php',
-        VAPTSECURE_PATH . 'vapt-functions.php'
-    ];
-
-    foreach ($paths as $path) {
-      if (!file_exists($path)) {
-          // If it doesn't exist, we only create it if we have rules to write
-          if (empty($all_php_code)) continue;
-          $dir = dirname($path);
-          if (!is_dir($dir)) wp_mkdir_p($dir);
-          file_put_contents($path, "<?php\n\n// VAPT Secure: Protection Functions\n\n");
-      }
-
-      $content = file_get_contents($path);
-      $start_marker = "// BEGIN VAPT SECURITY RULES";
-      $end_marker = "// END VAPT SECURITY RULES";
-
-      $new_vapt_block = "";
-      if (!empty($all_php_code)) {
-          $new_vapt_block = $start_marker . "\n" . implode("\n\n", $all_php_code) . "\n" . $end_marker;
-      }
-
-      // Replace old block or append
-      if (strpos($content, $start_marker) !== false && strpos($content, $end_marker) !== false) {
-          $pattern = "/" . preg_quote($start_marker, '/') . ".*?" . preg_quote($end_marker, '/') . "/is";
-          $content = preg_replace($pattern, $new_vapt_block, $content);
-      } else {
-          $content = rtrim($content) . "\n\n" . $new_vapt_block . "\n";
-      }
-
-      // Cleanup: remove excess blank lines and trailing whitespace
-      $content = preg_replace("/(\r?\n){3,}/", "$1$1", $content);
-      file_put_contents($path, $content);
-    }
+    return VAPTSECURE_PHP_Driver::write_batch($all_rules);
   }
 
   /**
