@@ -1274,15 +1274,18 @@
           
           const getShortPath = (fullPath) => {
               if (!fullPath) return '';
-              let path = fullPath;
-              if (vSettings.abspath && path.startsWith(vSettings.abspath)) {
-                  return './' + path.replace(vSettings.abspath, '').replace(/^[\\\/]/, '');
+              let pathStr = fullPath.replace(/\\/g, '/');
+              let absPath = (vSettings.abspath || '').replace(/\\/g, '/');
+              let pluginPath = (vSettings.pluginPath || '').replace(/\\/g, '/');
+
+              if (absPath && pathStr.toLowerCase().startsWith(absPath.toLowerCase())) {
+                  return './' + pathStr.substring(absPath.length).replace(/^[\\\/]/, '');
               }
-              if (vSettings.pluginPath && path.startsWith(vSettings.pluginPath)) {
-                  const pluginBase = vSettings.pluginPath.split(/[\\\/]/).filter(Boolean).pop();
-                  return pluginBase + '/' + path.replace(vSettings.pluginPath, '').replace(/^[\\\/]/, '');
+              if (pluginPath && pathStr.toLowerCase().startsWith(pluginPath.toLowerCase())) {
+                  const pluginBase = pluginPath.split(/[\\\/]/).filter(Boolean).pop();
+                  return pluginBase + '/' + pathStr.substring(pluginPath.length).replace(/^[\\\/]/, '');
               }
-              return path;
+              return pathStr;
           };
 
           const statusHeader = isEnforced ? 
@@ -1331,24 +1334,19 @@
                         else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
                         else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
                         
-                        const displayPath = fullPath || targetFile;
+                        const displayPath = fullPath ? getShortPath(fullPath) : targetFile;
                         let displayName = name;
                         
                         return el('div', { key: idx, style: { marginBottom: '15px' } }, [
                           el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '2px' } }, [
-                            el('div', { style: { display: 'flex', justifyContent: 'space-between' } }, [
-                                el('span', { style: { fontWeight: '700', color: '#f1f5f9' } }, displayName),
-                                el('span', { style: { fontSize: '9px', color: '#64748b' } }, targetFile)
-                            ]),
-                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '9px', wordBreak: 'break-all' } }, displayPath)
+                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, displayPath)
                           ]),
                           el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '12px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap', borderLeft: isEnforced ? '3px solid #22c55e' : '3px solid #ef4444' } }, code)
                         ]);
                       }) : 
                       (mapping ? el('div', [
-                        el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' } }, [
-                            el('span', { style: { fontWeight: '700', color: '#f1f5f9' } }, __('Adaptive Driver', 'vaptsecure')),
-                            el('span', { style: { fontFamily: 'monospace', color: '#38bdf8' } }, (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'vapt-functions.php' : activeTarget))))
+                        el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px' } }, [
+                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, (activeDriver === 'htaccess' ? './.htaccess' : (activeDriver.includes('config') ? './wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'VAPT-Secure/vapt-functions.php' : './' + activeTarget))))
                         ]),
                         el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
                       ]) : el('em', { style: { color: '#64748b', fontSize: '11px' } }, __('No technical code mapping defined for this control.', 'vaptsecure')))
