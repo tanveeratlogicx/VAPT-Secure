@@ -34828,3 +34828,609 @@ Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"veri
 VAPT Enforcement Run at 2026-03-17 02:55:46
 Feature: RISK-004
 Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 02:59:59
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 02:59:59
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:28
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:28
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:37
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:37
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:41
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:41
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:44
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:44
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:44
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:44
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:49
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:49
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:00:50
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:00:50
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:15
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:15
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:19
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:19
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:22
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:22
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:25
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:25
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:26
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:26
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:26
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:26
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:29
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:29
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:31
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:31
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:31
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:31
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:34
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:34
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:34
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:34
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:01:34
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:01:34
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:02:30
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:02:30
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:02:30
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:02:30
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:03:28
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:03:28
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:04:31
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:04:31
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:05:18
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:05:18
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:06:22
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:06:22
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:06:28
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:06:28
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:08:22
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:08:22
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:08:29
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:08:29
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:09:18
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:09:18
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:10:34
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:10:34
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:11:18
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:11:18
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:13:22
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:13:22
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:15:22
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:15:22
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:17:22
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:17:22
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:18:18
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:18:18
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:20:25
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:20:25
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:21:48
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:21:48
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:23:48
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:23:48
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:25:50
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:25:50
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:27:49
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:27:49
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:29:51
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:29:51
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:44
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:44
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:44
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:44
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:53
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:53
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:53
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:53
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:53
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:53
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:58
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:58
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:58
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:58
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:31:59
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:31:59
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:32:59
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:32:59
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:33:55
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:33:55
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:34:59
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:34:59
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:35:54
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:35:54
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:35:56
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:35:56
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:01
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:01
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:09
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:09
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:10
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:10
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:10
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:10
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:14
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:14
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:20
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:20
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:23
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:23
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:30
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:30
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:45
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:45
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:48
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:48
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:55
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:55
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:57
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:57
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:57
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:57
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:36:58
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:36:58
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:23
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:23
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:26
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:26
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:36
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:36
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:36
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:42
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:42
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:42
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:43
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:43
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:43
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:43
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:43
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:43
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:37:55
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:55
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:37:55
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:38:06
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:38:06
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:38:06
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:38:20
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:38:20
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:38:20
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:38:28
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:38:28
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:38:28
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:38:37
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:38:37
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:38:37
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:38:42
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:38:42
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:38:42
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:39:12
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:39:12
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:12
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:39:18
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:18
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:18
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:39:20
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:20
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:20
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:39:28
+Feature: RISK-003
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_rest_lockdown":null,"verify_author_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:28
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:28
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:39:35
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:39:35
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:35
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:39:42
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:39:42
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:39:42
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:40:00
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:40:00
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:40:00
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:40:42
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:40:42
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:40:42
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:41:25
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:41:25
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:41:25
+Feature: RISK-004
+Skipped: No mappings found.
+VAPT Enforcement Run at 2026-03-17 03:41:57
+Feature: RISK-003
+Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).
+VAPT Enforcement Run at 2026-03-17 03:41:57
+Feature: RISK-004
+Applying rules with Data: {"feat_enabled":true,"verify_aplus_headers":null,"verify_active_protection":null,"verify_integrity":null}
+VAPT Enforcement Run at 2026-03-17 03:41:57
+Feature: RISK-004
+Skipped: No mappings found.

@@ -1433,12 +1433,17 @@ window.vaptScriptLoaded = true;
 
       const findBestMatch = (keywords) => {
         for (const keyword of keywords) {
-          // Exact match first
+          // Tier 1: Exact match
           const exact = allKeys.find(k => k.toLowerCase() === keyword.toLowerCase());
           if (exact) return exact;
-          // Suffix match (e.g., 'description.summary' matches 'summary')
+          // Tier 2: Suffix match (e.g., 'description.summary' matches 'summary')
           const suffix = allKeys.find(k => k.toLowerCase().endsWith('.' + keyword.toLowerCase()));
           if (suffix) return suffix;
+        }
+        // Tier 3: Partial/contains match (broader fallback for nested or compound keys)
+        for (const keyword of keywords) {
+          const partial = allKeys.find(k => k.toLowerCase().includes(keyword.toLowerCase()));
+          if (partial) return partial;
         }
         return '';
       };
@@ -1461,19 +1466,19 @@ window.vaptScriptLoaded = true;
       autoMapField('platform_implementations', ['platform_implementations', 'implementations', 'enforcer_map']);
 
       // Additional Context fields
-      autoMapField('operational_notes', ['operational_notes', 'notes', 'operation_notes', 'operation_details']);
-      autoMapField('verification_steps', ['verification_steps', 'manual_verification', 'steps', 'test_method', 'verification']);
+      autoMapField('operational_notes', ['operational_notes', 'notes', 'operation_notes', 'operation_details', 'summary']);
+      autoMapField('verification_steps', ['verification_steps', 'manual_verification', 'verification.steps', 'steps', 'test_method', 'verification', 'owasp']);
 
       // NEW: Additional fields for Design Implementation Modal
       autoMapField('risk_id', ['risk_id', 'id', 'risk identifier', 'risk id']);
       autoMapField('title', ['title', 'name', 'risk title', 'risk name']);
       autoMapField('category', ['category', 'type', 'risk category']);
       autoMapField('owasp_cwe', ['owasp.cwe', 'cwe', 'cwe id', 'cwe identifier']);
-      autoMapField('owasp_top_10_2025', ['owasp.owasp_top_10_2025', 'owasp top 10', 'owasp 2025', 'owasp']);
+      autoMapField('owasp_top_10_2025', ['owasp.owasp_top_10_2025', 'owasp top 10', 'owasp 2025', 'owasp_top_10_2025', 'owasp']);
 
-      // NEW: Verification fields from enforcer_pattern_library_v2.0.json
-      autoMapField('verification_command', ['verification.command', 'verification command', 'test command']);
-      autoMapField('verification_expected', ['verification.expected', 'expected output', 'test result']);
+      // Verification fields — resolved from enforcer_pattern_library or nested owasp data
+      autoMapField('verification_command', ['verification.command', 'verification_command', 'verification command', 'test command', 'verification']);
+      autoMapField('verification_expected', ['verification.expected', 'verification_expected', 'expected output', 'test result', 'expected', 'verification']);
 
       setFieldMapping(newMapping);
       if (mappedCount === 0) {
@@ -4224,7 +4229,7 @@ window.vaptScriptLoaded = true;
     const [sortBy, setSortBy] = useState(() => localStorage.getItem('vaptsecure_sort_by') || 'name');
     const [sortOrder, setSortOrder] = useState(() => localStorage.getItem('vaptsecure_sort_order') || 'asc');
     const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem('vaptsecure_search_query') || '');
-    const [fieldMapping, setFieldMapping] = useState({ test_method: '', verification_steps: '', verification_engine: '' });
+    const [fieldMapping, setFieldMapping] = useState({ test_method: '', verification_steps: '', verification_command: '', verification_expected: '', verification_engine: '' });
 
 
     // Load/Save Field Mapping per File
@@ -4234,7 +4239,7 @@ window.vaptScriptLoaded = true;
       if (saved) {
         setFieldMapping(JSON.parse(saved));
       } else {
-        setFieldMapping({ test_method: '', verification_steps: '', verification_engine: '' });
+        setFieldMapping({ test_method: '', verification_steps: '', verification_command: '', verification_expected: '', verification_engine: '' });
       }
     }, [selectedFile]);
 
