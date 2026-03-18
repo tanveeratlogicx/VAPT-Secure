@@ -3,13 +3,13 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version:           2.5.5
- * Author:            Tanveer Malik
- * Author URI:        https://vapt.copilot.com
- * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
- * Text Domain:       vaptsecure
- * Domain Path:       /languages
+ * Version: 2.5.6
+ * Author: Tanveer Malik
+ * Author URI: https://vapt.copilot.com
+ * License: GPL-2.0+
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
+ * Text Domain: vaptsecure
+ * Domain Path: /languages
  */
 
 if (!defined('ABSPATH')) {
@@ -52,7 +52,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-  define('VAPTSECURE_VERSION', '2.5.5');
+define('VAPTSECURE_VERSION', '2.5.6');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
@@ -155,6 +155,7 @@ require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-workflow.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-admin.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-license-manager.php';
 
 /**
  * Initialize Global Services

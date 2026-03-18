@@ -229,6 +229,7 @@ Every `implementation_plan.md` MUST follow this changelog-centric structure:
     - 🔴 `[Need Review]` entries MUST be moved to the very top.
     - 🟡 `[Implementing]` entries follow.
     - 🟢 `[Complete]` / ⚪ `[Pending]` entries follow.
+7.  **Visual Information Flow**: Every plan MUST include a Mermaid diagram (flowchart) to give a visual interpretation of the information flow or process logic. This ensures the technical approach is easily digestible.
 
 ---
 
