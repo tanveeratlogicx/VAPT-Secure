@@ -187,12 +187,39 @@ class VAPTSECURE_REST
 
         register_rest_route(
             'vaptsecure/v1', '/domains/batch-delete', array(
-            'methods'  => 'POST',
-            'callback' => array($this, 'batch_delete_domains'),
-            'permission_callback' => array($this, 'check_permission'),
+                'methods' => 'POST',
+                'callback' => array($this, 'batch_delete_domains'),
+                'permission_callback' => array($this, 'check_permission'),
             )
         );
-
+        
+        // License status check endpoint
+        register_rest_route(
+            'vaptsecure/v1', '/license/status', array(
+                'methods' => 'GET',
+                'callback' => array($this, 'get_license_status'),
+                'permission_callback' => array($this, 'check_permission'),
+            )
+        );
+        
+        // Manual restore from cache endpoint
+        register_rest_route(
+            'vaptsecure/v1', '/license/restore', array(
+                'methods' => 'POST',
+                'callback' => array($this, 'restore_license_cache'),
+                'permission_callback' => array($this, 'check_permission'),
+            )
+        );
+        
+        // Force license check endpoint
+        register_rest_route(
+            'vaptsecure/v1', '/license/check', array(
+                'methods' => 'POST',
+                'callback' => array($this, 'force_license_check'),
+                'permission_callback' => array($this, 'check_permission'),
+            )
+        );
+        
         register_rest_route(
             'vaptsecure/v1', '/build/generate', array(
             'methods'  => 'POST',
@@ -1509,15 +1536,24 @@ class VAPTSECURE_REST
         }
 
         $result_id = VAPTSECURE_DB::update_domain($domain, $is_wildcard ? 1 : 0, $is_enabled ? 1 : 0, $id, $license_id, $license_type, $manual_expiry_date, $auto_renew, $renewals_count, $history, $license_scope, $installation_limit);
-
+        
         if ($result_id === false) {
             return new WP_REST_Response(array('error' => 'Database update failed'), 500);
         }
-
+        
+        // Check if license was previously expired and is now valid (restoration scenario)
+        $was_expired = get_transient('vaptsecure_license_cache_' . $domain . '_expired_handled');
+        if ($was_expired && $new_exp_ts > $today_ts && $current_exp_ts < $today_ts) {
+            // License was expired, now renewed - restore settings from cache
+            if (class_exists('VAPTSECURE_License_Manager')) {
+                VAPTSECURE_License_Manager::restore_from_cache($domain);
+            }
+        }
+        
         $fresh = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}vaptsecure_domains WHERE id = %d", $result_id), ARRAY_A);
-
+        
         return new WP_REST_Response(array('success' => true, 'domain' => $fresh), 200);
-    }
+        }
 
     public function delete_domain($request)
     {
@@ -2552,10 +2588,84 @@ class VAPTSECURE_REST
 
         return new WP_REST_Response(
             array(
-            'success' => true,
-            'enabled' => $enabled
-            ), 200
+                'success' => true,
+                'enabled' => $enabled
+            ),
+            200
         );
     }
-}
-
+    
+    /**
+     * Get license status for current domain
+     *
+     * @return WP_REST_Response
+     */
+    public function get_license_status()
+    {
+        $domain = parse_url(get_site_url(), PHP_URL_HOST);
+        
+        if (class_exists('VAPTSECURE_License_Manager')) {
+            $info = VAPTSECURE_License_Manager::get_license_info($domain);
+            return new WP_REST_Response($info, 200);
+        }
+        
+        return new WP_REST_Response(array(
+            'status' => 'unknown',
+            'message' => 'License manager not available'
+        ), 200);
+    }
+    
+    /**
+     * Restore settings from cache (manual trigger)
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Response
+     */
+    public function restore_license_cache($request)
+    {
+        $domain = $request->get_param('domain');
+        
+        if (empty($domain)) {
+            $domain = parse_url(get_site_url(), PHP_URL_HOST);
+        }
+        
+        if (class_exists('VAPTSECURE_License_Manager')) {
+            $result = VAPTSECURE_License_Manager::restore_from_cache($domain);
+            
+            if ($result) {
+                return new WP_REST_Response(array(
+                    'success' => true,
+                    'message' => 'Settings restored successfully'
+                ), 200);
+            } else {
+                return new WP_REST_Response(array(
+                    'success' => false,
+                    'message' => 'No cached settings found or restoration failed'
+                ), 400);
+            }
+        }
+        
+        return new WP_REST_Response(array(
+            'success' => false,
+            'message' => 'License manager not available'
+        ), 500);
+    }
+    
+    /**
+     * Force license check and handle expiration
+     *
+     * @return WP_REST_Response
+     */
+    public function force_license_check()
+    {
+        if (class_exists('VAPTSECURE_License_Manager')) {
+            $result = VAPTSECURE_License_Manager::force_license_check();
+            return new WP_REST_Response($result, 200);
+        }
+        
+        return new WP_REST_Response(array(
+            'status' => 'unknown',
+            'message' => 'License manager not available'
+        ), 500);
+    }
+    }
