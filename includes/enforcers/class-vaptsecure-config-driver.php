@@ -23,9 +23,47 @@ class VAPTSECURE_Config_Driver
         $rules = array();
         $mappings = isset($enf_config['mappings']) ? $enf_config['mappings'] : array();
 
+        // 🛡️ TWO-WAY DEACTIVATION (v4.0.x - Toggle Detection for wp-config)
+        // Check master toggle before generating any rules
+        $is_enabled = true;
+        if (isset($data['feat_enabled'])) {
+            $is_enabled = (bool)filter_var($data['feat_enabled'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($data['enabled'])) {
+            $is_enabled = (bool)filter_var($data['enabled'], FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $risk_key = $schema['risk_id'] ?? $schema['id'] ?? $schema['feature_key'] ?? '';
+            $risk_suffix = str_replace('-', '_', strtolower($risk_key));
+            $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+            if (isset($data[$auto_key])) {
+                $is_enabled = (bool)filter_var($data[$auto_key], FILTER_VALIDATE_BOOLEAN);
+            }
+        }
+        
+        // If feature is disabled, return empty rules (rules will be stripped on next rebuild)
+        if (!$is_enabled) {
+            error_log("VAPT CONFIG: Feature disabled via toggle, skipping rule generation");
+            return array();
+        }
+
         foreach ($mappings as $key => $constant) {
+            // [v3.13.31] Robust value detection: if the schema-defined key is missing, check common alternates
+            $value = null;
             if (isset($data[$key])) {
                 $value = $data[$key];
+            } else {
+                $risk_key = $schema['risk_id'] ?? $schema['id'] ?? $schema['feature_key'] ?? '';
+                $risk_suffix = str_replace('-', '_', strtolower($risk_key));
+                $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+                if (isset($data[$auto_key])) {
+                    $value = $data[$auto_key];
+                } elseif (isset($data['feat_enabled'])) {
+                    $value = $data['feat_enabled'];
+                } elseif (isset($data['enabled'])) {
+                    $value = $data['enabled'];
+                }
+            }
+
+            if ($value !== null) {
 
                 // [v1.4.0] Support for v1.1/v2.0 rich mappings (Platform Objects)
                 $constant = VAPTSECURE_Enforcer::extract_code_from_mapping($constant, 'wp-config.php');
@@ -69,12 +107,25 @@ class VAPTSECURE_Config_Driver
         $paths = [];
         if (defined('ABSPATH')) {
             $base = rtrim(ABSPATH, DIRECTORY_SEPARATOR);
+            
+            // Standard location
             $paths[] = $base . DIRECTORY_SEPARATOR . 'wp-config.php';
+            
+            // One level above ABSPATH (WP standard for security)
             $paths[] = dirname($base) . DIRECTORY_SEPARATOR . 'wp-config.php';
+            
+            // [v3.13.31] Special: Home URL detection for subdirectory installs
+            if (function_exists('get_home_path')) {
+                $home = rtrim(get_home_path(), DIRECTORY_SEPARATOR);
+                if (!empty($home) && !in_array($home . DIRECTORY_SEPARATOR . 'wp-config.php', $paths)) {
+                    $paths[] = $home . DIRECTORY_SEPARATOR . 'wp-config.php';
+                    $paths[] = dirname($home) . DIRECTORY_SEPARATOR . 'wp-config.php';
+                }
+            }
         }
 
         $wp_config_path = null;
-        foreach ($paths as $path) {
+        foreach (array_unique($paths) as $path) {
             if (@is_file($path) && @is_readable($path) && @is_writable($path)) {
                 $wp_config_path = $path;
                 break;
@@ -82,8 +133,11 @@ class VAPTSECURE_Config_Driver
         }
 
         if (!$wp_config_path) {
-            error_log("VAPT: wp-config.php not writable or not found.");
+            $checked = implode(', ', array_unique($paths));
+            error_log("VAPT: wp-config.php not writable or not found in standard locations: $checked");
             return false;
+        } else {
+            // error_log("VAPT: Selected wp-config.php Path: " . $wp_config_path);
         }
 
         $content = file_get_contents($wp_config_path);

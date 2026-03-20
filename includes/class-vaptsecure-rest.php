@@ -1009,15 +1009,40 @@ class VAPTSECURE_REST
             } else {
                 $meta_updates['implementation_data'] = $val;
             }
+
+            // [v3.13.30] BI-DIRECTIONAL SYNC: Auto-detect Master Toggle in implementation_data
+            // [FIX v4.0.x] Also sync is_enforced so toggle affects file enforcement
+            if (is_array($implementation_data)) {
+                $is_enabled = null;
+                $risk_suffix = str_replace('-', '_', strtolower($key));
+                $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+
+                // Robust toggle check - check multiple possible toggle keys
+                $v = null;
+                if (isset($implementation_data['enabled'])) $v = $implementation_data['enabled'];
+                elseif (isset($implementation_data['feat_enabled'])) $v = $implementation_data['feat_enabled'];
+                elseif (isset($implementation_data[$auto_key])) $v = $implementation_data[$auto_key];
+
+                if ($v !== null) {
+                    $is_enabled = filter_var($v, FILTER_VALIDATE_BOOLEAN);
+                    // Sync both is_enabled AND is_enforced for consistent enforcement
+                    $meta_updates['is_enabled'] = $is_enabled ? 1 : 0;
+                    $meta_updates['is_enforced'] = $is_enabled ? 1 : 0;
+                    error_log("VAPT: Toggled enforcement for $key to " . ($is_enabled ? 'ENABLED' : 'DISABLED') . " (synced to both is_enabled and is_enforced)");
+                }
+            }
         }
 
         if (! empty($meta_updates)) {
             global $wpdb;
+            // error_log("VAPT: Updating meta for $key: " . json_encode($meta_updates));
             VAPTSECURE_DB::update_feature_meta($key, $meta_updates);
             if ($wpdb->last_error) {
                 error_log("[VAPT Error] DB Update Failed for $key: " . $wpdb->last_error);
             }
             do_action('vaptsecure_feature_saved', $key, $meta_updates);
+        } else {
+             // error_log("VAPT: No meta updates identified for $key");
         }
 
         if ($reset_history) {

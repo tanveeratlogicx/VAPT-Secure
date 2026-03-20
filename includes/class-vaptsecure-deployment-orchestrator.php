@@ -54,9 +54,13 @@ class VAPTSECURE_Deployment_Orchestrator
 
         // 1. Resolve Platform Matrix
         $platform_matrix = $schema['platform_matrix'] ?? $this->derive_matrix_from_legacy($schema, $impl_data);
+        
+        error_log("VAPT ORCHESTRATOR: Processing {$risk_id} with profile={$profile}, targets=" . count($platform_matrix));
 
         // 2. Select Targets
         $targets = $this->resolve_targets($profile, $env, $platform_matrix);
+        
+        error_log("VAPT ORCHESTRATOR: Selected targets for {$risk_id}: " . implode(', ', $targets));
 
         // 3. Execute Deployment
         foreach ($targets as $platform) {
@@ -64,11 +68,18 @@ class VAPTSECURE_Deployment_Orchestrator
                 $deployer = $this->deployers[$platform];
                 // 2.1 Calculate toggle state (v4.0.0 Adaptive logic)
                 $is_enabled = true;
+                $risk_suffix = str_replace('-', '_', strtolower($risk_id));
+                $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+
                 if (isset($impl_data['feat_enabled'])) {
                     $is_enabled = filter_var($impl_data['feat_enabled'], FILTER_VALIDATE_BOOLEAN);
                 } elseif (isset($impl_data['enabled'])) {
                     $is_enabled = filter_var($impl_data['enabled'], FILTER_VALIDATE_BOOLEAN);
+                } elseif (isset($impl_data[$auto_key])) {
+                    $is_enabled = filter_var($impl_data[$auto_key], FILTER_VALIDATE_BOOLEAN);
                 }
+                
+                error_log("VAPT ORCHESTRATOR: Deploying {$risk_id} to {$platform}, enabled=" . ($is_enabled ? 'true' : 'false'));
 
                 $implementation = $platform_matrix[$platform];
                 $res = $deployer->deploy($risk_id, $implementation, $is_enabled);
@@ -77,9 +88,13 @@ class VAPTSECURE_Deployment_Orchestrator
                     'success' => false,
                     'error' => $res->get_error_message()
                     ];
+                    error_log("VAPT ORCHESTRATOR: Deploy failed for {$risk_id} -> {$platform}: " . $res->get_error_message());
                 } else {
                     $results[$platform] = array_merge(['success' => true], $res);
+                    error_log("VAPT ORCHESTRATOR: Deploy success for {$risk_id} -> {$platform}");
                 }
+            } else {
+                error_log("VAPT ORCHESTRATOR: Skipping {$platform} - no deployer or no implementation matrix");
             }
         }
 
@@ -119,6 +134,11 @@ class VAPTSECURE_Deployment_Orchestrator
             if ($optimal !== 'php_functions' && isset($matrix['php_functions'])) {
                 $targets[] = 'php_functions';
             }
+
+            // [FIX] Always include wp_config if defined (Core configuration persists regardless of optimal server platform)
+            if (isset($matrix['wp_config'])) {
+                $targets[] = 'wp_config';
+            }
             break;
         }
 
@@ -141,7 +161,9 @@ class VAPTSECURE_Deployment_Orchestrator
         $mappings = $enforcement['mappings'] ?? [];
         $target = $enforcement['target'] ?? 'root';
 
-        if (empty($mappings)) { return $matrix;
+        if (empty($mappings)) { 
+            error_log("VAPT ORCHESTRATOR: No mappings found in schema for derive_matrix");
+            return $matrix;
         }
 
         // Check toggle state (v4.0.0 Adaptive logic)
@@ -155,9 +177,24 @@ class VAPTSECURE_Deployment_Orchestrator
         // Map legacy drivers to v4.0 platforms
         if ($driver === 'htaccess') {
             include_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
-      
-            $raw_code = VAPTSECURE_Enforcer::extract_code_from_mapping($mappings, 'htaccess');
-      
+            
+            // [FIX v4.0.x] Iterate through each mapping and extract platform-specific code
+            $extracted_rules = [];
+            foreach ($mappings as $mapping_key => $directive) {
+                // Skip toggle-like keys that aren't actual directives
+                if (in_array(strtolower($mapping_key), ['feat_enabled', 'enabled', 'risk_id', 'id', 'key'])) {
+                    continue;
+                }
+                
+                // Extract htaccess code from this mapping
+                $code = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'htaccess');
+                if (!empty($code)) {
+                    $extracted_rules[] = $code;
+                }
+            }
+            
+            $raw_code = implode("\n\n", array_filter($extracted_rules));
+            
             // Perform variable substitution
             $site_url = function_exists('get_site_url') ? get_site_url() : '';
             $replacements = [
@@ -167,23 +204,71 @@ class VAPTSECURE_Deployment_Orchestrator
             '{{domain}}'   => parse_url($site_url, PHP_URL_HOST) ?? '',
             ];
             $raw_code = str_replace(array_keys($replacements), array_values($replacements), $raw_code);
+            
+            error_log("VAPT ORCHESTRATOR: Extracted htaccess rules length: " . strlen($raw_code));
 
-            $matrix['apache_htaccess'] = ['rules' => $raw_code, 'target' => $target];
+            if (!empty($raw_code)) {
+                $matrix['apache_htaccess'] = ['rules' => $raw_code, 'target' => $target];
+            }
             // Also provide a PHP fallback for mixed environments
             $matrix['php_functions'] = ['code' => '/* Managed via htaccess redirect */'];
         } elseif ($driver === 'nginx') {
-            $rules = is_array($mappings) ? implode("\n", $mappings) : $mappings;
-            $matrix['nginx_config'] = ['rules' => $rules];
+            // [FIX v4.0.x] Extract nginx code from each mapping
+            $extracted_rules = [];
+            foreach ($mappings as $mapping_key => $directive) {
+                if (in_array(strtolower($mapping_key), ['feat_enabled', 'enabled'])) continue;
+                $code = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'nginx');
+                if (!empty($code)) {
+                    $extracted_rules[] = $code;
+                }
+            }
+            $rules = implode("\n", array_filter($extracted_rules));
+            if (!empty($rules)) {
+                $matrix['nginx_config'] = ['rules' => $rules];
+            }
             $matrix['php_functions'] = ['code' => '/* Managed via nginx config */'];
         } elseif ($driver === 'wp-config' || $driver === 'config' || $driver === 'wp_config') {
-            $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
-            $matrix['wp_config'] = ['code' => $code];
+            // [FIX v4.0.x] Extract wp-config code from each mapping
+            $extracted_code = [];
+            foreach ($mappings as $mapping_key => $directive) {
+                if (in_array(strtolower($mapping_key), ['feat_enabled', 'enabled'])) continue;
+                $code = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'wp-config');
+                if (!empty($code)) {
+                    $extracted_code[] = $code;
+                }
+            }
+            $code = implode("\n", array_filter($extracted_code));
+            if (!empty($code)) {
+                $matrix['wp_config'] = ['code' => $code];
+            }
         } elseif ($driver === 'hook') {
-            $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
-            $matrix['php_functions'] = ['code' => $code];
+            // [FIX v4.0.x] Extract PHP/hook code from each mapping
+            $extracted_code = [];
+            foreach ($mappings as $mapping_key => $directive) {
+                if (in_array(strtolower($mapping_key), ['feat_enabled', 'enabled'])) continue;
+                $code = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, 'hook');
+                if (!empty($code)) {
+                    $extracted_code[] = $code;
+                }
+            }
+            $code = implode("\n", array_filter($extracted_code));
+            if (!empty($code)) {
+                $matrix['php_functions'] = ['code' => $code];
+            }
         } else {
-            $code = is_array($mappings) ? implode("\n", $mappings) : $mappings;
-            $matrix['php_functions'] = ['code' => $code];
+            // [FIX v4.0.x] Generic fallback - extract from each mapping
+            $extracted_code = [];
+            foreach ($mappings as $mapping_key => $directive) {
+                if (in_array(strtolower($mapping_key), ['feat_enabled', 'enabled'])) continue;
+                $code = VAPTSECURE_Enforcer::extract_code_from_mapping($directive, $driver);
+                if (!empty($code)) {
+                    $extracted_code[] = $code;
+                }
+            }
+            $code = implode("\n", array_filter($extracted_code));
+            if (!empty($code)) {
+                $matrix['php_functions'] = ['code' => $code];
+            }
         }
 
         return $matrix;

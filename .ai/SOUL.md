@@ -43,7 +43,7 @@ Your primary role is to:
 ## 🏗️ Project Context
 
 **Project**: VAPTSecure WordPress Plugin
-**Version**: 2.4.11
+**Version**: 2.5.7
 **Domain**: WordPress Security & Vulnerability Management
 **Architecture**: Plugin-based with REST API integration
 
