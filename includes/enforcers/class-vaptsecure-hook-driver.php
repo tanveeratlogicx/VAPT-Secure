@@ -80,34 +80,39 @@ class VAPTSECURE_Hook_Driver
             $resolved_data = array_merge($resolved_data, $impl_data);
         }
 
-        // 2. TWO-WAY STRATEGY: Strictly check 'enabled' or 'feat_enabled' toggle (v3.13.20)
-        $is_enabled = false;
-        if (isset($resolved_data["enabled"])) {
-            $is_enabled = (bool) $resolved_data["enabled"];
-        } elseif (isset($resolved_data["feat_enabled"])) {
-            $is_enabled = (bool) $resolved_data["feat_enabled"];
+        // 2. TWO-WAY STRATEGY: Check 'enabled' or 'feat_enabled' toggle (v4.0.x FIX)
+        // [FIX v4.0.x] Default to ENABLED if no toggle key exists - features should
+        // run by default unless explicitly disabled. This fixes the issue where
+        // toggling OFF in the UI doesn't update a toggle key, causing all enforcement to be skipped.
+        $has_toggle_key = false;
+        $is_enabled = true; // Default: ENFORCE if no explicit toggle key exists
+
+        if (isset($resolved_data["feat_enabled"])) {
+            $has_toggle_key = true;
+            $is_enabled = (bool) filter_var($resolved_data["feat_enabled"], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($resolved_data["enabled"])) {
+            $has_toggle_key = true;
+            $is_enabled = (bool) filter_var($resolved_data["enabled"], FILTER_VALIDATE_BOOLEAN);
         } else {
-            // Check mapped toggles (v3.13.20)
-            $mappings = $schema["enforcement"]["mappings"] ?? [];
-            foreach ($mappings as $mapped_key => $directive) {
-                if (isset($resolved_data[$mapped_key]) 
-                    && ($resolved_data[$mapped_key] === false 
-                    || $resolved_data[$mapped_key] === 0 
-                    || $resolved_data[$mapped_key] === "0")
-                ) {
-                    $is_enabled = false;
-                    break;
-                }
+            // Check auto-generated risk-specific toggle keys (v4.0.x)
+            $risk_suffix = str_replace('-', '_', strtolower($key));
+            $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+            if (isset($resolved_data[$auto_key])) {
+                $has_toggle_key = true;
+                $is_enabled = (bool) filter_var($resolved_data[$auto_key], FILTER_VALIDATE_BOOLEAN);
             }
         }
+        
+        error_log("VAPT HOOK DRIVER apply(): key={$key}, has_toggle={$has_toggle_key}, is_enabled={$is_enabled}, resolved_data_keys=" . json_encode(array_keys($resolved_data)));
 
         if (!$is_enabled) {
             file_put_contents(
                 $log_file,
                 $log .
-                    "Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled).\n",
+                    "Deactivated: Feature is explicitly disabled in UI (feat_enabled/enabled=false).\n",
                 FILE_APPEND,
             );
+            error_log("VAPT HOOK DRIVER: Feature {$key} is DISABLED via toggle, skipping enforcement");
             return; // Stop enforcement
         }
 

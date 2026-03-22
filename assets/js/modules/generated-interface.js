@@ -159,47 +159,82 @@
         }
       }
 
-      // [FIX v2.4.25] Check if test expects specific headers
+      // [FIX v2.5.2] State-Aware Success Logic: Verify headers match toggle state
       const hasExpectedHeaders = control.test_config && control.test_config.expected_headers;
-      
+
       if (hasExpectedHeaders) {
         // The reliable marker is x-vapt-enforced being present with a valid enforcer value.
-        // Note: x-vapt-feature contains DB slugs, not RISK-IDs, so we can't match featureKey directly.
-        // x-vapt-risk-id is not emitted by any enforcer today — checking x-vapt-enforced is sufficient.
         const validEnforcers = ['htaccess', 'nginx', 'php-headers', 'php-rate-limit', 'php-xmlrpc', 'php-dir', 'php-null-byte'];
         const isValidEnforcer = vaptEnforced && validEnforcers.some(e => vaptEnforced.toLowerCase().includes(e));
         const isProtectionEnabled = isFeatureEnabled(featureData);
 
-        // [FIX v2.5.1] Properly validate toggle state against actual server response
+        // [FIX v2.5.2] State-Aware Success: Align result with user intent (toggle state)
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | ON                | Detected         | "Plugin is actively enforcing protection."                 | SUCCESS |
+        // | ON                | Not Detected     | "Protection toggle is ON but server is NOT enforcing."     | FAILURE |
+        // | OFF               | Detected         | "Warning: Toggle is OFF but server is STILL enforcing."     | FAILURE |
+        // | OFF               | Not Detected     | "Protection correctly disabled. No enforcement detected."   | SUCCESS |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+
         if (isProtectionEnabled === false) {
-          // Toggle is OFF - we expect NO protection headers to be present
+          // Toggle is OFF: Check if THIS specific feature is still being enforced
           if (isValidEnforcer) {
-            // PROBLEM: Toggle is OFF but headers are still present - protection not removed!
-            return {
-              success: false,
-              message: `CRITICAL: Protection toggle is OFF but server is still enforcing headers (${vaptEnforced}). Protection was not properly removed.`,
-              raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: ${vaptEnforced}\n\n${headerStr.trim()}`
-            };
+            // Check if the specific feature is still in the enforced features list
+            const activeFeatures = enforcedFeature ? enforcedFeature.split(',').map(f => f.trim()) : [];
+            const isThisFeatureEnforced = featureKey && activeFeatures.includes(featureKey);
+            
+            if (isThisFeatureEnforced) {
+              // FAILURE: Toggle is OFF but THIS feature is still being enforced
+              // Show OTHER features using the SAME protection (same enforcer)
+              const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
+              const displayCount = 5;
+              const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
+              const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
+              const fullList = otherFeaturesUsingSameProtection.join(', ');
+              const displayMessage = hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList;
+              return {
+                success: false,
+                message: `Warning: ${featureKey} toggle is OFF but server is STILL enforcing (${vaptEnforced}). Other features using same protection: ${displayMessage}`,
+                raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: ${vaptEnforced} | Same Protection: ${fullList || 'none'}\n\n${headerStr.trim()}`
+              };
+            } else {
+              // SUCCESS: Toggle is OFF, headers present but THIS feature is NOT in the list
+              // This means protection was properly removed for this feature (other features may still be enforced)
+              // Show OTHER features using the SAME protection (same enforcer)
+              const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
+              const displayCount = 5;
+              const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
+              const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
+              const fullList = otherFeaturesUsingSameProtection.join(', ');
+              const displayMessage = hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList;
+              return {
+                success: true,
+                message: `Protection correctly disabled for this feature. Other features using same protection: ${displayMessage}`,
+                raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | This Feature: Not Enforced | Same Protection: ${fullList || 'none'}\n\n${headerStr.trim()}`
+              };
+            }
           }
-          // SUCCESS: Toggle is OFF and no headers present - protection correctly disabled
+          // SUCCESS: Toggle is OFF and no enforcement detected - correctly disabled
           return {
             success: true,
-            message: `Protection correctly disabled. No enforcement headers detected (toggle is OFF).`,
-            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: none\n\n${headerStr.trim()}`
+            message: `Protection correctly disabled. No enforcement headers detected.`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: None\n\n${headerStr.trim()}`
           };
         }
 
-        // Toggle is ON - we expect protection headers to be present
+        // Toggle is ON: Success depends on whether headers are detected
         if (!isValidEnforcer) {
-          // PROBLEM: Toggle is ON but headers are missing - protection not active!
+          // FAILURE: Toggle is ON but headers missing - protection not active!
           return {
             success: false,
-            message: `Protection toggle is ON but VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`,
+            message: `Protection toggle is ON but VAPT enforcement headers not found. Expected x-vapt-enforced. Got: ${vaptEnforced || 'none'}.`,
             raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Expected: A+ Headers\n\n${headerStr.trim()}`
           };
         }
-        // SUCCESS: Toggle is ON and headers are present - protection is active
-        return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
+        // SUCCESS: Toggle is ON and headers present - protection is active
+        return { success: true, message: `Plugin is actively enforcing protection (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Enforcement: ${vaptEnforced}\n\n${headerStr.trim()}` };
       }
       
       // Legacy behavior for tests without expected_headers
@@ -333,34 +368,38 @@
 
         const isEnabled = isFeatureEnabled(featureData);
 
+        // [FIX v2.5.2] State-Aware Success Logic for Rate Limiting
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | ON                | Detected (429)   | "Rate limiter is ACTIVE. Security measures working."        | SUCCESS |
+        // | ON                | Not Detected     | "Protection ON but rate limiter NOT active."               | FAILURE |
+        // | OFF               | Detected (429)   | "Warning: Toggle OFF but rate limiter STILL active."        | FAILURE |
+        // | OFF               | Not Detected     | "Protection correctly disabled. No rate limiting."          | SUCCESS |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+
         if (blocked > 0 && hasVaptHeader) {
           window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey } }));
           if (!isEnabled) {
+            // FAILURE: Toggle OFF but rate limiter still active
             return {
               success: false,
-              message: `Warning: Feature is DISABLED in UI but Rate Limiter is still BLOCKED traffic.`,
+              message: `Warning: Protection toggle is OFF but rate limiter is STILL blocking traffic (${blocked} blocked).`,
               meta: resultMeta,
-              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Expected: 200 (Disabled)`
+              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Toggle: OFF | Blocked: ${blocked}`
             };
           }
+          // SUCCESS: Toggle ON and rate limiter active
           return {
             success: true,
-            message: `Rate limiter is ACTIVE. Security measures are working correctly.`,
+            message: `Rate limiter is ACTIVE. Security measures are working correctly (${blocked} requests blocked).`,
             meta: resultMeta,
-            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Expected: 429`
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Toggle: ON | Blocked: ${blocked}`
           };
         }
 
         if (successCount > 0 || lastCount > 0) {
           window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey } }));
-          if (!isEnabled && blocked === 0) {
-            return {
-              success: false, unprotected: true,
-              message: `Baseline Test: Sent ${total} requests and all were accepted. The system is unprotected from rate limiting.`,
-              meta: resultMeta,
-              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
-            };
-          }
         }
 
         if (errorCount > 0) {
@@ -373,19 +412,32 @@
         }
 
         if (!isEnabled) {
+          // Toggle is OFF: Check if rate limiting is inactive
+          if (blocked === 0) {
+            // SUCCESS: Toggle OFF and no rate limiting - correctly disabled
+            return {
+              success: true,
+              message: `Protection correctly disabled. No rate limiting detected (all ${total} requests accepted).`,
+              meta: resultMeta,
+              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Toggle: OFF | Rate Limiting: Inactive`
+            };
+          }
+          // FAILURE: Toggle OFF but external rate limiting detected
           return {
-            success: false, external_block: blocked > 0, unprotected: blocked === 0,
-            message: blocked > 0 ? `Baseline Test: Some traffic was restricted. An external rate limiter is active.` : `Baseline Test: Traffic was not restricted. The system is unprotected.`,
+            success: false,
+            external_block: true,
+            message: `Warning: Protection toggle is OFF but external rate limiting detected (${blocked} blocked).`,
             meta: resultMeta,
-            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Toggle: OFF | External Rate Limiting`
           };
         }
 
+        // Toggle is ON but rate limiter not active
         return {
           success: false,
-          message: `Rate Limiter is NOT active. Traffic was not restricted.`,
+          message: `Protection toggle is ON but rate limiter is NOT active. All requests were accepted.`,
           meta: resultMeta,
-          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 429`
+          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Toggle: ON | Rate Limiting: Inactive`
         };
       } catch (err) {
         return {
@@ -406,34 +458,58 @@
 
       const isEnabled = isFeatureEnabled(featureData);
 
+      // [FIX v2.5.2] State-Aware Success Logic for XML-RPC Blocking
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Blocked (403)    | "Plugin is actively blocking XML-RPC."                      | SUCCESS |
+      // | ON                | Not Blocked      | "Protection ON but XML-RPC is OPEN and VULNERABLE."         | FAILURE |
+      // | OFF               | Blocked (403)    | "Warning: Toggle OFF but XML-RPC STILL blocked."           | FAILURE |
+      // | OFF               | Not Blocked (200)| "Protection correctly disabled. XML-RPC accessible."        | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
+      const isBlocked = response.status === 403 || response.status === 404 || vaptEnforced === 'php-xmlrpc';
+
       if (vaptEnforced === 'php-xmlrpc') {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
           return { success: false, message: `Inconclusive: XML-RPC is blocked by another VAPT feature ('${enforcedFeature}'). You must disable it there to verify this control independently.`, raw: `URL: ${url} | Status: ${response.status} | Expected: 403` };
         }
         if (!isEnabled) {
-          return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED (php-xmlrpc).`, raw: `URL: ${url} | Status: ${response.status} | Expected: 200 (Disabled)` };
+          // FAILURE: Toggle OFF but still enforcing
+          return { success: false, message: `Warning: Protection toggle is OFF but XML-RPC is STILL being blocked (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: ${vaptEnforced}` };
         }
-        return { success: true, message: `Plugin is actively blocking XML-RPC (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: 403` };
+        // SUCCESS: Toggle ON and blocking active
+        return { success: true, message: `Plugin is actively blocking XML-RPC (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Enforcement: ${vaptEnforced}` };
       }
 
       const isVulnerable = response.status === 200;
 
       if (!isEnabled) {
+        // Toggle is OFF: Check if XML-RPC is accessible
+        if (isVulnerable) {
+          // SUCCESS: Toggle OFF and XML-RPC is accessible - correctly disabled
+          return {
+            success: true,
+            message: `Protection correctly disabled. XML-RPC is accessible (HTTP 200).`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: None`
+          };
+        }
+        // FAILURE: Toggle OFF but XML-RPC is blocked by external system
         return {
           success: false,
-          unprotected: isVulnerable,
-          external_block: !isVulnerable,
-          message: isVulnerable ? `Baseline Test: XML-RPC responded (HTTP 200). The site is vulnerable to XML-RPC attacks.` : `Baseline Test: XML-RPC is blocked (HTTP ${response.status}). Another plugin or server configuration is protecting this endpoint.`,
-          raw: `URL: ${url} | Status: ${response.status} | Expected: 200`
+          external_block: true,
+          message: `Warning: Protection toggle is OFF but XML-RPC is still blocked (HTTP ${response.status}). External protection detected.`,
+          raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | External Block`
         };
       }
 
+      // Toggle is ON: Check if XML-RPC is blocked
       return {
         success: false,
         message: isVulnerable
-          ? `SECURITY FAILURE: XML-RPC is OPEN and VULNERABLE (HTTP 200). Plugin enforcement is not working.`
+          ? `SECURITY FAILURE: Protection toggle is ON but XML-RPC is OPEN and VULNERABLE (HTTP 200).`
           : `XML-RPC is blocked (HTTP ${response.status}), but NOT by this plugin. VAPT enforcement header missing.`,
-        raw: `URL: ${url} | Status: ${response.status} | Expected: 403`
+        raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Expected: 403`
       };
     },
 
@@ -448,25 +524,51 @@
 
       const isEnabled = isFeatureEnabled(featureData);
 
+      // [FIX v2.5.2] State-Aware Success Logic for Directory Browsing
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Blocked (403)    | "Plugin is actively blocking directory listing."           | SUCCESS |
+      // | ON                | Not Blocked      | "Protection ON but directory browsing is ACCESSIBLE."      | FAILURE |
+      // | OFF               | Blocked (403)    | "Warning: Toggle OFF but directory STILL blocked."          | FAILURE |
+      // | OFF               | Not Blocked (200)| "Protection correctly disabled. Directory accessible."     | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
+      const isBlocked = resp.status === 403 || resp.status === 404 || vaptEnforced === 'php-dir';
+
       if (vaptEnforced === 'php-dir') {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
           return { success: false, message: `Inconclusive: Directory browsing blocked by '${enforcedFeature}'.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
         }
         if (!isEnabled) {
-          return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED (php-dir).`, raw: `URL: ${target} | Status: ${resp.status}` };
+          // FAILURE: Toggle OFF but still enforcing
+          return { success: false, message: `Warning: Protection toggle is OFF but directory listing is STILL being blocked (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: ${vaptEnforced}` };
         }
-        return { success: true, message: `PASS: Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+        // SUCCESS: Toggle ON and blocking active
+        return { success: true, message: `Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON | Enforcement: ${vaptEnforced}` };
       }
 
       if (!isEnabled) {
+        // Toggle is OFF: Check if directory browsing is accessible
         if (resp.status === 200) {
-           return { success: false, unprotected: true, message: `Baseline Test: Directory browsing is accessible (HTTP ${resp.status}). The site is vulnerable.`, raw: `URL: ${target} | Status: ${resp.status}` };
-        } else {
-           return { success: false, external_block: true, message: `Baseline Test: Directory browsing is blocked (HTTP ${resp.status}). Another system is protecting this directory.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+          // SUCCESS: Toggle OFF and directory is accessible - correctly disabled
+          return {
+            success: true,
+            message: `Protection correctly disabled. Directory browsing is accessible (HTTP ${resp.status}).`,
+            raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: None`
+          };
         }
+        // FAILURE: Toggle OFF but directory is blocked by external system
+        return {
+          success: false,
+          external_block: true,
+          message: `Warning: Protection toggle is OFF but directory is still blocked (HTTP ${resp.status}). External protection detected.`,
+          raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | External Block\n\n${snippet}`
+        };
       }
 
-      return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+      // Toggle is ON: Check if directory browsing is blocked
+      return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON\n\n${snippet}` };
     },
 
     // 5. Null Byte Probe (and aliases)
@@ -479,22 +581,51 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
       const isEnabled = isFeatureEnabled(featureData);
+
+      // [FIX v2.5.2] State-Aware Success Logic for Null Byte Injection
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Blocked (400)    | "Plugin is actively blocking null byte injection."         | SUCCESS |
+      // | ON                | Not Blocked      | "Protection ON but null byte payload ACCEPTED."           | FAILURE |
+      // | OFF               | Blocked (400)    | "Warning: Toggle OFF but null byte STILL being blocked."   | FAILURE |
+      // | OFF               | Not Blocked (200)| "Protection correctly disabled. Null byte accessible."      | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
+      const isBlocked = resp.status === 400 || resp.status === 403 || vaptEnforced === 'php-null-byte';
+
       if (vaptEnforced === 'php-null-byte' || resp.status === 400) {
         if (!isEnabled && vaptEnforced === 'php-null-byte') {
-          return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED (php-null-byte).`, raw: `URL: ${target} | Status: ${resp.status}` };
+          // FAILURE: Toggle OFF but still enforcing
+          return { success: false, message: `Warning: Protection toggle is OFF but null byte injection is STILL being blocked (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: ${vaptEnforced}` };
         }
-        return { success: true, message: `PASS: Null Byte Injection Blocked (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
+        // SUCCESS: Either toggle ON with blocking, or server-level block (400)
+        if (isEnabled) {
+          return { success: true, message: `Plugin is actively blocking null byte injection (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON | Enforcement: ${vaptEnforced || 'Server'}` };
+        }
       }
 
       if (!isEnabled) {
+        // Toggle is OFF: Check if null byte payload is accepted
         if (resp.status === 200) {
-           return { success: false, unprotected: true, message: `Baseline Test: Null byte payload accepted (HTTP ${resp.status}). The site is vulnerable.`, raw: `URL: ${target} | Status: ${resp.status}` };
-        } else {
-           return { success: false, external_block: true, message: `Baseline Test: Null byte payload rejected (HTTP ${resp.status}). Another system is blocking this attack vector.`, raw: `URL: ${target} | Status: ${resp.status}` };
+          // SUCCESS: Toggle OFF and null byte is accepted - correctly disabled
+          return {
+            success: true,
+            message: `Protection correctly disabled. Null byte payload accepted (HTTP ${resp.status}).`,
+            raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: None`
+          };
         }
+        // FAILURE: Toggle OFF but null byte is blocked by external system
+        return {
+          success: false,
+          external_block: true,
+          message: `Warning: Protection toggle is OFF but null byte payload is still blocked (HTTP ${resp.status}). External protection detected.`,
+          raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | External Block`
+        };
       }
 
-      return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
+      // Toggle is ON: Check if null byte is blocked
+      return { success: false, message: `SECURITY FAILURE: Protection toggle is ON but null byte payload was ACCEPTED (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON | Expected: 400 or 403` };
     },
 
     // 6. Version Hide Probe
@@ -610,22 +741,68 @@
 
       let message = '';
 
+      // [FIX v2.5.2] State-Aware Success Logic for Universal Probe
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Detected/Blocked | "Protection is active. Attack blocked or headers present."  | SUCCESS |
+      // | ON                | Not Detected     | "Protection ON but server NOT enforcing expected response." | FAILURE |
+      // | OFF               | Detected         | "Warning: Toggle OFF but server STILL enforcing."           | FAILURE |
+      // | OFF               | Not Detected     | "Protection correctly disabled. No enforcement detected."   | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
       if (!isEnabled) {
-        // 🛡️ Precise Leak Detection (v2.4.3): Only FAIL if THIS feature is enforcing.
+        // Toggle is OFF: Success depends on whether enforcement is detected
         const activeFeatures = enforcedFeature ? enforcedFeature.split(',').map(f => f.trim()) : [];
         const isThisFeatureEnforcing = activeFeatures.includes(featureKey);
 
         if (isThisFeatureEnforcing) {
-          isSecure = false;
-          message = `Discrepancy: Feature '${featureKey}' is DISABLED in UI, but server is still ENFORCING it ('${vaptEnforced}').`;
-        } else {
-          isSecure = false;
-          let isUnprotected = (code === 200) || (!expectsBlock && !hasHeaderCheck);
-          message = isUnprotected
-            ? `Baseline Test: Target reached successfully (HTTP ${code}). The system is currently unprotected and vulnerable to this risk.`
-            : `Baseline Test: Access was blocked (HTTP ${code}). Protected by an external system or firewall.`;
-          return { success: isSecure, unprotected: isUnprotected, external_block: !isUnprotected, message, raw: `URL: ${url} | Status: ${code}` };
+          // FAILURE: Toggle OFF but this specific feature is still enforcing
+          return {
+            success: false,
+            message: `Warning: Feature '${featureKey}' is OFF but server is STILL enforcing it ('${vaptEnforced}').`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: ${vaptEnforced}`
+          };
         }
+
+        if (hasHeaderCheck && headerMatches) {
+          // FAILURE: Toggle OFF but expected headers detected
+          return {
+            success: false,
+            message: `Warning: Protection toggle is OFF but expected headers are still present (${vaptEnforced || 'headers matched'}).`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Headers: Matched`
+          };
+        }
+
+        if (vaptEnforced && (expectsBlock ? expectedStatusArray.includes(code) : headerMatches)) {
+          // FAILURE: Toggle OFF but server appears to be enforcing
+          return {
+            success: false,
+            message: `Warning: Protection toggle is OFF but server is STILL enforcing (${vaptEnforced}).`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: ${vaptEnforced}`
+          };
+        }
+
+        // SUCCESS: Toggle OFF and no enforcement detected - correctly disabled
+        if (expectsBlock && !expectedStatusArray.includes(code) && code === 200) {
+          return {
+            success: true,
+            message: `Protection correctly disabled. Target is accessible (HTTP ${code}) with toggle OFF.`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
+          };
+        }
+        if (expectsAllow && code === 200) {
+          return {
+            success: true,
+            message: `Protection correctly disabled. Target responded normally (HTTP ${code}).`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
+          };
+        }
+        return {
+          success: true,
+          message: `Protection correctly disabled. No enforcement detected.`,
+          raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
+        };
       } else if (hasHeaderCheck) {
         isSecure = headerMatches && (code === 200 || expectsAllow || statusMatches);
       } else if (expectsBlock) {
@@ -714,7 +891,7 @@
       return {
         success: isSecure,
         message: message,
-        raw: `URL: ${url} | Status: ${code} | Expected: ${expectedStatus || 'N/A'}`
+        raw: `URL: ${url} | Status: ${code} | Expected: ${expectedStatus || 'N/A'} | Toggle: ON`
       };
     },
 

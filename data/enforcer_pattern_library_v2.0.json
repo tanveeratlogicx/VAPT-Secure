@@ -11,16 +11,16 @@
         "driver_reference": "VAPT_Driver_Reference_v2.0.php",
         "readme": "VAPT_AI_Agent_System_README_v2.0.md"
     },
-    "description": "VAPT Enforcer Pattern Library v2.0 \u2014 All 125 risks, all enforcer types. Keys are enforcer-named (htaccess, wp_config, php_functions, wordpress, wordpress_core, fail2ban, nginx, apache, caddy_native, cloudflare, iis, caddy). Every entry includes a driver{} sub-object with machine-executable fields consumed by vapt_driver_manifest_v2.0.json.",
+    "description": "VAPT Enforcer Pattern Library v2.0 — All 125 risks, all enforcer types. Keys are enforcer-named (htaccess, wp_config, php_functions, wordpress, wordpress_core, fail2ban, nginx, apache, caddy_native, cloudflare, iis, caddy). Every entry includes a driver{} sub-object with machine-executable fields consumed by vapt_driver_manifest_v2.0.json.",
     "enforcer_key_map": {
-        "htaccess": ".htaccess enforcer \u2014 corrected rules + cloudflare/iis/caddy variants",
-        "wp_config": "wp-config.php enforcer \u2014 enriched with target_constants, insertion anchor",
-        "php_functions": "PHP Functions enforcer \u2014 hook-based code for functions.php / plugin file",
-        "wordpress": "WordPress enforcer \u2014 WP action/filter hooks",
-        "wordpress_core": "WordPress Core enforcer \u2014 core filter hooks",
-        "fail2ban": "fail2ban enforcer \u2014 jail.local config blocks",
-        "nginx": "Nginx enforcer \u2014 nginx.conf directives",
-        "apache": "Apache enforcer \u2014 httpd.conf / VirtualHost directives",
+        "htaccess": ".htaccess enforcer — corrected rules + cloudflare/iis/caddy variants",
+        "wp_config": "wp-config.php enforcer — enriched with target_constants, insertion anchor",
+        "php_functions": "PHP Functions enforcer — hook-based code for functions.php / plugin file",
+        "wordpress": "WordPress enforcer — WP action/filter hooks",
+        "wordpress_core": "WordPress Core enforcer — core filter hooks",
+        "fail2ban": "fail2ban enforcer — jail.local config blocks",
+        "nginx": "Nginx enforcer — nginx.conf directives",
+        "apache": "Apache enforcer — httpd.conf / VirtualHost directives",
         "caddy_native": "Native Caddy enforcer risks (RISK-123, RISK-124)",
         "cloudflare": "Cloudflare edge implementation derived from .htaccess correction",
         "iis": "IIS web.config implementation derived from .htaccess correction",
@@ -118,7 +118,7 @@
                 "name": "VAPT RISK-002",
                 "expression": "(http.request.uri.path ends_with \".xmlrpc\") or (http.request.uri.path ends_with \".php\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -177,14 +177,14 @@
                 "name": "VAPT RISK-003",
                 "expression": "(http.request.uri.path eq \"/wp-json/wp/v2/users\") or (http.request.uri.path wildcard \"/wp-json/wp/v2/users/*\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com | grep HTTP"
             },
             "iis": {
                 "implementation_type": "web_config_url_rewrite",
                 "web_config_snippet": "<!-- BEGIN VAPT RISK-003 -->\n<configuration>\n  <system.webServer>\n    <rewrite><rules>\n      <rule name=\"VAPT RISK-003\" stopProcessing=\"true\">\n        <match url=\"^wp-json/wp/v2/users.*\" />\n        <action type=\"CustomResponse\" statusCode=\"403\" statusReason=\"Forbidden\" statusDescription=\"Blocked by VAPT RISK-003\" />\n      </rule>\n    </rules></rewrite>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-003 -->",
                 "requirements": [
-                    "IIS URL Rewrite Module 2.1 \u2014 install from Web Platform Installer"
+                    "IIS URL Rewrite Module 2.1 — install from Web Platform Installer"
                 ],
                 "verification": "appcmd validate config && curl -sI https://yoursite.com | findstr HTTP"
             },
@@ -279,14 +279,14 @@
                 "name": "VAPT RISK-005",
                 "expression": "(http.request.uri.query contains \"author=\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com | grep HTTP"
             },
             "iis": {
                 "implementation_type": "web_config_url_rewrite",
                 "web_config_snippet": "<!-- BEGIN VAPT RISK-005 -->\n<configuration>\n  <system.webServer>\n    <rewrite><rules>\n      <rule name=\"VAPT RISK-005\" stopProcessing=\"true\">\n          <conditions><add input=\"{QUERY_STRING}\" pattern=\"author=\\d+\" /></conditions>\n        <match url=\".*\" />\n        <action type=\"CustomResponse\" statusCode=\"403\" statusReason=\"Forbidden\" statusDescription=\"Blocked by VAPT RISK-005\" />\n      </rule>\n    </rules></rewrite>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-005 -->",
                 "requirements": [
-                    "IIS URL Rewrite Module 2.1 \u2014 install from Web Platform Installer"
+                    "IIS URL Rewrite Module 2.1 — install from Web Platform Installer"
                 ],
                 "verification": "appcmd validate config && curl -sI https://yoursite.com | findstr HTTP"
             },
@@ -571,7 +571,7 @@
                 "name": "VAPT RISK-011",
                 "expression": "(http.request.uri.path ends_with \".readme\") or (http.request.uri.path ends_with \".html\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -604,8 +604,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"",
-                "wrapped_code": "# BEGIN VAPT RISK-012\nHeader always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n# END VAPT RISK-012",
+                "code": "<IfModule mod_headers.c>\n    Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-012\n<IfModule mod_headers.c>\n    Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n</IfModule>\n# END VAPT RISK-012",
                 "begin_marker": "# BEGIN VAPT RISK-012",
                 "end_marker": "# END VAPT RISK-012",
                 "note": "Enable mod_headers: sudo a2enmod headers. Effective over HTTPS only.",
@@ -617,7 +617,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-012\nHeader always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n# END VAPT RISK-012",
+                    "write_block": "# BEGIN VAPT RISK-012\n<IfModule mod_headers.c>\n    Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n</IfModule>\n# END VAPT RISK-012",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -717,8 +717,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set X-Frame-Options \"SAMEORIGIN\"",
-                "wrapped_code": "# BEGIN VAPT RISK-014\nHeader always set X-Frame-Options \"SAMEORIGIN\"\n# END VAPT RISK-014",
+                "code": "<IfModule mod_headers.c>\n    Header always set X-Frame-Options \"SAMEORIGIN\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-014\n<IfModule mod_headers.c>\n    Header always set X-Frame-Options \"SAMEORIGIN\"\n</IfModule>\n# END VAPT RISK-014",
                 "begin_marker": "# BEGIN VAPT RISK-014",
                 "end_marker": "# END VAPT RISK-014",
                 "note": "",
@@ -730,7 +730,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-014\nHeader always set X-Frame-Options \"SAMEORIGIN\"\n# END VAPT RISK-014",
+                    "write_block": "# BEGIN VAPT RISK-014\n<IfModule mod_headers.c>\n    Header always set X-Frame-Options \"SAMEORIGIN\"\n</IfModule>\n# END VAPT RISK-014",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -777,8 +777,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set X-Content-Type-Options \"nosniff\"",
-                "wrapped_code": "# BEGIN VAPT RISK-015\nHeader always set X-Content-Type-Options \"nosniff\"\n# END VAPT RISK-015",
+                "code": "<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-015\n<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>\n# END VAPT RISK-015",
                 "begin_marker": "# BEGIN VAPT RISK-015",
                 "end_marker": "# END VAPT RISK-015",
                 "note": "",
@@ -790,7 +790,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-015\nHeader always set X-Content-Type-Options \"nosniff\"\n# END VAPT RISK-015",
+                    "write_block": "# BEGIN VAPT RISK-015\n<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>\n# END VAPT RISK-015",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -837,8 +837,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set X-XSS-Protection \"1; mode=block\"",
-                "wrapped_code": "# BEGIN VAPT RISK-016\nHeader always set X-XSS-Protection \"1; mode=block\"\n# END VAPT RISK-016",
+                "code": "<IfModule mod_headers.c>\n    Header always set X-XSS-Protection \"1; mode=block\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-016\n<IfModule mod_headers.c>\n    Header always set X-XSS-Protection \"1; mode=block\"\n</IfModule>\n# END VAPT RISK-016",
                 "begin_marker": "# BEGIN VAPT RISK-016",
                 "end_marker": "# END VAPT RISK-016",
                 "note": "",
@@ -850,7 +850,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-016\nHeader always set X-XSS-Protection \"1; mode=block\"\n# END VAPT RISK-016",
+                    "write_block": "# BEGIN VAPT RISK-016\n<IfModule mod_headers.c>\n    Header always set X-XSS-Protection \"1; mode=block\"\n</IfModule>\n# END VAPT RISK-016",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -897,8 +897,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Referrer-Policy \"strict-origin-when-cross-origin\"",
-                "wrapped_code": "# BEGIN VAPT RISK-017\nHeader always set Referrer-Policy \"strict-origin-when-cross-origin\"\n# END VAPT RISK-017",
+                "code": "<IfModule mod_headers.c>\n    Header always set Referrer-Policy \"strict-origin-when-cross-origin\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-017\n<IfModule mod_headers.c>\n    Header always set Referrer-Policy \"strict-origin-when-cross-origin\"\n</IfModule>\n# END VAPT RISK-017",
                 "begin_marker": "# BEGIN VAPT RISK-017",
                 "end_marker": "# END VAPT RISK-017",
                 "note": "",
@@ -910,7 +910,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-017\nHeader always set Referrer-Policy \"strict-origin-when-cross-origin\"\n# END VAPT RISK-017",
+                    "write_block": "# BEGIN VAPT RISK-017\n<IfModule mod_headers.c>\n    Header always set Referrer-Policy \"strict-origin-when-cross-origin\"\n</IfModule>\n# END VAPT RISK-017",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -957,8 +957,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"",
-                "wrapped_code": "# BEGIN VAPT RISK-018\nHeader always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n# END VAPT RISK-018",
+                "code": "<IfModule mod_headers.c>\n    Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-018\n<IfModule mod_headers.c>\n    Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n</IfModule>\n# END VAPT RISK-018",
                 "begin_marker": "# BEGIN VAPT RISK-018",
                 "end_marker": "# END VAPT RISK-018",
                 "note": "",
@@ -970,7 +970,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-018\nHeader always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n# END VAPT RISK-018",
+                    "write_block": "# BEGIN VAPT RISK-018\n<IfModule mod_headers.c>\n    Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n</IfModule>\n# END VAPT RISK-018",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -1043,7 +1043,7 @@
                 "name": "VAPT RISK-019",
                 "expression": "(http.request.uri.path ends_with \".env\") or (http.request.uri.path ends_with \".git\") or (http.request.uri.path ends_with \".sql\") or (http.request.uri.path ends_with \".log\") or (http.request.uri.path ends_with \".ini\") or (http.request.uri.path ends_with \".yml\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1080,7 +1080,7 @@
                 "wrapped_code": "# BEGIN VAPT RISK-020\n<FilesMatch \"\\.php$\">\n    Order Deny,Allow\n    Deny from all\n</FilesMatch>\n# END VAPT RISK-020",
                 "begin_marker": "# BEGIN VAPT RISK-020",
                 "end_marker": "# END VAPT RISK-020",
-                "note": "CRITICAL: Place in wp-content/uploads/.htaccess \u2014 a separate file. <Directory> is silently ignored in .htaccess. Apache 2.4+: use Require all denied",
+                "note": "CRITICAL: Place in wp-content/uploads/.htaccess — a separate file. <Directory> is silently ignored in .htaccess. Apache 2.4+: use Require all denied",
                 "verification": {
                     "command": "apachectl -t",
                     "expected": "Exit 0, no syntax errors"
@@ -1102,7 +1102,7 @@
                 "name": "VAPT RISK-020",
                 "expression": "(http.request.uri.path ends_with \".php\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1161,7 +1161,7 @@
                 "name": "VAPT RISK-021",
                 "expression": "(http.request.uri.path ends_with \".wp\") or (http.request.uri.path ends_with \".config\") or (http.request.uri.path ends_with \".php\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1194,8 +1194,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"",
-                "wrapped_code": "# BEGIN VAPT RISK-022\nHeader always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n# END VAPT RISK-022",
+                "code": "<IfModule mod_headers.c>\n    Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-022\n<IfModule mod_headers.c>\n    Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n</IfModule>\n# END VAPT RISK-022",
                 "begin_marker": "# BEGIN VAPT RISK-022",
                 "end_marker": "# END VAPT RISK-022",
                 "note": "Tune to your plugin/theme needs. Use Content-Security-Policy-Report-Only first.",
@@ -1207,7 +1207,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-022\nHeader always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n# END VAPT RISK-022",
+                    "write_block": "# BEGIN VAPT RISK-022\n<IfModule mod_headers.c>\n    Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n</IfModule>\n# END VAPT RISK-022",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -1280,14 +1280,14 @@
                 "name": "VAPT RISK-023",
                 "expression": "(http.request.method eq \"TRACE\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com | grep HTTP"
             },
             "iis": {
                 "implementation_type": "web_config_url_rewrite",
                 "web_config_snippet": "<!-- BEGIN VAPT RISK-023 -->\n<configuration>\n  <system.webServer>\n    <rewrite><rules>\n      <rule name=\"VAPT RISK-023\" stopProcessing=\"true\">\n          <conditions><add input=\"{REQUEST_METHOD}\" pattern=\"^TRACE$\" /></conditions>\n        <match url=\".*\" />\n        <action type=\"CustomResponse\" statusCode=\"403\" statusReason=\"Forbidden\" statusDescription=\"Blocked by VAPT RISK-023\" />\n      </rule>\n    </rules></rewrite>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-023 -->",
                 "requirements": [
-                    "IIS URL Rewrite Module 2.1 \u2014 install from Web Platform Installer"
+                    "IIS URL Rewrite Module 2.1 — install from Web Platform Installer"
                 ],
                 "verification": "appcmd validate config && curl -sI https://yoursite.com | findstr HTTP"
             },
@@ -1316,8 +1316,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By",
-                "wrapped_code": "# BEGIN VAPT RISK-024\nHeader unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n# END VAPT RISK-024",
+                "code": "<IfModule mod_headers.c>\n    Header unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-024\n<IfModule mod_headers.c>\n    Header unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n</IfModule>\n# END VAPT RISK-024",
                 "begin_marker": "# BEGIN VAPT RISK-024",
                 "end_marker": "# END VAPT RISK-024",
                 "note": "ServerSignature Off is server-level only (silently ignored in .htaccess). Also add: ServerSignature Off + ServerTokens Prod to httpd.conf.",
@@ -1329,7 +1329,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-024\nHeader unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n# END VAPT RISK-024",
+                    "write_block": "# BEGIN VAPT RISK-024\n<IfModule mod_headers.c>\n    Header unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n</IfModule>\n# END VAPT RISK-024",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -1509,7 +1509,7 @@
                 "name": "VAPT RISK-027",
                 "expression": "(http.request.uri.path ends_with \".install\") or (http.request.uri.path ends_with \".php\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1568,7 +1568,7 @@
                 "name": "VAPT RISK-028",
                 "expression": "(http.request.uri.path ends_with \".upgrade\") or (http.request.uri.path ends_with \".php\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1627,7 +1627,7 @@
                 "name": "VAPT RISK-029",
                 "expression": "(http.request.uri.path ends_with \".bak\") or (http.request.uri.path ends_with \".backup\") or (http.request.uri.path ends_with \".old\") or (http.request.uri.path ends_with \".orig\") or (http.request.uri.path ends_with \".save\") or (http.request.uri.path ends_with \".swp\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1686,7 +1686,7 @@
                 "name": "VAPT RISK-030",
                 "expression": "(http.request.uri.path ends_with \".log\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1719,8 +1719,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Cross-Origin-Resource-Policy \"same-origin\"",
-                "wrapped_code": "# BEGIN VAPT RISK-031\nHeader always set Cross-Origin-Resource-Policy \"same-origin\"\n# END VAPT RISK-031",
+                "code": "<IfModule mod_headers.c>\n    Header always set Cross-Origin-Resource-Policy \"same-origin\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-031\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Resource-Policy \"same-origin\"\n</IfModule>\n# END VAPT RISK-031",
                 "begin_marker": "# BEGIN VAPT RISK-031",
                 "end_marker": "# END VAPT RISK-031",
                 "note": "",
@@ -1732,7 +1732,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-031\nHeader always set Cross-Origin-Resource-Policy \"same-origin\"\n# END VAPT RISK-031",
+                    "write_block": "# BEGIN VAPT RISK-031\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Resource-Policy \"same-origin\"\n</IfModule>\n# END VAPT RISK-031",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -1779,8 +1779,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Cross-Origin-Embedder-Policy \"require-corp\"",
-                "wrapped_code": "# BEGIN VAPT RISK-032\nHeader always set Cross-Origin-Embedder-Policy \"require-corp\"\n# END VAPT RISK-032",
+                "code": "<IfModule mod_headers.c>\n    Header always set Cross-Origin-Embedder-Policy \"require-corp\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-032\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Embedder-Policy \"require-corp\"\n</IfModule>\n# END VAPT RISK-032",
                 "begin_marker": "# BEGIN VAPT RISK-032",
                 "end_marker": "# END VAPT RISK-032",
                 "note": "May break third-party embeds. Test with COEP: Report-Only first.",
@@ -1792,7 +1792,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-032\nHeader always set Cross-Origin-Embedder-Policy \"require-corp\"\n# END VAPT RISK-032",
+                    "write_block": "# BEGIN VAPT RISK-032\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Embedder-Policy \"require-corp\"\n</IfModule>\n# END VAPT RISK-032",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -1839,8 +1839,8 @@
                     "mod_headers"
                 ],
                 "allowoverride": "FileInfo",
-                "code": "Header always set Cross-Origin-Opener-Policy \"same-origin\"",
-                "wrapped_code": "# BEGIN VAPT RISK-033\nHeader always set Cross-Origin-Opener-Policy \"same-origin\"\n# END VAPT RISK-033",
+                "code": "<IfModule mod_headers.c>\n    Header always set Cross-Origin-Opener-Policy \"same-origin\"\n</IfModule>",
+                "wrapped_code": "# BEGIN VAPT RISK-033\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Opener-Policy \"same-origin\"\n</IfModule>\n# END VAPT RISK-033",
                 "begin_marker": "# BEGIN VAPT RISK-033",
                 "end_marker": "# END VAPT RISK-033",
                 "note": "",
@@ -1852,7 +1852,7 @@
                 "driver": {
                     "write_mode": "prepend_to_file",
                     "target_file": "{ABSPATH}.htaccess",
-                    "write_block": "# BEGIN VAPT RISK-033\nHeader always set Cross-Origin-Opener-Policy \"same-origin\"\n# END VAPT RISK-033",
+                    "write_block": "# BEGIN VAPT RISK-033\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Opener-Policy \"same-origin\"\n</IfModule>\n# END VAPT RISK-033",
                     "anchor_string": null,
                     "anchor_position": "prepend",
                     "fallback": null,
@@ -1925,7 +1925,7 @@
                 "name": "VAPT RISK-034",
                 "expression": "(http.request.uri.path ends_with \".debug\") or (http.request.uri.path ends_with \".log\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com/blocked-file | grep HTTP"
             },
             "iis": {
@@ -1984,14 +1984,14 @@
                 "name": "VAPT RISK-035",
                 "expression": "(http.request.uri.path eq \"/server-status\") or (http.request.uri.path eq \"/server-info\")",
                 "action": "Block",
-                "dashboard_path": "Cloudflare \u2192 Security \u2192 WAF \u2192 Custom Rules \u2192 Create Rule",
+                "dashboard_path": "Cloudflare → Security → WAF → Custom Rules → Create Rule",
                 "verification": "curl -sI https://yoursite.com | grep HTTP"
             },
             "iis": {
                 "implementation_type": "web_config_url_rewrite",
                 "web_config_snippet": "<!-- BEGIN VAPT RISK-035 -->\n<configuration>\n  <system.webServer>\n    <rewrite><rules>\n      <rule name=\"VAPT RISK-035\" stopProcessing=\"true\">\n        <match url=\"^(server-status|server-info)$\" />\n        <action type=\"CustomResponse\" statusCode=\"403\" statusReason=\"Forbidden\" statusDescription=\"Blocked by VAPT RISK-035\" />\n      </rule>\n    </rules></rewrite>\n  </system.webServer>\n</configuration>\n<!-- END VAPT RISK-035 -->",
                 "requirements": [
-                    "IIS URL Rewrite Module 2.1 \u2014 install from Web Platform Installer"
+                    "IIS URL Rewrite Module 2.1 — install from Web Platform Installer"
                 ],
                 "verification": "appcmd validate config && curl -sI https://yoursite.com | findstr HTTP"
             },

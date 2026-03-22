@@ -57,19 +57,30 @@ class VAPTSECURE_Htaccess_Driver
         $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();
 
         // 🛡️ TWO-WAY DEACTIVATION (v3.13.20 - Intelligent Detection)
+        // [FIX v4.0.x] Check multiple toggle key formats including feat_enabled, enabled, and auto-generated keys
         $is_enabled = true;
-        if (isset($data['enabled'])) {
-            $is_enabled = (bool)$data['enabled'];
-        } elseif (isset($data['feat_enabled'])) {
-            $is_enabled = (bool)$data['feat_enabled'];
+        
+        // Check common toggle keys in priority order
+        if (isset($data['feat_enabled'])) {
+            $is_enabled = (bool)filter_var($data['feat_enabled'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($data['enabled'])) {
+            $is_enabled = (bool)filter_var($data['enabled'], FILTER_VALIDATE_BOOLEAN);
         } else {
-            // If 'enabled' is missing, check if any mapped toggle is set to false
-            $mappings = $enf_config['mappings'] ?? array();
-            foreach ($mappings as $key => $directive) {
-                if (isset($data[$key]) && ($data[$key] === false || $data[$key] === 0 || $data[$key] === '0')) {
-                    // If the primary enforcement mapping is a toggle and it's OFF, consider feature disabled
-                    $is_enabled = false;
-                    break;
+            // Check auto-generated risk-specific toggle keys
+            $risk_key = $schema['risk_id'] ?? $schema['id'] ?? $schema['feature_key'] ?? '';
+            $risk_suffix = str_replace('-', '_', strtolower($risk_key));
+            $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+            if (isset($data[$auto_key])) {
+                $is_enabled = (bool)filter_var($data[$auto_key], FILTER_VALIDATE_BOOLEAN);
+            } else {
+                // If 'enabled' is missing, check if any mapped toggle is set to false
+                $mappings = $enf_config['mappings'] ?? array();
+                foreach ($mappings as $key => $directive) {
+                    if (isset($data[$key]) && ($data[$key] === false || $data[$key] === 0 || $data[$key] === '0')) {
+                        // If the primary enforcement mapping is a toggle and it's OFF, consider feature disabled
+                        $is_enabled = false;
+                        break;
+                    }
                 }
             }
         }
