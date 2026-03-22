@@ -15,7 +15,7 @@
 > | 6 | **Windsurf** | VS Code fork | `.windsurfrules → .ai/SOUL.md` | Rules file |
 > | 7 | **Kilo Code** | VS Code | `.kilocode/rules/soul.md → .ai/SOUL.md` | Rules dir |
 > | 8 | **Continue** | VS Code / JetBrains | `.continue/rules/soul.md → .ai/SOUL.md` | Rules dir |
-> | 9 | **Roo Code** | VS Code | `.roo/rules/soul.md → .ai/SOUL.md` | Rules dir |
+> | 9 | **Roo Code** | VS Code | `.clinerules → .ai/SOUL.md` (fallback: `.roorules`) | Rules file |
 > | 10 | **GitHub Copilot** | VS Code / JetBrains / Visual Studio | `.github/copilot-instructions.md → .ai/SOUL.md` | Instructions file |
 > | 11 | **JetBrains Junie** | IntelliJ / PyCharm / WebStorm / GoLand / PhpStorm | `.junie/guidelines.md → .ai/SOUL.md` | Guidelines file |
 > | 12 | **Zed** | Zed Editor | `.rules → .ai/SOUL.md` | Rules file |
@@ -43,7 +43,7 @@ Your primary role is to:
 ## 🏗️ Project Context
 
 **Project**: VAPTSecure WordPress Plugin
-**Version**: 2.4.11
+**Version**: 2.5.9
 **Domain**: WordPress Security & Vulnerability Management
 **Architecture**: Plugin-based with REST API integration
 
@@ -128,9 +128,11 @@ Your primary role is to:
     └── soul.md        → ../../.ai/SOUL.md  ← Continue loads all .md in this dir
 
 .roo/
-└── rules/
-    └── soul.md        → ../../.ai/SOUL.md  ← Roo Code loads all .md in this dir
+├── rules/
+│   └── soul.md        → ../../.ai/SOUL.md  ← Roo Code loads all .md in this dir
+├── skills/            → ../../.ai/skills/
 .roorules              → .ai/SOUL.md        ← Roo Code fallback (if .roo/rules/ empty)
+.clinerules            → .ai/SOUL.md        ← Roo Code (modern entry point)
 
 # ── Cross-IDE (GitHub Copilot, JetBrains Junie) ───────────────────────────────
 
@@ -2069,4 +2071,4 @@ if ( $result->has_failures() ) {
 
 *This `SOUL.md` defines universal AI behavior for the VAPTSecure plugin project.*
 *Edit this file once — changes propagate to **all 13 editors and extensions** via their respective symlinks.*
-*Version: 2.4.11 | Last Updated: March 2026*
+*Version: 2.5.9 | Last Updated: March 2026*
