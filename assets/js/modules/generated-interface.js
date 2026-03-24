@@ -1223,6 +1223,16 @@ var vaptLog = window.vaptLog || {
               const targetUrl = urlMatch ? urlMatch[1].trim() : '';
               const displayUrl = targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
+              // 🛡️ Restrict Internal Signal IDs (v3.13.20+)
+              let finalRaw = result.raw;
+              const isSuperAdmin = window.vaptSecureSettings && window.vaptSecureSettings.isSuper;
+              if (!isSuperAdmin) {
+                // Safely remove any x-vapt-feature data from the trace blob
+                finalRaw = finalRaw.replace(/(?:^|\n|\|?\s*)x-vapt-feature:[^\n]*(?=\n|$)/gi, '');
+                // Handle cases where it is dumped as Active Features: X (v2.4 legacy)
+                finalRaw = finalRaw.replace(/(?:^|\n|\|?\s*)[Aa]ctive\s+[Ff]eatures?:[^\n]*(?=\n|$)/gi, '');
+              }
+
               return el('div', { style: { fontSize: '11px', marginBottom: '8px', color: '#64748b' } }, [
                 el('strong', { style: { color: '#475569' } }, 'Target: '),
                 el('a', {
@@ -1240,7 +1250,7 @@ var vaptLog = window.vaptLog || {
                     window.open(targetUrl, '_blank');
                   }
                 }, displayUrl),
-                el('pre', { style: { margin: '4px 0 0', padding: '8px', background: 'white', borderRadius: '4px', overflowX: 'auto', border: '1px solid #f1f5f9', fontSize: '10px' } }, result.raw)
+                el('pre', { style: { margin: '4px 0 0', padding: '8px', background: 'white', borderRadius: '4px', overflowX: 'auto', border: '1px solid #f1f5f9', fontSize: '10px' } }, finalRaw)
               ]);
             })(),
 

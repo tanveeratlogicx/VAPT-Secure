@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
-  * Version: 2.5.10
+  * Version: 2.5.11
  * Author: Tanveer H. Malik
  * Author URI: https://vapt.copilot.com
  * License: GPL-2.0+
@@ -22,7 +22,7 @@ if (file_exists(dirname(__FILE__) . '/vendor/autoload.php')) {
 }
 
 /**
- * 🛠️ Linter Stubs (Satisfies IDEs without WP symbols)
+ * ðŸ› ï¸ Linter Stubs (Satisfies IDEs without WP symbols)
  */
 if (false) {
     function home_url($path = '', $scheme = null)
@@ -52,7 +52,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-define('VAPTSECURE_VERSION', '2.5.10');
+define('VAPTSECURE_VERSION', '2.5.11');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
@@ -87,7 +87,7 @@ if (! defined('VAPTC_URL')) {
 }
 
 /**
- * 🔒 Obfuscated Superadmin Identity
+ * ðŸ”’ Obfuscated Superadmin Identity
  * Returns decoded credentials for strict access control.
  *
  * User: tanmalik786 (Base64: dGFubWFsaWs3ODY=)
@@ -113,7 +113,7 @@ if (! defined('VAPTSECURE_SUPERADMIN_EMAIL')) {
 }
 
 /**
- * 🔒 Strict Superadmin Check
+ * ðŸ”’ Strict Superadmin Check
  * Verifies if current user matches the hidden identity.
  *
  * @return bool True if the current user is a superadmin.
@@ -128,7 +128,7 @@ function is_vaptsecure_superadmin($require_auth = false)
     $login = strtolower($current_user->user_login);
     $email = strtolower($current_user->user_email);
 
-    // 1. 🛡️ Identity Check (Primary Firewall)
+    // 1. ðŸ›¡ï¸ Identity Check (Primary Firewall)
     // MUST match the hardcoded superadmin identity login or email.
     $is_super_identity = ($login === strtolower($identity['user']) || $email === strtolower($identity['email']));
 
@@ -136,7 +136,7 @@ function is_vaptsecure_superadmin($require_auth = false)
         return false;
     }
 
-    // 2. 🛡️ Authentication Check (Secondary Layer)
+    // 2. ðŸ›¡ï¸ Authentication Check (Secondary Layer)
     // If require_auth is true, also check if the user has a valid OTP session.
     if ($require_auth && class_exists('VAPTSECURE_Auth')) {
         if (!VAPTSECURE_Auth::is_authenticated()) {
@@ -302,7 +302,7 @@ function vaptsecure_activate_plugin()
         wp_mkdir_p(VAPTSECURE_PATH . 'data');
     }
 
-    // 🔔 Send Activation Email to Superadmin (Only on fresh activation)
+    // ðŸ”” Send Activation Email to Superadmin (Only on fresh activation)
     $existing_version = get_option('vaptsecure_version');
     if (empty($existing_version)) {
         vaptsecure_send_activation_email();
@@ -593,7 +593,7 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
             80
         );
 
-        // 🛡️ Superadmin Only Sub-menus
+        // ðŸ›¡ï¸ Superadmin Only Sub-menus
         if ($is_superadmin_identity) {
             // Sub-menu 1: Workbench
             add_submenu_page(
@@ -815,7 +815,7 @@ function vaptsecure_enqueue_admin_assets($hook)
     'uploadPath' => wp_upload_dir()['basedir'],
     );
 
-    // 🛡️ GLOBAL REST HOTPATCH (v3.8.17) - Inline for maximum priority
+    // ðŸ›¡ï¸ GLOBAL REST HOTPATCH (v3.8.17) - Inline for maximum priority
     $home_url = esc_url_raw(home_url());
     $inline_patch = "
     (function() {
@@ -823,7 +823,7 @@ function vaptsecure_enqueue_admin_assets($hook)
       if (wp.apiFetch.__vaptsecure_patched) return;
       
       try {
-        // 🛡️ RECOVERY: If the browser was permanently stuck in silent mode, free it (v2.2.9 Fix)
+        // ðŸ›¡ï¸ RECOVERY: If the browser was permanently stuck in silent mode, free it (v2.2.9 Fix)
         localStorage.removeItem('vaptsecure_rest_broken');
       } catch (e) { }
 
@@ -837,7 +837,7 @@ function vaptsecure_enqueue_admin_assets($hook)
         
         const home = '{$home_url}';
         
-        // 🛡️ AUTH PERI-FIX: Ensure Nonce is present for non-GET requests
+        // ðŸ›¡ï¸ AUTH PERI-FIX: Ensure Nonce is present for non-GET requests
         const method = (args.method || 'GET').toUpperCase();
         if (effectiveNonce && method !== 'GET') {
           if (!args.headers) args.headers = {};
@@ -861,7 +861,7 @@ function vaptsecure_enqueue_admin_assets($hook)
           return cleanHome + '/?rest_route=/' + cleanPath + queryParams + nonceParam;
         };
 
-        // 🛡️ REMOVED THE INSTANT FALLBACK LOGIC to prevent permanently spamming 403s
+        // ðŸ›¡ï¸ REMOVED THE INSTANT FALLBACK LOGIC to prevent permanently spamming 403s
         // on all endpoints when only one endpoint was broken.
         // Fallbacks will only occur per-request dynamically.
 
