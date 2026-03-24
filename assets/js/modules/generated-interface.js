@@ -193,13 +193,16 @@ var vaptLog = window.vaptLog || {
         if (isProtectionEnabled === false) {
           // Toggle is OFF: Check if THIS specific feature is still being enforced
           if (isValidEnforcer) {
+            const activeFeatures = enforcedFeature ? enforcedFeature.split(',').map(f => f.trim()) : [];
+            const isThisFeatureEnforced = activeFeatures.includes(featureKey);
             const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
             const displayCount = 5;
             const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
             const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
             const fullList = otherFeaturesUsingSameProtection.join(', ');
-            const displayMessageSnippet = (otherFeaturesUsingSameProtection.length > 0) 
-              ? ` But the following other feature's are still offering the same Protection: ${hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList}` 
+            // Only show other features message for superadmins and when there are other features using same protection
+            const displayMessageSnippet = (isSuperAdmin && otherFeaturesUsingSameProtection.length > 0)
+              ? ` But the following other feature's (RiskID's) are still offering the same Protection: ${hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList}`
               : '';
 
             if (isThisFeatureEnforced) {
