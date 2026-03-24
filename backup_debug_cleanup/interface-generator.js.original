@@ -1,20 +1,8 @@
 // VAPT Builder - Auto-Interface Generator
 // Analyzes remediation text and returns a UI Schema for the dashboard.
 
-// Debug mode control - set to true to enable console logs for debugging
-var VAPT_DEBUG = window.VAPT_DEBUG || false;
-
-// Helper function for conditional logging
-var vaptLog = window.vaptLog || {
-  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
-  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
-  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
-  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
-  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
-};
-
 (function () {
-  vaptLog.log('Interface Generator Loaded v3.6.11-FIXED'); // Verify cache bust
+  console.log('VAPT Interface Generator Loaded v3.6.11-FIXED'); // Verify cache bust
   const InterfaceGenerator = {
 
     /**

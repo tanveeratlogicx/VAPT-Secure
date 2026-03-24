@@ -828,7 +828,14 @@ class VAPTSECURE_REST
 
         // FIX: Lifecycle race condition. Capture initial status before transition runs.
         $current_feat_db = VAPTSECURE_DB::get_feature($key);
-        $initial_status = $current_feat_db ? strtolower($current_feat_db['status']) : 'draft';
+        $initial_status = 'draft';
+        if ($current_feat_db) {
+            if (is_array($current_feat_db) && isset($current_feat_db['status'])) {
+                $initial_status = strtolower($current_feat_db['status']);
+            } elseif (is_object($current_feat_db) && isset($current_feat_db->status)) {
+                $initial_status = strtolower($current_feat_db->status);
+            }
+        }
 
         if ($status) {
             $note = $request->get_param('history_note') ?: ($request->get_param('transition_note') ?: '');
@@ -862,6 +869,32 @@ class VAPTSECURE_REST
 
         $is_enforced_param = $request->get_param('is_enforced');
         if ($is_enforced_param !== null) { $meta_updates['is_enforced'] = $is_enforced_param ? 1 : 0;
+        }
+
+        $force_inject_impl = false;
+        $force_sync_val = ($is_enforced_param !== null) ? filter_var($is_enforced_param, FILTER_VALIDATE_BOOLEAN) : (($is_enabled_param !== null) ? filter_var($is_enabled_param, FILTER_VALIDATE_BOOLEAN) : null);
+        
+        if ($force_sync_val !== null) {
+            $risk_suffix = str_replace('-', '_', strtolower($key));
+            $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+
+            if ($request->has_param('implementation_data')) {
+                $impl_temp = $request->get_param('implementation_data');
+                if (is_string($impl_temp)) { $impl_temp = json_decode($impl_temp, true); }
+                if (is_array($impl_temp)) {
+                    $impl_temp[$auto_key] = $force_sync_val;
+                    $impl_temp['enabled'] = $force_sync_val;
+                    $request->set_param('implementation_data', $impl_temp);
+                }
+            } else {
+                $existing_meta = VAPTSECURE_DB::get_feature_meta($key);
+                $existing_impl = ($existing_meta && !empty($existing_meta['implementation_data'])) ? json_decode($existing_meta['implementation_data'], true) : [];
+                if (!is_array($existing_impl)) { $existing_impl = []; }
+                $existing_impl[$auto_key] = $force_sync_val;
+                $existing_impl['enabled'] = $force_sync_val;
+                $request->set_param('implementation_data', $existing_impl);
+                $force_inject_impl = true;
+            }
         }
 
         $is_adaptive = $request->get_param('is_adaptive_deployment');
@@ -964,7 +997,7 @@ class VAPTSECURE_REST
             }
         }
 
-        if ($request->has_param('implementation_data')) {
+        if ($request->has_param('implementation_data') || (isset($force_inject_impl) && $force_inject_impl)) {
             $current_status = $initial_status; // Use captured status
 
             // 🛡️ VALIDATION: Check implementation data against schema (v3.6.19)
@@ -986,6 +1019,21 @@ class VAPTSECURE_REST
                 if (is_array($decoded)) {
                     $implementation_data = $decoded;
                 }
+            }
+
+            // Reverse sync: Ensure implementations reflect UI toggle enforce switch (Fix for deployment overrides)
+            if (isset($force_sync_val) && $force_sync_val !== null) {
+                if (!is_array($implementation_data)) { 
+                    $existing_meta = VAPTSECURE_DB::get_feature_meta($key);
+                    $implementation_data = ($existing_meta && !empty($existing_meta['implementation_data'])) ? json_decode($existing_meta['implementation_data'], true) : [];
+                    if (!is_array($implementation_data)) { $implementation_data = []; }
+                }
+                $risk_suffix = str_replace('-', '_', strtolower($key));
+                $auto_key = "vapt_risk_{$risk_suffix}_enabled";
+                $implementation_data[$auto_key] = $force_sync_val;
+                $implementation_data['enabled'] = $force_sync_val;
+                $implementation_data['feat_enabled'] = $force_sync_val;
+                $implementation_data['prot_enabled'] = $force_sync_val;
             }
 
             if ($schema_for_val) {
@@ -1033,12 +1081,14 @@ class VAPTSECURE_REST
             }
         }
 
-        if (! empty($meta_updates)) {
+        if (! empty($meta_updates) || ! empty($status)) {
             global $wpdb;
-            // error_log("VAPT: Updating meta for $key: " . json_encode($meta_updates));
-            VAPTSECURE_DB::update_feature_meta($key, $meta_updates);
-            if ($wpdb->last_error) {
-                error_log("[VAPT Error] DB Update Failed for $key: " . $wpdb->last_error);
+            if (! empty($meta_updates)) {
+                // error_log("VAPT: Updating meta for $key: " . json_encode($meta_updates));
+                VAPTSECURE_DB::update_feature_meta($key, $meta_updates);
+                if ($wpdb->last_error) {
+                    error_log("[VAPT Error] DB Update Failed for $key: " . $wpdb->last_error);
+                }
             }
             do_action('vaptsecure_feature_saved', $key, $meta_updates);
         } else {

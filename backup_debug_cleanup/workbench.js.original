@@ -1,20 +1,7 @@
 // Superadmin Workbench Entry Point
 // Phase 6 Implementation - IDE Workbench Redesign
-
-// Debug mode control - set to true to enable console logs for debugging
-var VAPT_DEBUG = window.VAPT_DEBUG || false;
-
-// Helper function for conditional logging
-var vaptLog = window.vaptLog || {
-  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
-  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
-  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
-  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
-  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
-};
-
 (function () {
-  vaptLog.log('workbench.js loaded');
+  console.log('VAPT Secure: workbench.js loaded');
   if (typeof wp === 'undefined') return;
 
   const { render, useState, useEffect, useMemo, Fragment, createElement: el } = wp.element || {};
@@ -109,7 +96,7 @@ var vaptLog = window.vaptLog || {
           return res;
         })
         .catch(err => {
-          vaptLog.error('Save failed:', err);
+          console.error('Save failed:', err);
           if (!silent) {
             setSaveStatus({ message: __('Save Failed', 'vaptsecure'), type: 'error' });
           }
@@ -189,7 +176,7 @@ var vaptLog = window.vaptLog || {
     // Helper to render a single feature card
     const renderFeatureCard = (f, setVerifFeature) => {
       const schema = typeof f.generated_schema === 'string' ? JSON.parse(f.generated_schema) : (f.generated_schema || { controls: [] });
-      vaptLog.log(`Rendering Feature ${f.key}:`, schema);
+      console.log(`[VAPT] Rendering Feature ${f.key}:`, schema);
       const isVerifEngine = f.include_verification_engine;
 
       // 🛡️ Resilience: Auto-Inject Verification Controls (Moved from GeneratedInterface v3.6.19)
@@ -540,7 +527,7 @@ var vaptLog = window.vaptLog || {
   const init = () => {
     const container = document.getElementById('vapt-workbench-root');
     if (container) render(el(ClientDashboard), container);
-    else vaptLog.error('#vapt-workbench-root not found!');
+    else console.error('VAPT Secure: #vapt-workbench-root not found!');
   };
 
   if (document.readyState === 'loading') {

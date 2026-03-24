@@ -1913,6 +1913,23 @@ register_deactivation_hook( __FILE__, ['VAPT_Lifecycle', 'on_deactivate'] );
 register_uninstall_hook(    __FILE__, ['VAPT_Lifecycle', 'on_uninstall']  );
 ```
 
+### Rule 7 — Mandatory ID for `div` Elements
+
+Every `div` element generated in HTML, PHP, or JavaScript output—whether **newly created** or an **existing element being updated/modified**—**MUST** have a unique and descriptive `id` attribute. If an existing `div` lacks an `id`, it must be assigned one during the modification process. This is a non-negotiable requirement to ensure that the USER can easily identify and tweak specific components via CSS or JavaScript after they are generated.
+
+---
+
+## 🚀 Development Workflow
+
+The following workflow must be followed for every code generation task:
+
+1.  **Session Cleanup**: Clear `VAPT-Secure/vapt-debug.txt` at the start of every new session or major task. This file MUST NEVER be committed to Git.
+2.  **Requirement Analysis**: Understand the feature or fix requested.
+3.  **Schema Alignment**: Ensure all output aligns with the project's JSON schemas and architecture.
+4.  **Mandatory Identifiers**: Ensure every **`div`** created or modified has a unique and descriptive **`id`**.
+5.  **Self-Check**: Run the 19-point rubric and self-check engine BEFORE delivery.
+6.  **Toggle Intelligence**: Ensure the code correctly responds to the feature's enabled/disabled state.
+
 ---
 
 ## 🔒 WordPress-Specific Security Rules
@@ -1969,8 +1986,9 @@ actions:
 3. **Always reference the enforcer library** — never write patterns from memory
 4. **4-step workflow**: Rulebook → Blueprint → Enforcement → Self-Check
 5. **Score output against 19-point rubric** before delivering
-6. **Naming**: `UI-RISK-XXX-YYY` format
-7. **Domain**: always `{domain}` — never any literal hostname
+6. **Unique ID Requirement**: Every `div` element must have a mandatory `id` attribute for easier identification and tweaking.
+7. **Naming**: `UI-RISK-XXX-YYY` format
+8. **Domain**: always `{domain}` — never any literal hostname
 
 ---
 

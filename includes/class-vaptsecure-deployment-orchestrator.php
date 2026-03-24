@@ -104,6 +104,84 @@ class VAPTSECURE_Deployment_Orchestrator
         return $results;
     }
 
+    /**
+     * Priority order for enforcer selection (highest to lowest)
+     * Based on performance, reliability, and security effectiveness
+     */
+    private $priority_order = [
+        'cloudflare_edge',  // Edge-level protection, highest priority
+        'nginx_config',     // Native Nginx configuration
+        'apache_htaccess',   // Apache .htaccess
+        'caddy_native',     // Caddy native config
+        'iis_config',       // IIS web.config
+        'php_functions',    // PHP runtime enforcement
+        'wp_config',        // WordPress config (always included if available)
+        'server_cron',      // Cron-based enforcement
+        'fail2ban'          // Fail2ban integration
+    ];
+
+    /**
+     * Check if a platform is compatible with current environment capabilities
+     */
+    private function is_platform_compatible($platform, $env)
+    {
+        $capabilities = $env['capabilities'] ?? [];
+        
+        $compatibility_map = [
+            'cloudflare_edge' => ['cloudflare_proxy'],
+            'nginx_config'    => ['nginx'],
+            'apache_htaccess' => ['apache', 'mod_rewrite', 'allowoverride'],
+            'caddy_native'    => ['caddy'],
+            'iis_config'      => ['iis'],
+            'php_functions'   => ['php'],
+            'wp_config'       => ['wordpress'],
+            'server_cron'     => ['cron'],
+            'fail2ban'        => ['fail2ban']
+        ];
+
+        $required = $compatibility_map[$platform] ?? [];
+        
+        // Platform is compatible if all required capabilities are present
+        foreach ($required as $cap) {
+            if (!in_array($cap, $capabilities)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Select best enforcer based on priority and compatibility
+     */
+    private function select_best_enforcer($matrix, $env)
+    {
+        $available = array_keys($matrix);
+        
+        // Filter by compatibility
+        $compatible = array_filter($available, function($platform) use ($env) {
+            return $this->is_platform_compatible($platform, $env);
+        });
+        
+        if (empty($compatible)) {
+            return null;
+        }
+        
+        // Sort by priority order
+        usort($compatible, function($a, $b) {
+            $pos_a = array_search($a, $this->priority_order);
+            $pos_b = array_search($b, $this->priority_order);
+            
+            // If not in priority list, put at end
+            if ($pos_a === false) $pos_a = PHP_INT_MAX;
+            if ($pos_b === false) $pos_b = PHP_INT_MAX;
+            
+            return $pos_a - $pos_b;
+        });
+        
+        return $compatible[0];
+    }
+
     private function resolve_targets($profile, $env, $matrix)
     {
         $targets = [];
@@ -116,26 +194,34 @@ class VAPTSECURE_Deployment_Orchestrator
             break;
 
         case 'conservative':
-            // Only deploy to PHP and .htaccess if safe
-            if (isset($matrix['php_functions'])) { $targets[] = 'php_functions';
+            // Only deploy to PHP and .htaccess if safe and compatible
+            if (isset($matrix['php_functions']) && $this->is_platform_compatible('php_functions', $env)) {
+                $targets[] = 'php_functions';
             }
-            if ($optimal === 'apache_htaccess') { $targets[] = 'apache_htaccess';
+            if ($optimal === 'apache_htaccess' && isset($matrix['apache_htaccess']) && $this->is_platform_compatible('apache_htaccess', $env)) {
+                $targets[] = 'apache_htaccess';
             }
             break;
 
         case 'auto_detect':
         default:
-            // Primary: Optimal Platform
-            if (isset($matrix[$optimal])) {
+            // Primary: Use intelligent priority-based selection
+            $best = $this->select_best_enforcer($matrix, $env);
+            if ($best) {
+                $targets[] = $best;
+            }
+
+            // Fallback: If optimal platform is different from best, include it too
+            if ($optimal && $optimal !== $best && isset($matrix[$optimal]) && $this->is_platform_compatible($optimal, $env)) {
                 $targets[] = $optimal;
             }
 
-            // Fallback: Always include PHP if defined and not already optimal
-            if ($optimal !== 'php_functions' && isset($matrix['php_functions'])) {
+            // Always include PHP if defined and not already selected (for runtime enforcement)
+            if (!in_array('php_functions', $targets) && isset($matrix['php_functions']) && $this->is_platform_compatible('php_functions', $env)) {
                 $targets[] = 'php_functions';
             }
 
-            // [FIX] Always include wp_config if defined (Core configuration persists regardless of optimal server platform)
+            // Always include wp_config if defined (Core configuration persists regardless of optimal server platform)
             if (isset($matrix['wp_config'])) {
                 $targets[] = 'wp_config';
             }

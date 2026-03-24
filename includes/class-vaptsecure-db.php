@@ -18,7 +18,7 @@ class VAPTSECURE_DB
     {
         global $wpdb;
         $table = $wpdb->prefix . 'vaptsecure_feature_status';
-        $results = $wpdb->get_results("SELECT * FROM $table", ARRAY_A);
+        $results = $wpdb->get_results("SELECT * FROM $table", OBJECT_K);
 
         $statuses = [];
         foreach ($results as $row) {
@@ -60,7 +60,7 @@ class VAPTSECURE_DB
     {
         global $wpdb;
         $table = $wpdb->prefix . 'vaptsecure_feature_status';
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE feature_key = %s", $key), ARRAY_A);
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE feature_key = %s", $key), OBJECT);
     }
 
     /**
@@ -184,7 +184,7 @@ class VAPTSECURE_DB
         // [SAFETY] Check if essential columns exist
         $id_col = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table LIKE %s", 'id'));
         if (empty($id_col)) {
-            error_log('VAPT: "id" column missing in domains table. Attempting to add...');
+            vapt_warning('"id" column missing in domains table. Attempting to add...');
             $wpdb->query("ALTER TABLE $table DROP PRIMARY KEY");
             $wpdb->query("ALTER TABLE $table ADD COLUMN id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (id)");
         }
@@ -239,10 +239,10 @@ class VAPTSECURE_DB
         $formats = array('%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%d');
 
         if ($existing) {
-            error_log('VAPT: DB Found Existing Record (ID: ' . $existing->id . '). Updating...');
+            vapt_debug('DB Found Existing Record (ID: ' . $existing->id . '). Updating...');
             $success = $wpdb->update($table, $data, array('id' => $existing->id), $formats, array('%d'));
             if ($success === false) {
-                error_log('VAPT: DB Update Error: ' . $wpdb->last_error);
+                vapt_error('DB Update Error: ' . $wpdb->last_error);
                 return false;
             }
             return $existing->id;

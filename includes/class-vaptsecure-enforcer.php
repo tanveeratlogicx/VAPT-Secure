@@ -52,7 +52,7 @@ class VAPTSECURE_Enforcer
             set_transient($cache_key, $enforced, HOUR_IN_SECONDS);
         }
         
-        error_log("VAPT RUNTIME: Found " . count($enforced) . " enforced features in runtime enforcement");
+        vapt_debug("Found " . count($enforced) . " enforced features in runtime enforcement");
 
         if (empty($enforced)) { return;
         }
@@ -85,7 +85,7 @@ class VAPTSECURE_Enforcer
                         || strpos($val_to_test, 'add_filter(') !== false 
                         || strpos($val_to_test, 'function ') !== false
                     ) {
-                        error_log("VAPT: Skipping htaccess for $feature_key - using hook driver instead");
+                        vapt_debug("Skipping htaccess for $feature_key - using hook driver instead");
                         $driver = 'hook';
                         $schema['enforcement']['driver'] = 'hook';
                         break;
@@ -113,7 +113,7 @@ class VAPTSECURE_Enforcer
         $bundled_path = VAPTSECURE_PATH . 'vapt-functions.php';
         if (file_exists($bundled_path)) {
             include_once $bundled_path;
-            error_log("VAPT: Loaded bundled vapt-functions.php");
+            vapt_debug("Loaded bundled vapt-functions.php");
         }
     }
 
@@ -138,6 +138,7 @@ class VAPTSECURE_Enforcer
         global $wpdb;
         $status_row = $wpdb->get_row($wpdb->prepare("SELECT status FROM {$wpdb->prefix}vaptsecure_feature_status WHERE feature_key = %s", $key));
         $status = $status_row ? strtolower($status_row->status) : 'draft';
+        $meta['status'] = $status;
 
         // Override Logic
         $use_override_schema = in_array($status, ['test', 'release']) && !empty($meta['override_schema']);

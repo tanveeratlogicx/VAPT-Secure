@@ -1,3 +1,8 @@
+/* Batch Revert to Draft - Modal */
+.vapt-batch-revert-modal {
+    min-height: fit-content;
+}
+
 /* VAPT CoPilot Admin Styles */
 
 .vapt-dashboard-header {

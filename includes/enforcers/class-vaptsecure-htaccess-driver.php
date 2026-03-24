@@ -86,14 +86,8 @@ class VAPTSECURE_Htaccess_Driver
         }
 
         if (!$is_enabled) {
-            // [FIX v2.4.11] Return DISABLED marker to trigger rule removal
-            // The write_batch method will strip existing active rules for this feature
-            $feature_key = isset($schema['feature_key']) ? $schema['feature_key'] : 'unknown';
-            return array(
-            "# 🛑 DISABLED: {$feature_key}",
-            '# This protection has been deactivated by the user',
-            '# All active rules for this feature have been removed'
-            );
+            // [FIX v4.0.x] Return empty array to strip rules completely (removed DISABLED marker clutter)
+            return array();
         }
 
         $enf_config = isset($schema['enforcement']) ? $schema['enforcement'] : array();

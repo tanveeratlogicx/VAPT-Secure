@@ -2,18 +2,6 @@
 // Version 3.0 - Global Driver & Probe Architecture
 // Expects props: { feature, onUpdate }
 
-// Debug mode control - set to true to enable console logs for debugging
-var VAPT_DEBUG = window.VAPT_DEBUG || false;
-
-// Helper function for conditional logging
-var vaptLog = window.vaptLog || {
-  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
-  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
-  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
-  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
-  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
-};
-
 (function () {
   const { createElement: el, useState, useEffect, useRef, useMemo } = wp.element;
   const { Button, TextControl, ToggleControl, SelectControl, TextareaControl, Modal, Icon, Tooltip } = wp.components;
@@ -82,7 +70,7 @@ var vaptLog = window.vaptLog || {
 
     const normalizedPath = sub.startsWith('/') ? sub : '/' + sub;
     let result = base.replace(/\/$/, '') + (normalizedPath === '/' ? '' : normalizedPath);
-
+    
     // [FIX v2.4.11] Append query string if it was separated
     if (queryPart) {
       result += queryPart;
@@ -151,11 +139,11 @@ var vaptLog = window.vaptLog || {
       const url = resolveUrl(configPath, control.config?.url, featureKey);
       const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vaptsecure_test_context=login' : '';
       const finalUrl = url + (url.includes('?') ? '&' : '?') + 'vaptsecure_header_check=' + Date.now() + contextParam;
-      vaptLog.log(`Header Probe: Fetching ${finalUrl}`);
+      console.log(`[VAPT] Header Probe: Fetching ${finalUrl}`);
       const response = await fetch(finalUrl, { method: 'GET', cache: 'no-store' });
       const headers = {};
       response.headers.forEach((v, k) => { headers[k] = v; });
-      vaptLog.log("Full Response Headers:", headers);
+      console.log("[VAPT] Full Response Headers:", headers);
 
       const vaptEnforced = response.headers.get('x-vapt-enforced');
       const enforcedFeature = response.headers.get('x-vapt-feature'); // Can be comma-separated
@@ -193,34 +181,44 @@ var vaptLog = window.vaptLog || {
         if (isProtectionEnabled === false) {
           // Toggle is OFF: Check if THIS specific feature is still being enforced
           if (isValidEnforcer) {
-            const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
-            const displayCount = 5;
-            const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
-            const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
-            const fullList = otherFeaturesUsingSameProtection.join(', ');
-            const displayMessageSnippet = (otherFeaturesUsingSameProtection.length > 0) 
-              ? ` But the following other feature's are still offering the same Protection: ${hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList}` 
-              : '';
-
+            // Check if the specific feature is still in the enforced features list
+            const activeFeatures = enforcedFeature ? enforcedFeature.split(',').map(f => f.trim()) : [];
+            const isThisFeatureEnforced = featureKey && activeFeatures.includes(featureKey);
+            
             if (isThisFeatureEnforced) {
               // FAILURE: Toggle is OFF but THIS feature is still being enforced
+              // Show OTHER features using the SAME protection (same enforcer)
+              const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
+              const displayCount = 5;
+              const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
+              const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
+              const fullList = otherFeaturesUsingSameProtection.join(', ');
+              const displayMessage = hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList;
               return {
                 success: false,
-                message: `Warning: ${featureKey} toggle is OFF but server is STILL enforcing it (${vaptEnforced}).${displayMessageSnippet}`,
+                message: `Warning: ${featureKey} toggle is OFF but server is STILL enforcing (${vaptEnforced}). Other features using same protection: ${displayMessage}`,
                 raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: ${vaptEnforced} | Same Protection: ${fullList || 'none'}\n\n${headerStr.trim()}`
               };
             } else {
               // SUCCESS: Toggle is OFF, headers present but THIS feature is NOT in the list
+              // This means protection was properly removed for this feature (other features may still be enforced)
+              // Show OTHER features using the SAME protection (same enforcer)
+              const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
+              const displayCount = 5;
+              const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
+              const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
+              const fullList = otherFeaturesUsingSameProtection.join(', ');
+              const displayMessage = hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList;
               return {
-                success: false, unprotected: true,
-                message: `Protection currently disabled for this feature.${displayMessageSnippet}`,
+                success: true,
+                message: `Protection correctly disabled for this feature. Other features using same protection: ${displayMessage}`,
                 raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | This Feature: Not Enforced | Same Protection: ${fullList || 'none'}\n\n${headerStr.trim()}`
               };
             }
           }
           // SUCCESS: Toggle is OFF and no enforcement detected - correctly disabled
           return {
-            success: false, unprotected: true,
+            success: true,
             message: `Protection correctly disabled. No enforcement headers detected.`,
             raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: None\n\n${headerStr.trim()}`
           };
@@ -238,19 +236,19 @@ var vaptLog = window.vaptLog || {
         // SUCCESS: Toggle is ON and headers present - protection is active
         return { success: true, message: `Plugin is actively enforcing protection (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Enforcement: ${vaptEnforced}\n\n${headerStr.trim()}` };
       }
-
+      
       // Legacy behavior for tests without expected_headers
       if (vaptEnforced === 'php-headers' || vaptEnforced === 'htaccess' || vaptEnforced?.includes('php')) {
         if (featureKey && enforcedFeature) {
           const activeFeatures = enforcedFeature.split(',').map(f => f.trim());
           if (activeFeatures.includes(featureKey)) {
-            if (isFeatureEnabled(featureData) === false) {
+              if (isFeatureEnabled(featureData) === false) {
               return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED by server policy.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
             }
             return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
           } else {
             // Case: Global headers exist but this feature isn't in the active list (intentional non-enforcement)
-            if (isFeatureEnabled(featureData) === false) {
+              if (isFeatureEnabled(featureData) === false) {
               return { success: false, unprotected: true, message: `Baseline Test: No enforcement headers for this feature. The system is unprotected for this risk vector.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
             }
             return { success: false, message: `Discrepancy: Global headers found, but this specific feature ('${featureKey}') is NOT matching enforcement policy.`, raw: `URL: ${url} | Status: ${response.status} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
@@ -294,22 +292,22 @@ var vaptLog = window.vaptLog || {
 
         if (isNaN(rpm)) rpm = 5;
 
-        vaptLog.log(`spam_requests Debug: rpm=${rpm}, load=${Math.ceil(rpm * 1.25)}, data=`, featureData);
+        console.log(`[VAPT] spam_requests Debug: rpm=${rpm}, load=${Math.ceil(rpm * 1.25)}, data=`, featureData);
         if (isNaN(rpm) || rpm <= 0) {
           throw new Error('Invalid rate limit configuration. RPM must be a positive number.');
         }
 
         const load = Math.ceil(rpm * 1.25);
         if (load > 1000) {
-          vaptLog.warn('Warning: Rate limit test sending more than 1000 requests. This may impact server performance.');
+          console.warn('[VAPT] Warning: Rate limit test sending more than 1000 requests. This may impact server performance.');
         }
 
         try {
           const resetRes = await fetch(siteUrl + '/wp-json/vaptsecure/v1/reset-limit', { method: 'POST', cache: 'no-store' });
           const resetJson = await resetRes.json();
-          vaptLog.log('Rate limit reset debug:', resetJson);
+          console.log('[VAPT] Rate limit reset debug:', resetJson);
         } catch (e) {
-          vaptLog.warn('Failed to reset rate limit:', e);
+          console.warn('[VAPT] Failed to reset rate limit:', e);
         }
 
         const responses = [];
@@ -349,7 +347,7 @@ var vaptLog = window.vaptLog || {
               window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey: featureKey.toLowerCase() } }));
             }
           } catch (err) {
-            vaptLog.warn(`Request ${i} failed:`, err);
+            console.warn(`[VAPT] Request ${i} failed:`, err);
             stats[0] = (stats[0] || 0) + 1;
           }
         }
@@ -418,7 +416,7 @@ var vaptLog = window.vaptLog || {
           if (blocked === 0) {
             // SUCCESS: Toggle OFF and no rate limiting - correctly disabled
             return {
-              success: false, unprotected: true,
+              success: true,
               message: `Protection correctly disabled. No rate limiting detected (all ${total} requests accepted).`,
               meta: resultMeta,
               raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Toggle: OFF | Rate Limiting: Inactive`
@@ -453,7 +451,7 @@ var vaptLog = window.vaptLog || {
     // 3. Status Probe: Verifies specific file block (e.g., XML-RPC)
     block_xmlrpc: async (siteUrl, control, featureData, featureKey) => {
       const url = resolveUrl('/xmlrpc.php', control.config?.url, featureKey);
-      vaptLog.log(`XML-RPC Probe: Fetching ${url}`);
+      console.log(`[VAPT] XML-RPC Probe: Fetching ${url}`);
       const response = await fetch(url, { method: 'POST', body: '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName><params></params></methodCall>' });
       const vaptEnforced = response.headers.get('x-vapt-enforced');
       const enforcedFeature = response.headers.get('x-vapt-feature');
@@ -491,7 +489,7 @@ var vaptLog = window.vaptLog || {
         if (isVulnerable) {
           // SUCCESS: Toggle OFF and XML-RPC is accessible - correctly disabled
           return {
-            success: false, unprotected: true,
+            success: true,
             message: `Protection correctly disabled. XML-RPC is accessible (HTTP 200).`,
             raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: None`
           };
@@ -555,7 +553,7 @@ var vaptLog = window.vaptLog || {
         if (resp.status === 200) {
           // SUCCESS: Toggle OFF and directory is accessible - correctly disabled
           return {
-            success: false, unprotected: true,
+            success: true,
             message: `Protection correctly disabled. Directory browsing is accessible (HTTP ${resp.status}).`,
             raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: None`
           };
@@ -612,7 +610,7 @@ var vaptLog = window.vaptLog || {
         if (resp.status === 200) {
           // SUCCESS: Toggle OFF and null byte is accepted - correctly disabled
           return {
-            success: false, unprotected: true,
+            success: true,
             message: `Protection correctly disabled. Null byte payload accepted (HTTP ${resp.status}).`,
             raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: None`
           };
@@ -638,14 +636,6 @@ var vaptLog = window.vaptLog || {
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
       const hasGenerator = text.toLowerCase().includes('name="generator" content="wordpress');
-      const isEnabled = isFeatureEnabled(featureData);
-
-      if (!isEnabled) {
-        if (!hasGenerator) {
-          return { success: false, unprotected: true, message: `Protection correctly disabled. WordPress generator tag is hidden by external policy.`, raw: `URL: ${url} | Status: ${resp.status} | Toggle: OFF | State: Secure` };
-        }
-        return { success: false, unprotected: true, message: `Baseline Test: WordPress generator tag is present. You are unprotected for this risk vector.`, raw: `URL: ${url} | Status: ${resp.status} | Toggle: OFF | State: Vulnerable` };
-      }
 
       if (!hasGenerator) {
         return { success: true, message: `Secure: WordPress generator tag is hidden.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: No generator tag` };
@@ -796,20 +786,20 @@ var vaptLog = window.vaptLog || {
         // SUCCESS: Toggle OFF and no enforcement detected - correctly disabled
         if (expectsBlock && !expectedStatusArray.includes(code) && code === 200) {
           return {
-            success: false, unprotected: true,
+            success: true,
             message: `Protection correctly disabled. Target is accessible (HTTP ${code}) with toggle OFF.`,
             raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
           };
         }
         if (expectsAllow && code === 200) {
           return {
-            success: false, unprotected: true,
+            success: true,
             message: `Protection correctly disabled. Target responded normally (HTTP ${code}).`,
             raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
           };
         }
         return {
-          success: false, unprotected: true,
+          success: true,
           message: `Protection correctly disabled. No enforcement detected.`,
           raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
         };
@@ -901,18 +891,14 @@ var vaptLog = window.vaptLog || {
       return {
         success: isSecure,
         message: message,
-        raw: `URL: ${url} | Status: ${code} | Expected: ${expectedStatus || 'N/A'} | Toggle: ${isEnabled ? 'ON' : 'OFF'}`
+        raw: `URL: ${url} | Status: ${code} | Expected: ${expectedStatus || 'N/A'} | Toggle: ON`
       };
     },
 
     // 8. Default Generic Probe
-    default: async (siteUrl, control, featureData) => {
+    default: async (siteUrl, control) => {
       const resp = await fetch(siteUrl + '?vaptsecure_ping=1');
-      const isEnabled = isFeatureEnabled(featureData);
-      if (!isEnabled) {
-        return { success: false, unprotected: true, message: `Protection correctly disabled. Verification probe active (HTTP ${resp.status}).`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Toggle: OFF` };
-      }
-      return { success: resp.ok, message: `Probe result: HTTP ${resp.status}`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Time: ${new Date().toISOString()} | Toggle: ON` };
+      return { success: resp.ok, message: `Probe result: HTTP ${resp.status}`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Time: ${new Date().toISOString()}` };
     }
   };
 
@@ -1081,20 +1067,20 @@ var vaptLog = window.vaptLog || {
 
         if (res && typeof res === 'object') {
           if (res.unprotected) {
-            setStatus('unprotected');
+             setStatus('unprotected');
           } else if (res.external_block) {
-            setStatus('external_block');
+             setStatus('external_block');
           } else if (res.skipped) {
-            setStatus('skipped');
+             setStatus('skipped');
           } else {
-            setStatus(res.success ? 'success' : 'error');
+             setStatus(res.success ? 'success' : 'error');
           }
           setResult(res);
         } else {
           throw new Error('Invalid test result format');
         }
       } catch (err) {
-        vaptLog.error(`Probe Execution Error for ${control.test_logic}:`, err);
+        console.error(`[VAPT] Probe Execution Error for ${control.test_logic}:`, err);
         setStatus('error');
         setResult({
           success: false,
@@ -1219,7 +1205,7 @@ var vaptLog = window.vaptLog || {
               const urlMatch = result.raw.match(/URL:\s*([^\s|]+)/i);
               const targetUrl = urlMatch ? urlMatch[1].trim() : '';
               const displayUrl = targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-
+              
               return el('div', { style: { fontSize: '11px', marginBottom: '8px', color: '#64748b' } }, [
                 el('strong', { style: { color: '#475569' } }, 'Target: '),
                 el('a', {
@@ -1276,7 +1262,7 @@ var vaptLog = window.vaptLog || {
         setStats(data);
         consecutiveFailsRef.current = 0;
       } catch (e) {
-        vaptLog.error('Failed to fetch stats:', e);
+        console.error('[VAPT] Failed to fetch stats:', e);
         consecutiveFailsRef.current++;
       } finally {
         setLoading(false);
@@ -1293,7 +1279,7 @@ var vaptLog = window.vaptLog || {
         });
         await fetchStats();
       } catch (e) {
-        vaptLog.error('Failed to reset stats:', e);
+        console.error('[VAPT] Failed to reset stats:', e);
       } finally {
         setResetting(false);
       }
@@ -1303,7 +1289,7 @@ var vaptLog = window.vaptLog || {
       fetchStats();
       const interval = setInterval(() => {
         if (consecutiveFailsRef.current >= 3) {
-          vaptLog.warn('Background polling stopped due to consecutive network/REST errors.');
+          console.warn('VAPT Secure: Background polling stopped due to consecutive network/REST errors.');
           clearInterval(interval);
           return;
         }
@@ -1361,14 +1347,14 @@ var vaptLog = window.vaptLog || {
   };
 
   const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, globalProtection = true }) => {
-    vaptLog.log('GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
+    console.log('[VAPT] GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
     let schema = useMemo(() => {
       if (!feature.generated_schema) return {};
       if (typeof feature.generated_schema === 'object') return feature.generated_schema;
       try {
         return JSON.parse(feature.generated_schema);
       } catch (e) {
-        vaptLog.warn('Failed to parse generated_schema:', e);
+        console.warn('[VAPT] Failed to parse generated_schema:', e);
         return {};
       }
     }, [feature.generated_schema]);
@@ -1392,7 +1378,7 @@ var vaptLog = window.vaptLog || {
       try {
         return JSON.parse(feature.implementation_data);
       } catch (e) {
-        vaptLog.warn('Failed to parse implementation_data:', e);
+        console.warn('[VAPT] Failed to parse implementation_data:', e);
         return {};
       }
     }, [feature.implementation_data]);
@@ -1455,38 +1441,38 @@ var vaptLog = window.vaptLog || {
           const mapping = (schema.enforcement?.mappings || {})[key] || (schema.client_deployment?.enforcement?.mappings || {})[key];
           const isDevelop = (feature.status || '').toLowerCase() === 'develop' || (feature.normalized_status || '').toLowerCase() === 'develop';
           const isSuperAdmin = window.vaptSecureSettings?.isSuper || false;
-
+          
           // Enhanced Driver Detection for Tooltip Accuracy
           const activeDriver = schema.enforcement?.driver || schema.client_deployment?.enforcement?.driver || 'hook';
           const activeTarget = schema.enforcement?.target || schema.client_deployment?.enforcement?.target || 'root';
 
           const isEnforced = toBool(value);
           const vSettings = window.vaptSecureSettings || {};
-
+          
           const getShortPath = (fullPath) => {
-            if (!fullPath) return '';
-            let pathStr = fullPath.replace(/\\/g, '/');
-            let absPath = (vSettings.abspath || '').replace(/\\/g, '/');
-            let pluginPath = (vSettings.pluginPath || '').replace(/\\/g, '/');
+              if (!fullPath) return '';
+              let pathStr = fullPath.replace(/\\/g, '/');
+              let absPath = (vSettings.abspath || '').replace(/\\/g, '/');
+              let pluginPath = (vSettings.pluginPath || '').replace(/\\/g, '/');
 
-            if (absPath && pathStr.toLowerCase().startsWith(absPath.toLowerCase())) {
-              return './' + pathStr.substring(absPath.length).replace(/^[\\\/]/, '');
-            }
-            if (pluginPath && pathStr.toLowerCase().startsWith(pluginPath.toLowerCase())) {
-              const pluginBase = pluginPath.split(/[\\\/]/).filter(Boolean).pop();
-              return pluginBase + '/' + pathStr.substring(pluginPath.length).replace(/^[\\\/]/, '');
-            }
-            return pathStr;
+              if (absPath && pathStr.toLowerCase().startsWith(absPath.toLowerCase())) {
+                  return './' + pathStr.substring(absPath.length).replace(/^[\\\/]/, '');
+              }
+              if (pluginPath && pathStr.toLowerCase().startsWith(pluginPath.toLowerCase())) {
+                  const pluginBase = pluginPath.split(/[\\\/]/).filter(Boolean).pop();
+                  return pluginBase + '/' + pathStr.substring(pluginPath.length).replace(/^[\\\/]/, '');
+              }
+              return pathStr;
           };
 
-          const statusHeader = isEnforced ?
+          const statusHeader = isEnforced ? 
             el('div', { style: { color: '#22c55e', background: '#f0fdf4', padding: '6px 10px', borderRadius: '4px', fontWeight: '800', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bbf7d0' } }, [
-              el(Icon, { icon: 'saved', size: 14 }),
-              __('STATUS: ACTIVE & INJECTED', 'vaptsecure')
+                el(Icon, { icon: 'saved', size: 14 }),
+                __('STATUS: ACTIVE & INJECTED', 'vaptsecure')
             ]) :
             el('div', { style: { color: '#ef4444', background: '#fef2f2', padding: '6px 10px', borderRadius: '4px', fontWeight: '800', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #fecaca' } }, [
-              el(Icon, { icon: 'no-alt', size: 14 }),
-              __('STATUS: INACTIVE / REMOVED', 'vaptsecure')
+                el(Icon, { icon: 'no-alt', size: 14 }),
+                __('STATUS: INACTIVE / REMOVED', 'vaptsecure')
             ]);
 
           return el('div', { id: control.id, key: uniqueKey, style: { marginBottom: '0' } }, [
@@ -1498,46 +1484,46 @@ var vaptLog = window.vaptLog || {
                   text: el('div', { style: { padding: '12px', maxWidth: '450px', maxHeight: '500px', overflowY: 'auto', background: '#1e293b', borderRadius: '8px' } }, [
                     el('div', { style: { fontWeight: '700', marginBottom: '12px', fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #334155', paddingBottom: '6px', letterSpacing: '0.05em' } }, __('Technical Trace & Enforcement', 'vaptsecure')),
                     statusHeader,
-                    feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ?
+                    feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
                       Object.entries(feature.platform_implementations)
-                        .filter(([name, impl]) => {
-                          const n = name.toLowerCase();
-                          const d = activeDriver.toLowerCase();
-                          if (d === 'htaccess') return n.includes('htaccess') || n.includes('apache');
-                          if (d === 'config' || d === 'wp_config' || d === 'wp-config') return n.includes('config');
-                          if (d === 'nginx') return n.includes('nginx');
-                          if (d === 'cloudflare') return n.includes('cloudflare');
-                          if (d === 'iis') return n.includes('iis');
-                          if (d === 'hook' || d === 'php_functions' || d === 'wordpress') return n.includes('hook') || n.includes('functions') || n.includes('wordpress');
-                          return true;
-                        })
-                        .map(([name, impl], idx) => {
-                          let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
-                          if (!code) return null;
+                      .filter(([name, impl]) => {
+                        const n = name.toLowerCase();
+                        const d = activeDriver.toLowerCase();
+                        if (d === 'htaccess') return n.includes('htaccess') || n.includes('apache');
+                        if (d === 'config' || d === 'wp_config' || d === 'wp-config') return n.includes('config');
+                        if (d === 'nginx') return n.includes('nginx');
+                        if (d === 'cloudflare') return n.includes('cloudflare');
+                        if (d === 'iis') return n.includes('iis');
+                        if (d === 'hook' || d === 'php_functions' || d === 'wordpress') return n.includes('hook') || n.includes('functions') || n.includes('wordpress');
+                        return true; 
+                      })
+                      .map(([name, impl], idx) => {
+                        let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
+                        if (!code) return null;
+                        
+                        let targetFile = impl.target_file || (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : 'root'));
+                        if (activeDriver === 'hook' || activeDriver === 'php_functions') targetFile = 'vapt-functions.php';
 
-                          let targetFile = impl.target_file || (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : 'root'));
-                          if (activeDriver === 'hook' || activeDriver === 'php_functions') targetFile = 'vapt-functions.php';
-
-                          let fullPath = '';
-                          if (targetFile === 'wp-config.php') fullPath = (vSettings.abspath || '') + 'wp-config.php';
-                          else if (targetFile === '.htaccess') fullPath = (vSettings.abspath || '') + '.htaccess';
-                          else if (targetFile === 'vapt-functions.php') fullPath = (vSettings.pluginPath || '') + 'vapt-functions.php';
-                          else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
-                          else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
-
-                          const displayPath = fullPath ? getShortPath(fullPath) : targetFile;
-                          let displayName = name;
-
-                          return el('div', { key: idx, style: { marginBottom: '15px' } }, [
-                            el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '2px' } }, [
-                              el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, displayPath)
-                            ]),
-                            el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '12px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap', borderLeft: isEnforced ? '3px solid #22c55e' : '3px solid #ef4444' } }, code)
-                          ]);
-                        }) :
+                        let fullPath = '';
+                        if (targetFile === 'wp-config.php') fullPath = (vSettings.abspath || '') + 'wp-config.php';
+                        else if (targetFile === '.htaccess') fullPath = (vSettings.abspath || '') + '.htaccess';
+                        else if (targetFile === 'vapt-functions.php') fullPath = (vSettings.pluginPath || '') + 'vapt-functions.php';
+                        else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
+                        else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
+                        
+                        const displayPath = fullPath ? getShortPath(fullPath) : targetFile;
+                        let displayName = name;
+                        
+                        return el('div', { key: idx, style: { marginBottom: '15px' } }, [
+                          el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '2px' } }, [
+                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, displayPath)
+                          ]),
+                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '12px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap', borderLeft: isEnforced ? '3px solid #22c55e' : '3px solid #ef4444' } }, code)
+                        ]);
+                      }) : 
                       (mapping ? el('div', [
                         el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px' } }, [
-                          el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, (activeDriver === 'htaccess' ? './.htaccess' : (activeDriver.includes('config') ? './wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'VAPT-Secure/vapt-functions.php' : './' + activeTarget))))
+                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, (activeDriver === 'htaccess' ? './.htaccess' : (activeDriver.includes('config') ? './wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'VAPT-Secure/vapt-functions.php' : './' + activeTarget))))
                         ]),
                         el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
                       ]) : el('em', { style: { color: '#64748b', fontSize: '11px' } }, __('No technical code mapping defined for this control.', 'vaptsecure')))
