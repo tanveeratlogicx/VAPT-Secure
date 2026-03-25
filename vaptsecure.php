@@ -52,7 +52,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-define('VAPTSECURE_VERSION', '2.5.23');
+define('VAPTSECURE_VERSION', '2.5.25');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
@@ -509,7 +509,31 @@ if (! function_exists('vaptsecure_manual_db_fix')) {
         ) $charset_collate;";
             dbDelta($table_security_events);
 
-            $msg = "Database schema updated (History Table + Security Events + assigned_to + Status Enum + Manual Expiry + Generated Schema + Implementation Data + Domain Enabled + Robust ID column + License Scope + Inst. Limit + Removed is_enforced).";
+            // 6. Clean up domain-feature relationships: remove features not in Release state
+            $domain_features_table = $wpdb->prefix . 'vaptsecure_domain_features';
+            $feature_status_table = $wpdb->prefix . 'vaptsecure_feature_status';
+            
+            // Get all features that are NOT in Release state
+            $non_release_features = $wpdb->get_col(
+                "SELECT feature_key FROM {$feature_status_table} WHERE status != 'Release'"
+            );
+            
+            if (!empty($non_release_features)) {
+                $placeholders = array_fill(0, count($non_release_features), '%s');
+                $placeholders_string = implode(', ', $placeholders);
+                
+                // Delete domain-feature relationships for non-release features
+                $deleted = $wpdb->query(
+                    $wpdb->prepare(
+                        "DELETE FROM {$domain_features_table} WHERE feature_key IN ({$placeholders_string})",
+                        $non_release_features
+                    )
+                );
+                
+                echo '<div class="notice notice-success"><p>Cleaned up domain-feature relationships: removed ' . intval($deleted) . ' entries for features not in Release state.</p></div>';
+            }
+
+            $msg = "Database schema updated (History Table + Security Events + assigned_to + Status Enum + Manual Expiry + Generated Schema + Implementation Data + Domain Enabled + Robust ID column + License Scope + Inst. Limit + Removed is_enforced + Cleaned non-Release domain-feature relationships).";
             wp_die(sprintf("<h1>VAPT Secure Database Updated</h1><p>Schema refresh run. %s</p><p>Please go back to the dashboard.</p>", esc_html($msg)));
         }
     }
