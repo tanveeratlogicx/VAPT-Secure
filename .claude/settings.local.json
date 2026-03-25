@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:hermasnet.local)",
+      "WebFetch(domain:prnt.sc)"
+    ]
+  }
+}

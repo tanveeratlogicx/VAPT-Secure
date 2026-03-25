@@ -1,7 +1,20 @@
 // Superadmin Workbench Entry Point
 // Phase 6 Implementation - IDE Workbench Redesign
+
+// Debug mode control - set to true to enable console logs for debugging
+var VAPT_DEBUG = window.VAPT_DEBUG || false;
+
+// Helper function for conditional logging
+var vaptLog = window.vaptLog || {
+  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
+  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
+  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
+  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
+  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
+};
+
 (function () {
-  console.log('VAPT Secure: workbench.js loaded');
+  vaptLog.log('workbench.js loaded');
   if (typeof wp === 'undefined') return;
 
   const { render, useState, useEffect, useMemo, Fragment, createElement: el } = wp.element || {};
@@ -96,7 +109,7 @@
           return res;
         })
         .catch(err => {
-          console.error('Save failed:', err);
+          vaptLog.error('Save failed:', err);
           if (!silent) {
             setSaveStatus({ message: __('Save Failed', 'vaptsecure'), type: 'error' });
           }
@@ -176,7 +189,7 @@
     // Helper to render a single feature card
     const renderFeatureCard = (f, setVerifFeature) => {
       const schema = typeof f.generated_schema === 'string' ? JSON.parse(f.generated_schema) : (f.generated_schema || { controls: [] });
-      console.log(`[VAPT] Rendering Feature ${f.key}:`, schema);
+      vaptLog.log(`Rendering Feature ${f.key}:`, schema);
       const isVerifEngine = f.include_verification_engine;
 
       // 🛡️ Resilience: Auto-Inject Verification Controls (Moved from GeneratedInterface v3.6.19)
@@ -277,16 +290,16 @@
           ])
         ]),
         el(CardBody, { style: { padding: '24px' } }, [
-          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px', alignItems: 'stretch' } }, [
+          el('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px', alignItems: 'stretch', minHeight: '300px' } }, [
             // Left Column: Implementation
-            el('div', { className: 'vapt-implementation-panel', style: { padding: '20px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' } }, [
+            el('div', { className: 'vapt-implementation-panel', style: { padding: '20px', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' } }, [
               el('h4', { style: { margin: '0 0 20px 0', fontSize: '14px', fontWeight: 700, color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' } }, [
                 el('span', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
                   el(Icon, { icon: 'admin-settings', size: 18 }),
                   __('Functional Implementation', 'vaptsecure')
                 ])
               ]),
-              el('div', { style: { flex: 1 } }, [
+              el('div', { style: { flex: 1, minWidth: 0, overflow: 'hidden' } }, [
                 f.generated_schema && GeneratedInterface
                   ? el(GeneratedInterface, { feature: { ...f, generated_schema: { ...schema, controls: implControls } }, onUpdate: (data) => updateFeature(f.key, { implementation_data: data }), hideProtocol: true })
                   : el('div', { style: { padding: '30px', background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: '8px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' } },
@@ -304,19 +317,21 @@
             ]),
 
             // Right Column: Automated Verification
-            el('div', { className: 'vapt-automation-panel', style: { display: 'flex', flexDirection: 'column', gap: '15px', height: '100%' } }, [
+            el('div', { className: 'vapt-automation-panel', style: { display: 'flex', flexDirection: 'column', gap: '15px', height: '100%', minWidth: 0 } }, [
               // Automated Engine
-              el('div', { style: { padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1, display: 'flex', flexDirection: 'column' } }, [
+              el('div', { style: { padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' } }, [
                 el('h4', { style: { margin: '0 0 15px 0', fontSize: '12px', fontWeight: 700, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' } }, [
                   el(Icon, { icon: 'yes-alt', size: 16 }),
                   __('Automated Verification Engine', 'vaptsecure')
                 ]),
-                el('div', { style: { flex: 1 } }, [
+                el('div', { style: { flex: 1, minWidth: 0, overflow: 'hidden' } }, [
                   automControls.length > 0 ? el(GeneratedInterface, {
                     feature: { ...f, generated_schema: { ...schema, controls: automControls } },
                     onUpdate: (data) => updateFeature(f.key, { implementation_data: data }),
                     hideMonitor: true,
-                    hideOpNotes: true
+                    hideOpNotes: true,
+                    showTechnicalTrace: true,
+                    showVerificationDetails: false
                   }) : el('p', { style: { fontSize: '12px', color: '#64748b', fontStyle: 'italic', margin: 0 } }, __('No automated tests defined.', 'vaptsecure'))
                 ])
               ])
@@ -460,7 +475,7 @@
         // Pane 3: Feature Interface (Right)
         el('main', { style: { flexGrow: 1, padding: '30px', overflowY: 'auto', background: '#f9fafb' } }, [
           !activeFeatureKey ? el('div', { style: { textAlign: 'center', padding: '100px', color: '#9ca3af' } }, __('Select a feature from the list to view implementation controls.', 'vaptsecure')) :
-            el('div', { style: { maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' } }, [
+            el('div', { style: { maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 } }, [
               // Breadcrumb Removed (v3.6.19 Request)
               renderFeatureCard(features.find(f => f.key === activeFeatureKey), setVerifFeature)
             ])
@@ -527,7 +542,7 @@
   const init = () => {
     const container = document.getElementById('vapt-workbench-root');
     if (container) render(el(ClientDashboard), container);
-    else console.error('VAPT Secure: #vapt-workbench-root not found!');
+    else vaptLog.error('#vapt-workbench-root not found!');
   };
 
   if (document.readyState === 'loading') {

@@ -11,7 +11,33 @@ class VAPTSECURE_Config_Deployer
 {
     public function can_deploy()
     {
-        return is_writable(ABSPATH . 'wp-config.php');
+        $paths = [];
+        if (defined('ABSPATH')) {
+            $base = rtrim(ABSPATH, DIRECTORY_SEPARATOR);
+            
+            // Standard location
+            $paths[] = $base . DIRECTORY_SEPARATOR . 'wp-config.php';
+            
+            // One level above ABSPATH (WP standard for security)
+            $paths[] = dirname($base) . DIRECTORY_SEPARATOR . 'wp-config.php';
+            
+            // [v3.13.31] Special: Home URL detection for subdirectory installs
+            if (function_exists('get_home_path')) {
+                $home = rtrim(get_home_path(), DIRECTORY_SEPARATOR);
+                if (!empty($home) && !in_array($home . DIRECTORY_SEPARATOR . 'wp-config.php', $paths)) {
+                    $paths[] = $home . DIRECTORY_SEPARATOR . 'wp-config.php';
+                    $paths[] = dirname($home) . DIRECTORY_SEPARATOR . 'wp-config.php';
+                }
+            }
+        }
+
+        foreach (array_unique($paths) as $path) {
+            if (@file_exists($path) && @is_writable($path)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function deploy($risk_id, $implementation, $is_enabled = true)

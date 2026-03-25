@@ -595,10 +595,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-012\nHeader always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n# END VAPT RISK-012",
+                    "write_block": "# BEGIN VAPT RISK-012\n<IfModule mod_headers.c>\n    Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n</IfModule>\n# END VAPT RISK-012",
                     "begin_marker": "# BEGIN VAPT RISK-012",
                     "end_marker": "# END VAPT RISK-012",
-                    "raw_code": "Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Strict-Transport-Security'",
                         "expected": "Exit 0, no syntax errors"
@@ -675,10 +675,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-014\nHeader always set X-Frame-Options \"SAMEORIGIN\"\n# END VAPT RISK-014",
+                    "write_block": "# BEGIN VAPT RISK-014\n<IfModule mod_headers.c>\n    Header always set X-Frame-Options \"SAMEORIGIN\"\n</IfModule>\n# END VAPT RISK-014",
                     "begin_marker": "# BEGIN VAPT RISK-014",
                     "end_marker": "# END VAPT RISK-014",
-                    "raw_code": "Header always set X-Frame-Options \"SAMEORIGIN\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set X-Frame-Options \"SAMEORIGIN\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'X-Frame-Options'",
                         "expected": "Exit 0, no syntax errors"
@@ -715,10 +715,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-015\nHeader always set X-Content-Type-Options \"nosniff\"\n# END VAPT RISK-015",
+                    "write_block": "# BEGIN VAPT RISK-015\n<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>\n# END VAPT RISK-015",
                     "begin_marker": "# BEGIN VAPT RISK-015",
                     "end_marker": "# END VAPT RISK-015",
-                    "raw_code": "Header always set X-Content-Type-Options \"nosniff\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'X-Content-Type-Options'",
                         "expected": "Exit 0, no syntax errors"
@@ -755,10 +755,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-016\nHeader always set X-XSS-Protection \"1; mode=block\"\n# END VAPT RISK-016",
+                    "write_block": "# BEGIN VAPT RISK-016\n<IfModule mod_headers.c>\n    Header always set X-XSS-Protection \"1; mode=block\"\n</IfModule>\n# END VAPT RISK-016",
                     "begin_marker": "# BEGIN VAPT RISK-016",
                     "end_marker": "# END VAPT RISK-016",
-                    "raw_code": "Header always set X-XSS-Protection \"1; mode=block\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set X-XSS-Protection \"1; mode=block\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'X-XSS-Protection'",
                         "expected": "Exit 0, no syntax errors"
@@ -795,10 +795,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-017\nHeader always set Referrer-Policy \"strict-origin-when-cross-origin\"\n# END VAPT RISK-017",
+                    "write_block": "# BEGIN VAPT RISK-017\n<IfModule mod_headers.c>\n    Header always set Referrer-Policy \"strict-origin-when-cross-origin\"\n</IfModule>\n# END VAPT RISK-017",
                     "begin_marker": "# BEGIN VAPT RISK-017",
                     "end_marker": "# END VAPT RISK-017",
-                    "raw_code": "Header always set Referrer-Policy \"strict-origin-when-cross-origin\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Referrer-Policy \"strict-origin-when-cross-origin\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Referrer-Policy'",
                         "expected": "Exit 0, no syntax errors"
@@ -835,10 +835,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-018\nHeader always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n# END VAPT RISK-018",
+                    "write_block": "# BEGIN VAPT RISK-018\n<IfModule mod_headers.c>\n    Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n</IfModule>\n# END VAPT RISK-018",
                     "begin_marker": "# BEGIN VAPT RISK-018",
                     "end_marker": "# END VAPT RISK-018",
-                    "raw_code": "Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Permissions-Policy \"geolocation=(), microphone=(), camera=()\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Permissions-Policy'",
                         "expected": "Exit 0, no syntax errors"
@@ -995,10 +995,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-022\nHeader always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n# END VAPT RISK-022",
+                    "write_block": "# BEGIN VAPT RISK-022\n<IfModule mod_headers.c>\n    Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n</IfModule>\n# END VAPT RISK-022",
                     "begin_marker": "# BEGIN VAPT RISK-022",
                     "end_marker": "# END VAPT RISK-022",
-                    "raw_code": "Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Content-Security-Policy'",
                         "expected": "Exit 0, no syntax errors"
@@ -1075,10 +1075,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-024\nHeader unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By\n# END VAPT RISK-024",
+                    "write_block": "# BEGIN VAPT RISK-024\n<IfModule mod_headers.c>\n    Header unset Server\n    Header always unset X-Powered-By\n    Header unset X-Powered-By\n</IfModule>\n# END VAPT RISK-024",
                     "begin_marker": "# BEGIN VAPT RISK-024",
                     "end_marker": "# END VAPT RISK-024",
-                    "raw_code": "Header unset Server\nHeader always unset X-Powered-By\nHeader unset X-Powered-By",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header unset Server\n    Header always unset X-Powered-By\n    Header unset X-Powered-By\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Server'",
                         "expected": "Exit 0, no syntax errors"
@@ -1355,10 +1355,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-031\nHeader always set Cross-Origin-Resource-Policy \"same-origin\"\n# END VAPT RISK-031",
+                    "write_block": "# BEGIN VAPT RISK-031\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Resource-Policy \"same-origin\"\n</IfModule>\n# END VAPT RISK-031",
                     "begin_marker": "# BEGIN VAPT RISK-031",
                     "end_marker": "# END VAPT RISK-031",
-                    "raw_code": "Header always set Cross-Origin-Resource-Policy \"same-origin\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Cross-Origin-Resource-Policy \"same-origin\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Resource-Policy'",
                         "expected": "Exit 0, no syntax errors"
@@ -1395,10 +1395,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-032\nHeader always set Cross-Origin-Embedder-Policy \"require-corp\"\n# END VAPT RISK-032",
+                    "write_block": "# BEGIN VAPT RISK-032\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Embedder-Policy \"require-corp\"\n</IfModule>\n# END VAPT RISK-032",
                     "begin_marker": "# BEGIN VAPT RISK-032",
                     "end_marker": "# END VAPT RISK-032",
-                    "raw_code": "Header always set Cross-Origin-Embedder-Policy \"require-corp\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Cross-Origin-Embedder-Policy \"require-corp\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Embedder-Policy'",
                         "expected": "Exit 0, no syntax errors"
@@ -1435,10 +1435,10 @@
                         "anchor_position": "prepend",
                         "fallback": null
                     },
-                    "write_block": "# BEGIN VAPT RISK-033\nHeader always set Cross-Origin-Opener-Policy \"same-origin\"\n# END VAPT RISK-033",
+                    "write_block": "# BEGIN VAPT RISK-033\n<IfModule mod_headers.c>\n    Header always set Cross-Origin-Opener-Policy \"same-origin\"\n</IfModule>\n# END VAPT RISK-033",
                     "begin_marker": "# BEGIN VAPT RISK-033",
                     "end_marker": "# END VAPT RISK-033",
-                    "raw_code": "Header always set Cross-Origin-Opener-Policy \"same-origin\"",
+                    "raw_code": "<IfModule mod_headers.c>\n    Header always set Cross-Origin-Opener-Policy \"same-origin\"\n</IfModule>",
                     "verification": {
                         "command": "apachectl -t && curl -sI https://yoursite.com | grep -i 'Cross-Origin-Opener-Policy'",
                         "expected": "Exit 0, no syntax errors"

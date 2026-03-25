@@ -2,6 +2,18 @@
 // Version 3.0 - Global Driver & Probe Architecture
 // Expects props: { feature, onUpdate }
 
+// Debug mode control - set to true to enable console logs for debugging
+var VAPT_DEBUG = window.VAPT_DEBUG || false;
+
+// Helper function for conditional logging
+var vaptLog = window.vaptLog || {
+  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
+  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
+  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
+  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
+  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
+};
+
 (function () {
   const { createElement: el, useState, useEffect, useRef, useMemo } = wp.element;
   const { Button, TextControl, ToggleControl, SelectControl, TextareaControl, Modal, Icon, Tooltip } = wp.components;
@@ -70,7 +82,7 @@
 
     const normalizedPath = sub.startsWith('/') ? sub : '/' + sub;
     let result = base.replace(/\/$/, '') + (normalizedPath === '/' ? '' : normalizedPath);
-    
+
     // [FIX v2.4.11] Append query string if it was separated
     if (queryPart) {
       result += queryPart;
@@ -139,11 +151,11 @@
       const url = resolveUrl(configPath, control.config?.url, featureKey);
       const contextParam = (featureKey && (featureKey.includes('login') || featureKey.includes('brute'))) ? '&vaptsecure_test_context=login' : '';
       const finalUrl = url + (url.includes('?') ? '&' : '?') + 'vaptsecure_header_check=' + Date.now() + contextParam;
-      console.log(`[VAPT] Header Probe: Fetching ${finalUrl}`);
+      vaptLog.log(`Header Probe: Fetching ${finalUrl}`);
       const response = await fetch(finalUrl, { method: 'GET', cache: 'no-store' });
       const headers = {};
       response.headers.forEach((v, k) => { headers[k] = v; });
-      console.log("[VAPT] Full Response Headers:", headers);
+      vaptLog.log("Full Response Headers:", headers);
 
       const vaptEnforced = response.headers.get('x-vapt-enforced');
       const enforcedFeature = response.headers.get('x-vapt-feature'); // Can be comma-separated
@@ -159,61 +171,89 @@
         }
       }
 
-      // [FIX v2.4.25] Check if test expects specific headers
+      // [FIX v2.5.2] State-Aware Success Logic: Verify headers match toggle state
       const hasExpectedHeaders = control.test_config && control.test_config.expected_headers;
-      
+
       if (hasExpectedHeaders) {
         // The reliable marker is x-vapt-enforced being present with a valid enforcer value.
-        // Note: x-vapt-feature contains DB slugs, not RISK-IDs, so we can't match featureKey directly.
-        // x-vapt-risk-id is not emitted by any enforcer today — checking x-vapt-enforced is sufficient.
         const validEnforcers = ['htaccess', 'nginx', 'php-headers', 'php-rate-limit', 'php-xmlrpc', 'php-dir', 'php-null-byte'];
         const isValidEnforcer = vaptEnforced && validEnforcers.some(e => vaptEnforced.toLowerCase().includes(e));
         const isProtectionEnabled = isFeatureEnabled(featureData);
 
-        // [FIX v2.5.1] Properly validate toggle state against actual server response
+        // [FIX v2.5.2] State-Aware Success: Align result with user intent (toggle state)
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | ON                | Detected         | "Plugin is actively enforcing protection."                 | SUCCESS |
+        // | ON                | Not Detected     | "Protection toggle is ON but server is NOT enforcing."     | FAILURE |
+        // | OFF               | Detected         | "Warning: Toggle is OFF but server is STILL enforcing."     | FAILURE |
+        // | OFF               | Not Detected     | "Protection correctly disabled. No enforcement detected."   | SUCCESS |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+
         if (isProtectionEnabled === false) {
-          // Toggle is OFF - we expect NO protection headers to be present
+          // Toggle is OFF: Check if THIS specific feature is still being enforced
           if (isValidEnforcer) {
-            // PROBLEM: Toggle is OFF but headers are still present - protection not removed!
-            return {
-              success: false,
-              message: `CRITICAL: Protection toggle is OFF but server is still enforcing headers (${vaptEnforced}). Protection was not properly removed.`,
-              raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: ${vaptEnforced}\n\n${headerStr.trim()}`
-            };
+            const activeFeatures = enforcedFeature ? enforcedFeature.split(',').map(f => f.trim()) : [];
+            const isThisFeatureEnforced = activeFeatures.includes(featureKey);
+            const otherFeaturesUsingSameProtection = activeFeatures.filter(f => f !== featureKey);
+            const displayCount = 5;
+            const displayList = otherFeaturesUsingSameProtection.slice(0, displayCount).join(', ');
+            const hiddenCount = otherFeaturesUsingSameProtection.length - displayCount;
+            const fullList = otherFeaturesUsingSameProtection.join(', ');
+            // Only show other features message for superadmins and when there are other features using same protection
+            const displayMessageSnippet = (isSuperAdmin && otherFeaturesUsingSameProtection.length > 0)
+              ? ` But the following other feature's (RiskID's) are still offering the same Protection: ${hiddenCount > 0 ? `${displayList} (+${hiddenCount} more)` : displayList}`
+              : '';
+
+            if (isThisFeatureEnforced) {
+              // FAILURE: Toggle is OFF but THIS feature is still being enforced
+              return {
+                success: false,
+                message: `Warning: ${featureKey} toggle is OFF but server is STILL enforcing it (${vaptEnforced}).${displayMessageSnippet}`,
+                raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: ${vaptEnforced} | Same Protection: ${fullList || 'none'}\n\n${headerStr.trim()}`
+              };
+            } else {
+              // SUCCESS: Toggle is OFF, headers present but THIS feature is NOT in the list
+              return {
+                success: false, unprotected: true,
+                message: `Protection currently disabled for this feature.${displayMessageSnippet}`,
+                raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | This Feature: Not Enforced | Same Protection: ${fullList || 'none'}\n\n${headerStr.trim()}`
+              };
+            }
           }
-          // SUCCESS: Toggle is OFF and no headers present - protection correctly disabled
+          // SUCCESS: Toggle is OFF and no enforcement detected - correctly disabled
           return {
-            success: true,
-            message: `Protection correctly disabled. No enforcement headers detected (toggle is OFF).`,
-            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | x-vapt-enforced: none\n\n${headerStr.trim()}`
+            success: false, unprotected: true,
+            message: `Protection correctly disabled. No enforcement headers detected.`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: None\n\n${headerStr.trim()}`
           };
         }
 
-        // Toggle is ON - we expect protection headers to be present
+        // Toggle is ON: Success depends on whether headers are detected
         if (!isValidEnforcer) {
-          // PROBLEM: Toggle is ON but headers are missing - protection not active!
+          // FAILURE: Toggle is ON but headers missing - protection not active!
           return {
             success: false,
-            message: `Protection toggle is ON but VAPT enforcement headers not found. Expected x-vapt-enforced to be present. Got: ${vaptEnforced || 'none'}.`,
+            message: `Protection toggle is ON but VAPT enforcement headers not found. Expected x-vapt-enforced. Got: ${vaptEnforced || 'none'}.`,
             raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Expected: A+ Headers\n\n${headerStr.trim()}`
           };
         }
-        // SUCCESS: Toggle is ON and headers are present - protection is active
-        return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
+        // SUCCESS: Toggle is ON and headers present - protection is active
+        return { success: true, message: `Plugin is actively enforcing protection (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Enforcement: ${vaptEnforced}\n\n${headerStr.trim()}` };
       }
-      
+
       // Legacy behavior for tests without expected_headers
       if (vaptEnforced === 'php-headers' || vaptEnforced === 'htaccess' || vaptEnforced?.includes('php')) {
         if (featureKey && enforcedFeature) {
           const activeFeatures = enforcedFeature.split(',').map(f => f.trim());
           if (activeFeatures.includes(featureKey)) {
-              if (isFeatureEnabled(featureData) === false) {
+            if (isFeatureEnabled(featureData) === false) {
               return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED by server policy.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
             }
             return { success: true, message: `Plugin is actively enforcing headers (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: A+ Headers\n\n${headerStr.trim()}` };
           } else {
             // Case: Global headers exist but this feature isn't in the active list (intentional non-enforcement)
-              if (isFeatureEnabled(featureData) === false) {
+            if (isFeatureEnabled(featureData) === false) {
               return { success: false, unprotected: true, message: `Baseline Test: No enforcement headers for this feature. The system is unprotected for this risk vector.`, raw: `URL: ${url} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
             }
             return { success: false, message: `Discrepancy: Global headers found, but this specific feature ('${featureKey}') is NOT matching enforcement policy.`, raw: `URL: ${url} | Status: ${response.status} | Active Features: ${enforcedFeature}\n\n${headerStr.trim()}` };
@@ -257,22 +297,22 @@
 
         if (isNaN(rpm)) rpm = 5;
 
-        console.log(`[VAPT] spam_requests Debug: rpm=${rpm}, load=${Math.ceil(rpm * 1.25)}, data=`, featureData);
+        vaptLog.log(`spam_requests Debug: rpm=${rpm}, load=${Math.ceil(rpm * 1.25)}, data=`, featureData);
         if (isNaN(rpm) || rpm <= 0) {
           throw new Error('Invalid rate limit configuration. RPM must be a positive number.');
         }
 
         const load = Math.ceil(rpm * 1.25);
         if (load > 1000) {
-          console.warn('[VAPT] Warning: Rate limit test sending more than 1000 requests. This may impact server performance.');
+          vaptLog.warn('Warning: Rate limit test sending more than 1000 requests. This may impact server performance.');
         }
 
         try {
           const resetRes = await fetch(siteUrl + '/wp-json/vaptsecure/v1/reset-limit', { method: 'POST', cache: 'no-store' });
           const resetJson = await resetRes.json();
-          console.log('[VAPT] Rate limit reset debug:', resetJson);
+          vaptLog.log('Rate limit reset debug:', resetJson);
         } catch (e) {
-          console.warn('[VAPT] Failed to reset rate limit:', e);
+          vaptLog.warn('Failed to reset rate limit:', e);
         }
 
         const responses = [];
@@ -312,7 +352,7 @@
               window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey: featureKey.toLowerCase() } }));
             }
           } catch (err) {
-            console.warn(`[VAPT] Request ${i} failed:`, err);
+            vaptLog.warn(`Request ${i} failed:`, err);
             stats[0] = (stats[0] || 0) + 1;
           }
         }
@@ -333,34 +373,38 @@
 
         const isEnabled = isFeatureEnabled(featureData);
 
+        // [FIX v2.5.2] State-Aware Success Logic for Rate Limiting
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+        // | ON                | Detected (429)   | "Rate limiter is ACTIVE. Security measures working."        | SUCCESS |
+        // | ON                | Not Detected     | "Protection ON but rate limiter NOT active."               | FAILURE |
+        // | OFF               | Detected (429)   | "Warning: Toggle OFF but rate limiter STILL active."        | FAILURE |
+        // | OFF               | Not Detected     | "Protection correctly disabled. No rate limiting."          | SUCCESS |
+        // +-------------------+------------------+-------------------------------------------------------------+---------+
+
         if (blocked > 0 && hasVaptHeader) {
           window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey } }));
           if (!isEnabled) {
+            // FAILURE: Toggle OFF but rate limiter still active
             return {
               success: false,
-              message: `Warning: Feature is DISABLED in UI but Rate Limiter is still BLOCKED traffic.`,
+              message: `Warning: Protection toggle is OFF but rate limiter is STILL blocking traffic (${blocked} blocked).`,
               meta: resultMeta,
-              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Expected: 200 (Disabled)`
+              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Toggle: OFF | Blocked: ${blocked}`
             };
           }
+          // SUCCESS: Toggle ON and rate limiter active
           return {
             success: true,
-            message: `Rate limiter is ACTIVE. Security measures are working correctly.`,
+            message: `Rate limiter is ACTIVE. Security measures are working correctly (${blocked} requests blocked).`,
             meta: resultMeta,
-            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Expected: 429`
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Toggle: ON | Blocked: ${blocked}`
           };
         }
 
         if (successCount > 0 || lastCount > 0) {
           window.dispatchEvent(new CustomEvent('vapt-refresh-stats', { detail: { featureKey } }));
-          if (!isEnabled && blocked === 0) {
-            return {
-              success: false, unprotected: true,
-              message: `Baseline Test: Sent ${total} requests and all were accepted. The system is unprotected from rate limiting.`,
-              meta: resultMeta,
-              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
-            };
-          }
         }
 
         if (errorCount > 0) {
@@ -373,19 +417,32 @@
         }
 
         if (!isEnabled) {
+          // Toggle is OFF: Check if rate limiting is inactive
+          if (blocked === 0) {
+            // SUCCESS: Toggle OFF and no rate limiting - correctly disabled
+            return {
+              success: false, unprotected: true,
+              message: `Protection correctly disabled. No rate limiting detected (all ${total} requests accepted).`,
+              meta: resultMeta,
+              raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Toggle: OFF | Rate Limiting: Inactive`
+            };
+          }
+          // FAILURE: Toggle OFF but external rate limiting detected
           return {
-            success: false, external_block: blocked > 0, unprotected: blocked === 0,
-            message: blocked > 0 ? `Baseline Test: Some traffic was restricted. An external rate limiter is active.` : `Baseline Test: Traffic was not restricted. The system is unprotected.`,
+            success: false,
+            external_block: true,
+            message: `Warning: Protection toggle is OFF but external rate limiting detected (${blocked} blocked).`,
             meta: resultMeta,
-            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 200`
+            raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 429 | Toggle: OFF | External Rate Limiting`
           };
         }
 
+        // Toggle is ON but rate limiter not active
         return {
           success: false,
-          message: `Rate Limiter is NOT active. Traffic was not restricted.`,
+          message: `Protection toggle is ON but rate limiter is NOT active. All requests were accepted.`,
           meta: resultMeta,
-          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Expected: 429`
+          raw: `URL: ${resolveUrl('/', control.config?.url)} | Status: 200 | Toggle: ON | Rate Limiting: Inactive`
         };
       } catch (err) {
         return {
@@ -399,41 +456,65 @@
     // 3. Status Probe: Verifies specific file block (e.g., XML-RPC)
     block_xmlrpc: async (siteUrl, control, featureData, featureKey) => {
       const url = resolveUrl('/xmlrpc.php', control.config?.url, featureKey);
-      console.log(`[VAPT] XML-RPC Probe: Fetching ${url}`);
+      vaptLog.log(`XML-RPC Probe: Fetching ${url}`);
       const response = await fetch(url, { method: 'POST', body: '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName><params></params></methodCall>' });
       const vaptEnforced = response.headers.get('x-vapt-enforced');
       const enforcedFeature = response.headers.get('x-vapt-feature');
 
       const isEnabled = isFeatureEnabled(featureData);
 
+      // [FIX v2.5.2] State-Aware Success Logic for XML-RPC Blocking
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Blocked (403)    | "Plugin is actively blocking XML-RPC."                      | SUCCESS |
+      // | ON                | Not Blocked      | "Protection ON but XML-RPC is OPEN and VULNERABLE."         | FAILURE |
+      // | OFF               | Blocked (403)    | "Warning: Toggle OFF but XML-RPC STILL blocked."           | FAILURE |
+      // | OFF               | Not Blocked (200)| "Protection correctly disabled. XML-RPC accessible."        | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
+      const isBlocked = response.status === 403 || response.status === 404 || vaptEnforced === 'php-xmlrpc';
+
       if (vaptEnforced === 'php-xmlrpc') {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
           return { success: false, message: `Inconclusive: XML-RPC is blocked by another VAPT feature ('${enforcedFeature}'). You must disable it there to verify this control independently.`, raw: `URL: ${url} | Status: ${response.status} | Expected: 403` };
         }
         if (!isEnabled) {
-          return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED (php-xmlrpc).`, raw: `URL: ${url} | Status: ${response.status} | Expected: 200 (Disabled)` };
+          // FAILURE: Toggle OFF but still enforcing
+          return { success: false, message: `Warning: Protection toggle is OFF but XML-RPC is STILL being blocked (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: ${vaptEnforced}` };
         }
-        return { success: true, message: `Plugin is actively blocking XML-RPC (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Expected: 403` };
+        // SUCCESS: Toggle ON and blocking active
+        return { success: true, message: `Plugin is actively blocking XML-RPC (${vaptEnforced}).`, raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Enforcement: ${vaptEnforced}` };
       }
 
       const isVulnerable = response.status === 200;
 
       if (!isEnabled) {
+        // Toggle is OFF: Check if XML-RPC is accessible
+        if (isVulnerable) {
+          // SUCCESS: Toggle OFF and XML-RPC is accessible - correctly disabled
+          return {
+            success: false, unprotected: true,
+            message: `Protection correctly disabled. XML-RPC is accessible (HTTP 200).`,
+            raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | Enforcement: None`
+          };
+        }
+        // FAILURE: Toggle OFF but XML-RPC is blocked by external system
         return {
           success: false,
-          unprotected: isVulnerable,
-          external_block: !isVulnerable,
-          message: isVulnerable ? `Baseline Test: XML-RPC responded (HTTP 200). The site is vulnerable to XML-RPC attacks.` : `Baseline Test: XML-RPC is blocked (HTTP ${response.status}). Another plugin or server configuration is protecting this endpoint.`,
-          raw: `URL: ${url} | Status: ${response.status} | Expected: 200`
+          external_block: true,
+          message: `Warning: Protection toggle is OFF but XML-RPC is still blocked (HTTP ${response.status}). External protection detected.`,
+          raw: `URL: ${url} | Status: ${response.status} | Toggle: OFF | External Block`
         };
       }
 
+      // Toggle is ON: Check if XML-RPC is blocked
       return {
         success: false,
         message: isVulnerable
-          ? `SECURITY FAILURE: XML-RPC is OPEN and VULNERABLE (HTTP 200). Plugin enforcement is not working.`
+          ? `SECURITY FAILURE: Protection toggle is ON but XML-RPC is OPEN and VULNERABLE (HTTP 200).`
           : `XML-RPC is blocked (HTTP ${response.status}), but NOT by this plugin. VAPT enforcement header missing.`,
-        raw: `URL: ${url} | Status: ${response.status} | Expected: 403`
+        raw: `URL: ${url} | Status: ${response.status} | Toggle: ON | Expected: 403`
       };
     },
 
@@ -448,25 +529,51 @@
 
       const isEnabled = isFeatureEnabled(featureData);
 
+      // [FIX v2.5.2] State-Aware Success Logic for Directory Browsing
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Blocked (403)    | "Plugin is actively blocking directory listing."           | SUCCESS |
+      // | ON                | Not Blocked      | "Protection ON but directory browsing is ACCESSIBLE."      | FAILURE |
+      // | OFF               | Blocked (403)    | "Warning: Toggle OFF but directory STILL blocked."          | FAILURE |
+      // | OFF               | Not Blocked (200)| "Protection correctly disabled. Directory accessible."     | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
+      const isBlocked = resp.status === 403 || resp.status === 404 || vaptEnforced === 'php-dir';
+
       if (vaptEnforced === 'php-dir') {
         if (featureKey && enforcedFeature && enforcedFeature !== featureKey) {
           return { success: false, message: `Inconclusive: Directory browsing blocked by '${enforcedFeature}'.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
         }
         if (!isEnabled) {
-          return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED (php-dir).`, raw: `URL: ${target} | Status: ${resp.status}` };
+          // FAILURE: Toggle OFF but still enforcing
+          return { success: false, message: `Warning: Protection toggle is OFF but directory listing is STILL being blocked (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: ${vaptEnforced}` };
         }
-        return { success: true, message: `PASS: Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+        // SUCCESS: Toggle ON and blocking active
+        return { success: true, message: `Plugin is actively blocking directory listing (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON | Enforcement: ${vaptEnforced}` };
       }
 
       if (!isEnabled) {
+        // Toggle is OFF: Check if directory browsing is accessible
         if (resp.status === 200) {
-           return { success: false, unprotected: true, message: `Baseline Test: Directory browsing is accessible (HTTP ${resp.status}). The site is vulnerable.`, raw: `URL: ${target} | Status: ${resp.status}` };
-        } else {
-           return { success: false, external_block: true, message: `Baseline Test: Directory browsing is blocked (HTTP ${resp.status}). Another system is protecting this directory.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+          // SUCCESS: Toggle OFF and directory is accessible - correctly disabled
+          return {
+            success: false, unprotected: true,
+            message: `Protection correctly disabled. Directory browsing is accessible (HTTP ${resp.status}).`,
+            raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: None`
+          };
         }
+        // FAILURE: Toggle OFF but directory is blocked by external system
+        return {
+          success: false,
+          external_block: true,
+          message: `Warning: Protection toggle is OFF but directory is still blocked (HTTP ${resp.status}). External protection detected.`,
+          raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | External Block\n\n${snippet}`
+        };
       }
 
-      return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status}\n\n${snippet}` };
+      // Toggle is ON: Check if directory browsing is blocked
+      return { success: false, message: `Directory browsing blocked (HTTP ${resp.status}), but NOT by this plugin. VAPT enforcement header missing.`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON\n\n${snippet}` };
     },
 
     // 5. Null Byte Probe (and aliases)
@@ -479,22 +586,51 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
       const isEnabled = isFeatureEnabled(featureData);
+
+      // [FIX v2.5.2] State-Aware Success Logic for Null Byte Injection
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Blocked (400)    | "Plugin is actively blocking null byte injection."         | SUCCESS |
+      // | ON                | Not Blocked      | "Protection ON but null byte payload ACCEPTED."           | FAILURE |
+      // | OFF               | Blocked (400)    | "Warning: Toggle OFF but null byte STILL being blocked."   | FAILURE |
+      // | OFF               | Not Blocked (200)| "Protection correctly disabled. Null byte accessible."      | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
+      const isBlocked = resp.status === 400 || resp.status === 403 || vaptEnforced === 'php-null-byte';
+
       if (vaptEnforced === 'php-null-byte' || resp.status === 400) {
         if (!isEnabled && vaptEnforced === 'php-null-byte') {
-          return { success: false, message: `Warning: Feature is DISABLED in UI but still being ENFORCED (php-null-byte).`, raw: `URL: ${target} | Status: ${resp.status}` };
+          // FAILURE: Toggle OFF but still enforcing
+          return { success: false, message: `Warning: Protection toggle is OFF but null byte injection is STILL being blocked (${vaptEnforced}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: ${vaptEnforced}` };
         }
-        return { success: true, message: `PASS: Null Byte Injection Blocked (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
+        // SUCCESS: Either toggle ON with blocking, or server-level block (400)
+        if (isEnabled) {
+          return { success: true, message: `Plugin is actively blocking null byte injection (HTTP ${resp.status}). Enforcer: ${vaptEnforced || 'Server'}`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON | Enforcement: ${vaptEnforced || 'Server'}` };
+        }
       }
 
       if (!isEnabled) {
+        // Toggle is OFF: Check if null byte payload is accepted
         if (resp.status === 200) {
-           return { success: false, unprotected: true, message: `Baseline Test: Null byte payload accepted (HTTP ${resp.status}). The site is vulnerable.`, raw: `URL: ${target} | Status: ${resp.status}` };
-        } else {
-           return { success: false, external_block: true, message: `Baseline Test: Null byte payload rejected (HTTP ${resp.status}). Another system is blocking this attack vector.`, raw: `URL: ${target} | Status: ${resp.status}` };
+          // SUCCESS: Toggle OFF and null byte is accepted - correctly disabled
+          return {
+            success: false, unprotected: true,
+            message: `Protection correctly disabled. Null byte payload accepted (HTTP ${resp.status}).`,
+            raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | Enforcement: None`
+          };
         }
+        // FAILURE: Toggle OFF but null byte is blocked by external system
+        return {
+          success: false,
+          external_block: true,
+          message: `Warning: Protection toggle is OFF but null byte payload is still blocked (HTTP ${resp.status}). External protection detected.`,
+          raw: `URL: ${target} | Status: ${resp.status} | Toggle: OFF | External Block`
+        };
       }
 
-      return { success: false, message: `FAIL: Null Byte Payload Accepted (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Expected: 400 or 403` };
+      // Toggle is ON: Check if null byte is blocked
+      return { success: false, message: `SECURITY FAILURE: Protection toggle is ON but null byte payload was ACCEPTED (HTTP ${resp.status}).`, raw: `URL: ${target} | Status: ${resp.status} | Toggle: ON | Expected: 400 or 403` };
     },
 
     // 6. Version Hide Probe
@@ -505,6 +641,14 @@
       const vaptEnforced = resp.headers.get('x-vapt-enforced');
 
       const hasGenerator = text.toLowerCase().includes('name="generator" content="wordpress');
+      const isEnabled = isFeatureEnabled(featureData);
+
+      if (!isEnabled) {
+        if (!hasGenerator) {
+          return { success: false, unprotected: true, message: `Protection correctly disabled. WordPress generator tag is hidden by external policy.`, raw: `URL: ${url} | Status: ${resp.status} | Toggle: OFF | State: Secure` };
+        }
+        return { success: false, unprotected: true, message: `Baseline Test: WordPress generator tag is present. You are unprotected for this risk vector.`, raw: `URL: ${url} | Status: ${resp.status} | Toggle: OFF | State: Vulnerable` };
+      }
 
       if (!hasGenerator) {
         return { success: true, message: `Secure: WordPress generator tag is hidden.`, raw: `URL: ${url} | Status: ${resp.status} | Expected: No generator tag` };
@@ -610,22 +754,68 @@
 
       let message = '';
 
+      // [FIX v2.5.2] State-Aware Success Logic for Universal Probe
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | Feature Toggle    | Server Enforce   | Resulting Message                                           | Status  |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+      // | ON                | Detected/Blocked | "Protection is active. Attack blocked or headers present."  | SUCCESS |
+      // | ON                | Not Detected     | "Protection ON but server NOT enforcing expected response." | FAILURE |
+      // | OFF               | Detected         | "Warning: Toggle OFF but server STILL enforcing."           | FAILURE |
+      // | OFF               | Not Detected     | "Protection correctly disabled. No enforcement detected."   | SUCCESS |
+      // +-------------------+------------------+-------------------------------------------------------------+---------+
+
       if (!isEnabled) {
-        // 🛡️ Precise Leak Detection (v2.4.3): Only FAIL if THIS feature is enforcing.
+        // Toggle is OFF: Success depends on whether enforcement is detected
         const activeFeatures = enforcedFeature ? enforcedFeature.split(',').map(f => f.trim()) : [];
         const isThisFeatureEnforcing = activeFeatures.includes(featureKey);
 
         if (isThisFeatureEnforcing) {
-          isSecure = false;
-          message = `Discrepancy: Feature '${featureKey}' is DISABLED in UI, but server is still ENFORCING it ('${vaptEnforced}').`;
-        } else {
-          isSecure = false;
-          let isUnprotected = (code === 200) || (!expectsBlock && !hasHeaderCheck);
-          message = isUnprotected
-            ? `Baseline Test: Target reached successfully (HTTP ${code}). The system is currently unprotected and vulnerable to this risk.`
-            : `Baseline Test: Access was blocked (HTTP ${code}). Protected by an external system or firewall.`;
-          return { success: isSecure, unprotected: isUnprotected, external_block: !isUnprotected, message, raw: `URL: ${url} | Status: ${code}` };
+          // FAILURE: Toggle OFF but this specific feature is still enforcing
+          return {
+            success: false,
+            message: `Warning: Feature '${featureKey}' is OFF but server is STILL enforcing it ('${vaptEnforced}').`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: ${vaptEnforced}`
+          };
         }
+
+        if (hasHeaderCheck && headerMatches) {
+          // FAILURE: Toggle OFF but expected headers detected
+          return {
+            success: false,
+            message: `Warning: Protection toggle is OFF but expected headers are still present (${vaptEnforced || 'headers matched'}).`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Headers: Matched`
+          };
+        }
+
+        if (vaptEnforced && (expectsBlock ? expectedStatusArray.includes(code) : headerMatches)) {
+          // FAILURE: Toggle OFF but server appears to be enforcing
+          return {
+            success: false,
+            message: `Warning: Protection toggle is OFF but server is STILL enforcing (${vaptEnforced}).`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: ${vaptEnforced}`
+          };
+        }
+
+        // SUCCESS: Toggle OFF and no enforcement detected - correctly disabled
+        if (expectsBlock && !expectedStatusArray.includes(code) && code === 200) {
+          return {
+            success: false, unprotected: true,
+            message: `Protection correctly disabled. Target is accessible (HTTP ${code}) with toggle OFF.`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
+          };
+        }
+        if (expectsAllow && code === 200) {
+          return {
+            success: false, unprotected: true,
+            message: `Protection correctly disabled. Target responded normally (HTTP ${code}).`,
+            raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
+          };
+        }
+        return {
+          success: false, unprotected: true,
+          message: `Protection correctly disabled. No enforcement detected.`,
+          raw: `URL: ${url} | Status: ${code} | Toggle: OFF | Enforcement: None`
+        };
       } else if (hasHeaderCheck) {
         isSecure = headerMatches && (code === 200 || expectsAllow || statusMatches);
       } else if (expectsBlock) {
@@ -714,14 +904,18 @@
       return {
         success: isSecure,
         message: message,
-        raw: `URL: ${url} | Status: ${code} | Expected: ${expectedStatus || 'N/A'}`
+        raw: `URL: ${url} | Status: ${code} | Expected: ${expectedStatus || 'N/A'} | Toggle: ${isEnabled ? 'ON' : 'OFF'}`
       };
     },
 
     // 8. Default Generic Probe
-    default: async (siteUrl, control) => {
+    default: async (siteUrl, control, featureData) => {
       const resp = await fetch(siteUrl + '?vaptsecure_ping=1');
-      return { success: resp.ok, message: `Probe result: HTTP ${resp.status}`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Time: ${new Date().toISOString()}` };
+      const isEnabled = isFeatureEnabled(featureData);
+      if (!isEnabled) {
+        return { success: false, unprotected: true, message: `Protection correctly disabled. Verification probe active (HTTP ${resp.status}).`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Toggle: OFF` };
+      }
+      return { success: resp.ok, message: `Probe result: HTTP ${resp.status}`, raw: `URL: ${siteUrl} | Status: ${resp.status} | Time: ${new Date().toISOString()} | Toggle: ON` };
     }
   };
 
@@ -799,13 +993,36 @@
       }
     }
 
+    // Format headers to appear on separate lines
+    if (typeof displayContent === 'string') {
+      // Ensure each header starts on a new line for clarity
+      // Match headers that might be concatenated without proper line breaks
+      const headerPatterns = [
+        'x-powered-by:', 'x-frame-options:', 'x-content-type-options:', 'x-xss-protection:',
+        'strict-transport-security:', 'content-security-policy:', 'referrer-policy:', 'permissions-policy:',
+        'server:', 'cache-control:', 'pragma:', 'expires:', 'vary:',
+        'access-control-allow-origin:', 'access-control-allow-methods:', 'access-control-allow-headers:',
+        'access-control-expose-headers:', 'access-control-max-age:', 'access-control-allow-credentials:',
+        'x-vapt-enforced:', 'x-vapt-feature:'
+      ];
+
+      // For each header pattern, ensure it's preceded by a newline if not already
+      headerPatterns.forEach(pattern => {
+        const regex = new RegExp(`([^\\n])\\s*(${pattern})`, 'gi');
+        displayContent = displayContent.replace(regex, '$1\n$2');
+      });
+
+      // Clean up multiple consecutive newlines
+      displayContent = displayContent.replace(/\n\s*\n/g, '\n').trim();
+    }
+
     // Auto-detect if content implies a directory listing
     const isDir = typeof displayContent === 'string' && (displayContent.includes('Index of /') || displayContent.includes('Parent Directory'));
     const isTrace = label === __('Verification Trace', 'vaptsecure');
     const displayLabel = isDir ? __('Directory Listing Exposed', 'vaptsecure') : label;
     const resolvedIcon = isTrace ? 'info' : 'media-code';
 
-    return (isTrace && typeof displayContent === 'string' && displayContent.startsWith('URL: ')) ? el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px' } }, [
+    return (isTrace && typeof displayContent === 'string' && displayContent.startsWith('URL: ')) ? el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', maxWidth: '100%', overflow: 'hidden' } }, [
       el(Tooltip, {
         text: el('div', { style: { textAlign: 'left', maxWidth: '300px' } }, [
           testContext ? el('div', { style: { marginBottom: '8px', lineHeight: '1.4' } }, testContext) : null,
@@ -817,7 +1034,7 @@
           el('span', { style: { color: '#94a3b8' } }, displayLabel)
         ])
       )
-    ]) : el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column' } }, [
+    ]) : el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column', maxWidth: '100%', overflow: 'hidden' } }, [
       el('div', { style: { fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' } }, [
         el(Icon, { icon: resolvedIcon, size: 14 }),
         displayLabel
@@ -831,7 +1048,10 @@
           padding: '10px',
           color: '#334155',
           fontFamily: 'monospace',
-          textAlign: 'left'
+          textAlign: 'left',
+          maxWidth: '100%',
+          overflow: 'hidden',
+          wordBreak: 'break-word'
         }
       }, displayContent.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         part.match(/^https?:\/\//)
@@ -846,9 +1066,11 @@
           borderRadius: '4px',
           padding: '10px',
           maxHeight: '200px',
+          maxWidth: '100%',
           overflow: 'auto',
           whiteSpace: 'pre-wrap',
-          color: '#334155'
+          color: '#334155',
+          wordBreak: 'break-word'
         }
       }, typeof displayContent === 'string' ? displayContent.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         part.match(/^https?:\/\//)
@@ -864,7 +1086,7 @@
    */
 
 
-  const TestRunnerControl = ({ control, featureData, featureKey, globalProtection }) => {
+  const TestRunnerControl = ({ control, featureData, featureKey, globalProtection, showTechnicalTrace = false, showVerificationDetails = true }) => {
     const [status, setStatus] = useState('idle');
     const [result, setResult] = useState(null);
     const [progress, setProgress] = useState(null);
@@ -890,20 +1112,20 @@
 
         if (res && typeof res === 'object') {
           if (res.unprotected) {
-             setStatus('unprotected');
+            setStatus('unprotected');
           } else if (res.external_block) {
-             setStatus('external_block');
+            setStatus('external_block');
           } else if (res.skipped) {
-             setStatus('skipped');
+            setStatus('skipped');
           } else {
-             setStatus(res.success ? 'success' : 'error');
+            setStatus(res.success ? 'success' : 'error');
           }
           setResult(res);
         } else {
           throw new Error('Invalid test result format');
         }
       } catch (err) {
-        console.error(`[VAPT] Probe Execution Error for ${control.test_logic}:`, err);
+        vaptLog.error(`Probe Execution Error for ${control.test_logic}:`, err);
         setStatus('error');
         setResult({
           success: false,
@@ -1003,61 +1225,123 @@
 
         el('div', { style: { fontSize: '13px', color: '#334155', lineHeight: '1.5', marginBottom: '12px', fontWeight: 500 } }, result.message),
 
-        // 🛡️ Technical Details: Clean, Collapsible (v3.4.0)
-        el('details', { style: { marginTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '10px' } }, [
-          el('summary', {
+        // 🛡️ Clean Summary Display: URL, Status, Toggle, Enforcement (v3.4.0+)
+        showVerificationDetails && (typeof result.raw === 'string' && result.raw.includes('URL: ')) && (() => {
+          // Parse the raw string to extract key information
+          const urlMatch = result.raw.match(/URL:\s*([^\s|]+)/i);
+          const statusMatch = result.raw.match(/Status:\s*([^\s|]+)/i);
+          const toggleMatch = result.raw.match(/Toggle:\s*([^\s|]+)/i);
+          const enforcementMatch = result.raw.match(/Enforcement:\s*([^\s|]+)/i);
+
+          const targetUrl = urlMatch ? urlMatch[1].trim() : '';
+          const status = statusMatch ? statusMatch[1].trim() : '';
+          const toggle = toggleMatch ? toggleMatch[1].trim() : '';
+          const enforcement = enforcementMatch ? enforcementMatch[1].trim() : '';
+
+          const displayUrl = (() => {
+            try {
+              return new URL(targetUrl).hostname;
+            } catch (e) {
+              return targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            }
+          })();
+
+          return el('div', {
             style: {
+              marginTop: '12px',
+              padding: '0',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '0',
               fontSize: '11px',
-              fontWeight: 700,
-              color: '#64748b',
-              cursor: 'pointer',
-              listStyle: 'none',
-              outline: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
+              color: '#334155',
+              lineHeight: '1.4',
+              maxWidth: '100%',
+              overflow: 'hidden'
             }
           }, [
-            el(Icon, { icon: 'editor-code', size: 14 }),
-            __('Technical Trace', 'vaptsecure')
-          ]),
-
-          el('div', { style: { marginTop: '10px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' } }, [
-            (typeof result.raw === 'string' && result.raw.includes('URL: ')) && (() => {
-              // Extract URL from raw result and make it clickable
-              const urlMatch = result.raw.match(/URL:\s*([^\s|]+)/i);
-              const targetUrl = urlMatch ? urlMatch[1].trim() : '';
-              const displayUrl = targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-              
-              return el('div', { style: { fontSize: '11px', marginBottom: '8px', color: '#64748b' } }, [
-                el('strong', { style: { color: '#475569' } }, 'Target: '),
+            el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' } }, [
+              el(Icon, { icon: 'info', size: 12, style: { color: '#64748b', flexShrink: 0 } }),
+              el('strong', { style: { fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', fontWeight: '800' } }, __('Verification Details', 'vaptsecure'))
+            ]),
+            el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px' } }, [
+              // Row 1: URL span full width
+              el('div', { style: { padding: '4px 0', background: 'transparent', borderRadius: '0', border: 'none', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' } }, [
+                el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('URL:', 'vaptsecure')),
                 el('a', {
                   href: targetUrl,
                   target: '_blank',
                   rel: 'noopener noreferrer',
                   style: {
                     color: '#0284c7',
-                    textDecoration: 'underline',
-                    textDecorationColor: '#0ea5e9',
-                    textUnderlineOffset: '2px'
+                    textDecoration: 'none',
+                    fontWeight: '700',
+                    wordBreak: 'break-all',
+                    fontSize: '11px'
                   },
                   onClick: (e) => {
                     e.stopPropagation();
                     window.open(targetUrl, '_blank');
                   }
-                }, displayUrl),
-                el('pre', { style: { margin: '4px 0 0', padding: '8px', background: 'white', borderRadius: '4px', overflowX: 'auto', border: '1px solid #f1f5f9', fontSize: '10px' } }, result.raw)
-              ]);
-            })(),
-
-            result.meta && el('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' } }, [
-              el('div', { style: { color: '#059669', background: '#ecfdf5', padding: '4px 8px', borderRadius: '4px' } }, [__('Accepted: '), el('strong', null, result.meta.accepted)]),
-              el('div', { style: { color: '#dc2626', background: '#fef2f2', padding: '4px 8px', borderRadius: '4px' } }, [__('Blocked: '), el('strong', null, result.meta.blocked)]),
-              el('div', { style: { color: '#64748b', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' } }, [__('Errors: '), el('strong', null, result.meta.errors)]),
-              el('div', { style: { color: '#64748b', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' } }, [__('Total: '), el('strong', null, result.meta.total)])
+                }, displayUrl || targetUrl)
+              ]),
+              // Row 2: Status, Toggle, Enforcement
+              el('div', { style: { padding: '4px 0', background: 'transparent', borderRadius: '0', border: 'none', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', color: '#475569' } }, [
+                // Status box
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                  el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Status:', 'vaptsecure')),
+                  el('span', {
+                    style: {
+                      color: status === '200' ? '#059669' : '#dc2626',
+                      fontWeight: '700'
+                    }
+                  }, status)
+                ]),
+                // Separator
+                el('span', { style: { color: '#cbd5e1' } }, '|'),
+                // Toggle box
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                  el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Toggle:', 'vaptsecure')),
+                  el('span', {
+                    style: {
+                      color: toggle === 'ON' ? '#059669' : '#dc2626',
+                      fontWeight: '700'
+                    }
+                  }, toggle)
+                ]),
+                // Enforcement conditionally generated
+                enforcement ? el('span', { style: { color: '#cbd5e1' } }, '|') : null,
+                enforcement ? el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                  el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Enforcement:', 'vaptsecure')),
+                  el('span', {
+                    style: {
+                      color: enforcement.includes('php') ? '#7c3aed' : '#0284c7',
+                      fontWeight: '700',
+                      background: enforcement.includes('php') ? '#f5f3ff' : '#f0f9ff',
+                      padding: '1px 4px',
+                      borderRadius: '3px'
+                    }
+                  }, enforcement)
+                ]) : null
+              ])
             ])
-          ])
-        ]),
+          ]);
+        })(),
+
+        // Technical Trace section (restored for workbench)
+        showTechnicalTrace && result.raw && el('div', {
+          style: {
+            maxWidth: '100%',
+            overflow: 'hidden',
+            marginTop: '10px',
+            borderTop: '1px solid #e2e8f0',
+            paddingTop: '10px'
+          }
+        }, el(FileInspector, {
+          content: result.raw,
+          label: __('Technical Trace', 'vaptsecure'),
+          testContext: control.test_logic
+        })),
 
         // v3.5.2: Multiple Evidence Gallery Renderer (v3.13.16 Safety Fix)
         (result.screenshot_paths || (result.meta && result.meta.screenshot_paths)) &&
@@ -1085,7 +1369,7 @@
         setStats(data);
         consecutiveFailsRef.current = 0;
       } catch (e) {
-        console.error('[VAPT] Failed to fetch stats:', e);
+        vaptLog.error('Failed to fetch stats:', e);
         consecutiveFailsRef.current++;
       } finally {
         setLoading(false);
@@ -1102,7 +1386,7 @@
         });
         await fetchStats();
       } catch (e) {
-        console.error('[VAPT] Failed to reset stats:', e);
+        vaptLog.error('Failed to reset stats:', e);
       } finally {
         setResetting(false);
       }
@@ -1112,7 +1396,7 @@
       fetchStats();
       const interval = setInterval(() => {
         if (consecutiveFailsRef.current >= 3) {
-          console.warn('VAPT Secure: Background polling stopped due to consecutive network/REST errors.');
+          vaptLog.warn('Background polling stopped due to consecutive network/REST errors.');
           clearInterval(interval);
           return;
         }
@@ -1169,15 +1453,16 @@
     ]);
   };
 
-  const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, globalProtection = true }) => {
-    console.log('[VAPT] GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
+  const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, globalProtection = true, showTechnicalTrace = false, showVerificationDetails = true }) => {
+    const isWorkbench = window.location.search.includes('page=vaptsecure-workbench');
+    vaptLog.log('GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
     let schema = useMemo(() => {
       if (!feature.generated_schema) return {};
       if (typeof feature.generated_schema === 'object') return feature.generated_schema;
       try {
         return JSON.parse(feature.generated_schema);
       } catch (e) {
-        console.warn('[VAPT] Failed to parse generated_schema:', e);
+        vaptLog.warn('Failed to parse generated_schema:', e);
         return {};
       }
     }, [feature.generated_schema]);
@@ -1201,7 +1486,7 @@
       try {
         return JSON.parse(feature.implementation_data);
       } catch (e) {
-        console.warn('[VAPT] Failed to parse implementation_data:', e);
+        vaptLog.warn('Failed to parse implementation_data:', e);
         return {};
       }
     }, [feature.implementation_data]);
@@ -1247,7 +1532,7 @@
 
       switch (type) {
         case 'test_action':
-          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection: globalProtection });
+          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection: globalProtection, showTechnicalTrace: showTechnicalTrace, showVerificationDetails: showVerificationDetails });
 
         case 'button':
           return el('div', { key: uniqueKey, style: { marginBottom: '15px' } }, [
@@ -1264,38 +1549,38 @@
           const mapping = (schema.enforcement?.mappings || {})[key] || (schema.client_deployment?.enforcement?.mappings || {})[key];
           const isDevelop = (feature.status || '').toLowerCase() === 'develop' || (feature.normalized_status || '').toLowerCase() === 'develop';
           const isSuperAdmin = window.vaptSecureSettings?.isSuper || false;
-          
+
           // Enhanced Driver Detection for Tooltip Accuracy
           const activeDriver = schema.enforcement?.driver || schema.client_deployment?.enforcement?.driver || 'hook';
           const activeTarget = schema.enforcement?.target || schema.client_deployment?.enforcement?.target || 'root';
 
           const isEnforced = toBool(value);
           const vSettings = window.vaptSecureSettings || {};
-          
-          const getShortPath = (fullPath) => {
-              if (!fullPath) return '';
-              let pathStr = fullPath.replace(/\\/g, '/');
-              let absPath = (vSettings.abspath || '').replace(/\\/g, '/');
-              let pluginPath = (vSettings.pluginPath || '').replace(/\\/g, '/');
 
-              if (absPath && pathStr.toLowerCase().startsWith(absPath.toLowerCase())) {
-                  return './' + pathStr.substring(absPath.length).replace(/^[\\\/]/, '');
-              }
-              if (pluginPath && pathStr.toLowerCase().startsWith(pluginPath.toLowerCase())) {
-                  const pluginBase = pluginPath.split(/[\\\/]/).filter(Boolean).pop();
-                  return pluginBase + '/' + pathStr.substring(pluginPath.length).replace(/^[\\\/]/, '');
-              }
-              return pathStr;
+          const getShortPath = (fullPath) => {
+            if (!fullPath) return '';
+            let pathStr = fullPath.replace(/\\/g, '/');
+            let absPath = (vSettings.abspath || '').replace(/\\/g, '/');
+            let pluginPath = (vSettings.pluginPath || '').replace(/\\/g, '/');
+
+            if (absPath && pathStr.toLowerCase().startsWith(absPath.toLowerCase())) {
+              return './' + pathStr.substring(absPath.length).replace(/^[\\\/]/, '');
+            }
+            if (pluginPath && pathStr.toLowerCase().startsWith(pluginPath.toLowerCase())) {
+              const pluginBase = pluginPath.split(/[\\\/]/).filter(Boolean).pop();
+              return pluginBase + '/' + pathStr.substring(pluginPath.length).replace(/^[\\\/]/, '');
+            }
+            return pathStr;
           };
 
-          const statusHeader = isEnforced ? 
+          const statusHeader = isEnforced ?
             el('div', { style: { color: '#22c55e', background: '#f0fdf4', padding: '6px 10px', borderRadius: '4px', fontWeight: '800', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #bbf7d0' } }, [
-                el(Icon, { icon: 'saved', size: 14 }),
-                __('STATUS: ACTIVE & INJECTED', 'vaptsecure')
+              el(Icon, { icon: 'saved', size: 14 }),
+              __('STATUS: ACTIVE & INJECTED', 'vaptsecure')
             ]) :
             el('div', { style: { color: '#ef4444', background: '#fef2f2', padding: '6px 10px', borderRadius: '4px', fontWeight: '800', marginBottom: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #fecaca' } }, [
-                el(Icon, { icon: 'no-alt', size: 14 }),
-                __('STATUS: INACTIVE / REMOVED', 'vaptsecure')
+              el(Icon, { icon: 'no-alt', size: 14 }),
+              __('STATUS: INACTIVE / REMOVED', 'vaptsecure')
             ]);
 
           return el('div', { id: control.id, key: uniqueKey, style: { marginBottom: '0' } }, [
@@ -1307,46 +1592,46 @@
                   text: el('div', { style: { padding: '12px', maxWidth: '450px', maxHeight: '500px', overflowY: 'auto', background: '#1e293b', borderRadius: '8px' } }, [
                     el('div', { style: { fontWeight: '700', marginBottom: '12px', fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8', borderBottom: '1px solid #334155', paddingBottom: '6px', letterSpacing: '0.05em' } }, __('Technical Trace & Enforcement', 'vaptsecure')),
                     statusHeader,
-                    feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ? 
+                    feature.platform_implementations && Object.keys(feature.platform_implementations).length > 0 ?
                       Object.entries(feature.platform_implementations)
-                      .filter(([name, impl]) => {
-                        const n = name.toLowerCase();
-                        const d = activeDriver.toLowerCase();
-                        if (d === 'htaccess') return n.includes('htaccess') || n.includes('apache');
-                        if (d === 'config' || d === 'wp_config' || d === 'wp-config') return n.includes('config');
-                        if (d === 'nginx') return n.includes('nginx');
-                        if (d === 'cloudflare') return n.includes('cloudflare');
-                        if (d === 'iis') return n.includes('iis');
-                        if (d === 'hook' || d === 'php_functions' || d === 'wordpress') return n.includes('hook') || n.includes('functions') || n.includes('wordpress');
-                        return true; 
-                      })
-                      .map(([name, impl], idx) => {
-                        let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
-                        if (!code) return null;
-                        
-                        let targetFile = impl.target_file || (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : 'root'));
-                        if (activeDriver === 'hook' || activeDriver === 'php_functions') targetFile = 'vapt-functions.php';
+                        .filter(([name, impl]) => {
+                          const n = name.toLowerCase();
+                          const d = activeDriver.toLowerCase();
+                          if (d === 'htaccess') return n.includes('htaccess') || n.includes('apache');
+                          if (d === 'config' || d === 'wp_config' || d === 'wp-config') return n.includes('config');
+                          if (d === 'nginx') return n.includes('nginx');
+                          if (d === 'cloudflare') return n.includes('cloudflare');
+                          if (d === 'iis') return n.includes('iis');
+                          if (d === 'hook' || d === 'php_functions' || d === 'wordpress') return n.includes('hook') || n.includes('functions') || n.includes('wordpress');
+                          return true;
+                        })
+                        .map(([name, impl], idx) => {
+                          let code = impl.wrapped_code || impl.code || (schema.enforcement?.mappings && schema.enforcement?.mappings[key]);
+                          if (!code) return null;
 
-                        let fullPath = '';
-                        if (targetFile === 'wp-config.php') fullPath = (vSettings.abspath || '') + 'wp-config.php';
-                        else if (targetFile === '.htaccess') fullPath = (vSettings.abspath || '') + '.htaccess';
-                        else if (targetFile === 'vapt-functions.php') fullPath = (vSettings.pluginPath || '') + 'vapt-functions.php';
-                        else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
-                        else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
-                        
-                        const displayPath = fullPath ? getShortPath(fullPath) : targetFile;
-                        let displayName = name;
-                        
-                        return el('div', { key: idx, style: { marginBottom: '15px' } }, [
-                          el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '2px' } }, [
-                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, displayPath)
-                          ]),
-                          el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '12px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap', borderLeft: isEnforced ? '3px solid #22c55e' : '3px solid #ef4444' } }, code)
-                        ]);
-                      }) : 
+                          let targetFile = impl.target_file || (activeDriver === 'htaccess' ? '.htaccess' : (activeDriver.includes('config') ? 'wp-config.php' : 'root'));
+                          if (activeDriver === 'hook' || activeDriver === 'php_functions') targetFile = 'vapt-functions.php';
+
+                          let fullPath = '';
+                          if (targetFile === 'wp-config.php') fullPath = (vSettings.abspath || '') + 'wp-config.php';
+                          else if (targetFile === '.htaccess') fullPath = (vSettings.abspath || '') + '.htaccess';
+                          else if (targetFile === 'vapt-functions.php') fullPath = (vSettings.pluginPath || '') + 'vapt-functions.php';
+                          else if (targetFile === 'web.config') fullPath = (vSettings.abspath || '') + 'web.config';
+                          else if (targetFile.includes('vapt-nginx-rules')) fullPath = (vSettings.uploadPath || '') + '/vapt-nginx-rules.conf';
+
+                          const displayPath = fullPath ? getShortPath(fullPath) : targetFile;
+                          let displayName = name;
+
+                          return el('div', { key: idx, style: { marginBottom: '15px' } }, [
+                            el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '2px' } }, [
+                              el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, displayPath)
+                            ]),
+                            el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '12px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap', borderLeft: isEnforced ? '3px solid #22c55e' : '3px solid #ef4444' } }, code)
+                          ]);
+                        }) :
                       (mapping ? el('div', [
                         el('div', { style: { fontSize: '10px', color: '#94a3b8', marginBottom: '6px' } }, [
-                            el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, (activeDriver === 'htaccess' ? './.htaccess' : (activeDriver.includes('config') ? './wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'VAPT-Secure/vapt-functions.php' : './' + activeTarget))))
+                          el('div', { style: { fontFamily: 'monospace', color: '#38bdf8', fontSize: '11px', wordBreak: 'break-all', fontWeight: '700' } }, (activeDriver === 'htaccess' ? './.htaccess' : (activeDriver.includes('config') ? './wp-config.php' : (activeDriver === 'hook' || activeDriver === 'php_functions' ? 'VAPT-Secure/vapt-functions.php' : './' + activeTarget))))
                         ]),
                         el('pre', { style: { margin: 0, fontSize: '9px', background: '#0f172a', color: isEnforced ? '#e2e8f0' : '#475569', padding: '10px', borderRadius: '6px', overflowX: 'auto', border: '1px solid #334155', whiteSpace: 'pre-wrap' } }, mapping)
                       ]) : el('em', { style: { color: '#64748b', fontSize: '11px' } }, __('No technical code mapping defined for this control.', 'vaptsecure')))
@@ -1593,7 +1878,7 @@
       }
     };
 
-    const verificationTypes = ['verification_action', 'automated_test', 'risk_indicators', 'assurance_badges'];
+    const verificationTypes = ['verification_action', 'automated_test', 'test_action', 'risk_indicators', 'assurance_badges'];
     const guideTypes = ['test_checklist', 'evidence_list', 'remediation_steps', 'evidence_uploader'];
 
     const mainControlsRaw = schema.controls.filter(c => {
@@ -1659,13 +1944,19 @@
 
     const riskControls = schema.controls.filter(c => c.type === 'risk_indicators');
     const badgeControls = schema.controls.filter(c => c.type === 'assurance_badges');
-    const otherVerificationControls = schema.controls.filter(c =>
-      verificationTypes.includes(c.type) &&
-      c.type !== 'risk_indicators' &&
-      c.type !== 'assurance_badges' &&
-      c.type !== 'verification_action' &&
-      c.type !== 'automated_test'
-    );
+    const otherVerificationControls = schema.controls.filter(c => {
+      const isVerification = verificationTypes.includes(c.type);
+      if (!isVerification) return false;
+      
+      if (c.type === 'risk_indicators' || c.type === 'assurance_badges' || c.type === 'verification_action' || c.type === 'automated_test') {
+        return false;
+      }
+      
+      // 🛡️ Hide "Active Protection Probe" from Client Dashboard (v2.5.21)
+      if (!isWorkbench && c.key === 'verify_active_protection') return false;
+      
+      return true;
+    });
 
     const getBadgeIcon = (text) => {
       const t = (text || '').toString().toLowerCase();
@@ -1688,7 +1979,49 @@
 
     const metadata = schema.metadata || {};
 
-    const opNotes = feature.operational_notes || schema.operational_notes;
+    let opNotes = feature.operational_notes || schema.operational_notes;
+
+    // 🛡️ Logic to handle "Implementation Details" visibility and styling (v2.5.19)
+    let processedNotes = opNotes;
+    let detailElement = null;
+    
+    if (typeof opNotes === 'string') {
+        const marker = 'Implementation Details:';
+        const markerIndex = opNotes.indexOf(marker);
+        
+        if (markerIndex !== -1) {
+            // Found implementation details
+            if (!isWorkbench) {
+                // Client Dashboard: Strip them out
+                processedNotes = opNotes.substring(0, markerIndex).trim().replace(/\n+$/, '');
+            } else {
+                // Workbench: Extract for styling and keep the rest as processedNotes
+                processedNotes = opNotes.substring(0, markerIndex).trim().replace(/\n+$/, '');
+                const detailContent = opNotes.substring(markerIndex + marker.length).trim();
+                
+                detailElement = el('div', {
+                    style: {
+                        marginTop: '14px',
+                        fontSize: '12px'
+                    }
+                }, [
+                    el('strong', {
+                        style: {
+                            fontWeight: '800',
+                            color: '#1e293b',
+                            textTransform: 'uppercase',
+                            fontSize: '10px',
+                            letterSpacing: '0.05em',
+                            display: 'block',
+                            marginBottom: '6px'
+                        }
+                    }, __('Implementation Details:', 'vaptsecure')),
+                    el('div', { style: { color: '#4b5563' } }, detailContent)
+                ]);
+            }
+        }
+    }
+
     const protocolData = feature.manual_protocol || schema.manual_protocol;
 
     // 🛡️ Robust Protocol Parsing (v3.12.19)
@@ -1774,9 +2107,10 @@
           el(Icon, { icon: 'info', size: 16 }),
           __('Business Impact & Security Benefit', 'vaptsecure')
         ]),
-        el('div', { style: { color: '#475569' } },
-          typeof opNotes === 'string' ? linkify(opNotes) : JSON.stringify(opNotes)
-        )
+        el('div', { style: { color: '#475569' } }, [
+          typeof processedNotes === 'string' ? linkify(processedNotes) : JSON.stringify(processedNotes),
+          detailElement
+        ])
       ]),
 
       // Functional Controls Panel

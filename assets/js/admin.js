@@ -1,9 +1,21 @@
 // Global check-in for diagnostics - ABSOLUTE TOP
 window.vaptScriptLoaded = true;
 
+// Debug mode control - set to true to enable console logs for debugging
+var VAPT_DEBUG = window.VAPT_DEBUG || false;
+
+// Helper function for conditional logging
+var vaptLog = window.vaptLog || {
+  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
+  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
+  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
+  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
+  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
+};
+
 (function () {
   if (typeof wp === 'undefined') {
-    console.error('VAPT Secure: "wp" global is missing!');
+    vaptLog.error('"wp" global is missing!');
     return;
   }
 
@@ -86,7 +98,7 @@ window.vaptScriptLoaded = true;
           if (!fallbackUrl) throw err;
 
           if (!localBroken) {
-            console.warn('VAPT Secure: Switching to Pre-emptive Mode (Silent) for REST API.');
+            vaptLog.warn('Switching to Pre-emptive Mode (Silent) for REST API.');
             localBroken = true;
             localStorage.setItem('vaptsecure_rest_broken', '1');
           }
@@ -122,7 +134,7 @@ window.vaptScriptLoaded = true;
     }
 
     componentDidCatch(error, errorInfo) {
-      console.error("VAPT React Error:", error, errorInfo);
+      vaptLog.error("React Error:", error, errorInfo);
       this.setState({ errorInfo });
     }
 
@@ -149,7 +161,7 @@ window.vaptScriptLoaded = true;
   const GeneratedInterface = window.VAPTSECURE_GeneratedInterface;
 
   if (!wp.element || !wp.components || !wp.apiFetch || !wp.i18n) {
-    console.error('VAPT Secure: One or more WordPress dependencies are missing!');
+    vaptLog.error('One or more WordPress dependencies are missing!');
     return;
   }
 
@@ -474,7 +486,7 @@ window.vaptScriptLoaded = true;
           })
           .catch(() => setIsSaving(false));
       } catch (e) {
-        console.error('VAPT Design Save Error:', e);
+        vaptLog.error('Design Save Error:', e);
         if (e instanceof SyntaxError) {
           setAlertState({ message: sprintf(__('Invalid JSON format: %s. Check for hidden characters or syntax errors.', 'vaptsecure'), e.message) });
         } else {
@@ -603,7 +615,7 @@ window.vaptScriptLoaded = true;
       // Preferred Order: .htaccess, PHP Function, wp-config
       let prioritizedDriver = 'hook';
       let driverContextInstruction = '';
-      
+
       const selection = feature.active_enforcer;
       const targets = feature.protection?.automated_protection?.implementation_targets || feature.available_platforms || [];
 
@@ -617,7 +629,7 @@ window.vaptScriptLoaded = true;
         else if (selLower === 'cloudflare') prioritizedDriver = 'cloudflare';
         else if (selLower === 'iis') prioritizedDriver = 'iis';
         else if (selLower === 'caddy') prioritizedDriver = 'caddy';
-        
+
         driverContextInstruction = `\n      - **USER SELECTION**: The user explicitly selected **${selection}** as the enforcer. Use the **${prioritizedDriver}** driver core strategy.`;
       } else if (Array.isArray(targets) && targets.length > 0) {
         if (targets.includes('.htaccess')) prioritizedDriver = 'htaccess';
@@ -1070,7 +1082,7 @@ window.vaptScriptLoaded = true;
           try {
             success = document.execCommand('copy');
           } catch (err) {
-            console.error('VAPT: Fallback Copy failed', err);
+            vaptLog.error('Fallback Copy failed', err);
           }
           document.body.removeChild(textArea);
           return success ? Promise.resolve() : Promise.reject('ExecCommand Failed');
@@ -1078,7 +1090,7 @@ window.vaptScriptLoaded = true;
 
         if (navigator.clipboard && window.isSecureContext) {
           return navigator.clipboard.writeText(text).catch(err => {
-            console.warn('VAPT: navigator.clipboard failed, trying fallback...', err);
+            vaptLog.warn('navigator.clipboard failed, trying fallback...', err);
             return fallbackCopy(text);
           });
         }
@@ -1091,7 +1103,7 @@ window.vaptScriptLoaded = true;
           setTimeout(() => setSaveStatus(null), 3000);
         })
         .catch(err => {
-          console.error('VAPT: All copy methods failed', err);
+          vaptLog.error('All copy methods failed', err);
           setSaveStatus({ message: __('Copy failed. Please select and copy manually.', 'vaptsecure'), type: 'error' });
           setTimeout(() => setSaveStatus(null), 4000);
         });
@@ -1274,7 +1286,7 @@ window.vaptScriptLoaded = true;
                   displayInstruct = schema.instruction;
                 }
               } catch (e) {
-                console.warn('VAPT: Failed to extract fallback instructions from schema', e);
+                vaptLog.warn('Failed to extract fallback instructions from schema', e);
               }
             }
 
@@ -1430,61 +1442,264 @@ window.vaptScriptLoaded = true;
     const handleAutoMap = () => {
       const newMapping = { ...fieldMapping };
       let mappedCount = 0;
+      const mappingDetails = [];
 
-      const findBestMatch = (keywords) => {
-        for (const keyword of keywords) {
-          // Tier 1: Exact match
-          const exact = allKeys.find(k => k.toLowerCase() === keyword.toLowerCase());
-          if (exact) return exact;
-          // Tier 2: Suffix match (e.g., 'description.summary' matches 'summary')
-          const suffix = allKeys.find(k => k.toLowerCase().endsWith('.' + keyword.toLowerCase()));
-          if (suffix) return suffix;
-        }
-        // Tier 3: Partial/contains match (broader fallback for nested or compound keys)
-        for (const keyword of keywords) {
-          const partial = allKeys.find(k => k.toLowerCase().includes(keyword.toLowerCase()));
-          if (partial) return partial;
-        }
-        return '';
+      // Enhanced matching with scoring - improved to prioritize nested keys and target field names
+      const findBestMatch = (keywords, targetFieldName = '') => {
+        const matches = [];
+
+        allKeys.forEach(field => {
+          const fieldLower = field.toLowerCase();
+          let bestScore = 0;
+          let bestKeyword = '';
+
+          keywords.forEach(keyword => {
+            const keywordLower = keyword.toLowerCase();
+            let score = 0;
+
+            // Bonus: keyword contains target field name (e.g., "verification_steps" contains "verification")
+            const targetInKeyword = targetFieldName && keywordLower.includes(targetFieldName.toLowerCase());
+            const keywordInTarget = targetFieldName && targetFieldName.toLowerCase().includes(keywordLower);
+
+            // Exact match (highest priority)
+            if (fieldLower === keywordLower) {
+              score = 100;
+              // Extra bonus if keyword contains target field name
+              if (targetInKeyword) score += 20;
+            }
+            // Field ends with .keyword (nested match) - e.g., "testing.verification_steps" ends with ".verification_steps"
+            else if (fieldLower.endsWith('.' + keywordLower)) {
+              score = 95;
+              if (targetInKeyword) score += 15;
+            }
+            // Field starts with keyword. - e.g., "verification_steps.testing" starts with "verification_steps."
+            else if (fieldLower.startsWith(keywordLower + '.')) {
+              score = 90;
+              if (targetInKeyword) score += 15;
+            }
+            // Field contains keyword as whole word with dots (nested structure)
+            else if (fieldLower.includes('.' + keywordLower + '.')) {
+              score = 85;
+              if (targetInKeyword) score += 10;
+            }
+            // Field contains keyword as whole word with underscores
+            else if (fieldLower.includes('_' + keywordLower + '_')) {
+              score = 80;
+              if (targetInKeyword) score += 10;
+            }
+            // Field contains keyword (partial match)
+            else if (fieldLower.includes(keywordLower)) {
+              // Penalize longer field names for partial matches
+              const lengthPenalty = Math.min(20, (fieldLower.length - keywordLower.length) * 2);
+              score = 70 - lengthPenalty;
+              if (targetInKeyword) score += 10;
+            }
+            // Levenshtein distance for fuzzy matching (fallback)
+            else {
+              // Simple similarity check
+              const similarity = keywordLower.split('').filter(c => fieldLower.includes(c)).length / keywordLower.length;
+              if (similarity > 0.7) {
+                score = Math.floor(similarity * 60);
+                if (targetInKeyword) score += 5;
+              }
+            }
+
+            // Extra bonus for exact target field name match
+            if (targetFieldName && fieldLower === targetFieldName.toLowerCase()) {
+              score += 25;
+            }
+
+            // Special bonus for nested keys that match the target field structure
+            if (targetFieldName) {
+              // Bonus for field containing target field name as part of nested structure
+              if (fieldLower.includes('.' + targetFieldName.toLowerCase() + '.')) {
+                score += 15;
+              }
+              // Bonus for field ending with target field name
+              if (fieldLower.endsWith('.' + targetFieldName.toLowerCase())) {
+                score += 20;
+              }
+              // Bonus for field starting with target field name
+              if (fieldLower.startsWith(targetFieldName.toLowerCase() + '.')) {
+                score += 20;
+              }
+
+              // SPECIAL HANDLING FOR SPECIFIC FIELDS
+              // For operational_notes, prioritize keys ending with ".context"
+              if (targetFieldName === 'operational_notes' && fieldLower.endsWith('.context')) {
+                score += 30; // Extra bonus for context fields
+              }
+              // For verification_steps, prioritize keys containing "verification_steps"
+              if (targetFieldName === 'verification_steps' && fieldLower.includes('verification_steps')) {
+                score += 25; // Extra bonus for exact verification_steps match
+              }
+              // For verification_steps, also prioritize keys ending with ".steps"
+              if (targetFieldName === 'verification_steps' && fieldLower.endsWith('.steps')) {
+                score += 20; // Bonus for steps fields
+              }
+            }
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestKeyword = keyword;
+            }
+          });
+
+          if (bestScore > 40) {
+            matches.push({
+              field,
+              score: bestScore,
+              keyword: bestKeyword
+            });
+          }
+        });
+
+        // Sort by score descending, then by field length (shorter is better)
+        matches.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.field.length - b.field.length;
+        });
+
+        return matches.length > 0 ? matches[0].field : '';
       };
 
-      const autoMapField = (key, keywords) => {
+      const autoMapField = (key, keywords, fieldType = 'any') => {
         if (!newMapping[key]) {
-          const match = findBestMatch(keywords);
-          if (match) { newMapping[key] = match; mappedCount++; }
+          const match = findBestMatch(keywords, key);
+          if (match) {
+            newMapping[key] = match;
+            mappedCount++;
+            mappingDetails.push({
+              target: key,
+              source: match,
+              keywords: keywords.slice(0, 3) // Show first 3 keywords for context
+            });
+          }
         }
       };
 
-      autoMapField('description', ['summary', 'description', 'desc']);
-      autoMapField('severity', ['severity.level', 'severity', 'level', 'risk_level']);
-      autoMapField('ui_layout', ['ui_layout', 'layout', 'ui']);
-      autoMapField('components', ['components', 'ui_components', 'fields']);
-      autoMapField('actions', ['actions', 'ui_actions', 'buttons']);
+      // Core Context Fields
+      autoMapField('description', ['summary', 'description', 'desc', 'overview', 'details', 'info', 'text', 'content', 'explanation', 'definition']);
+      autoMapField('severity', ['severity', 'level', 'risk_level', 'risk.level', 'priority', 'criticality', 'impact', 'risk', 'severity.level', 'severity_level']);
 
-      // interface_schema_v2.0 fields
-      autoMapField('available_platforms', ['available_platforms', 'platforms', 'platform_list']);
-      autoMapField('platform_implementations', ['platform_implementations', 'implementations', 'enforcer_map']);
+      // UI Schema Fields
+      autoMapField('ui_layout', ['ui_layout', 'ui-layout', 'uiLayout', 'layout', 'ui', 'interface', 'design', 'ui.layout', 'ui_layout_schema', 'interface_layout', 'ui_design', 'structure', 'arrangement', 'layout.ui', 'ui_schema', 'interface_schema', 'design_layout', 'visual_layout', 'page_layout', 'template_layout']);
+      autoMapField('components', ['components', 'ui_components', 'ui-components', 'uiComponents', 'ui.components', 'fields', 'elements', 'controls', 'widgets', 'parts', 'ui_elements', 'component_list', 'ui_elements_list', 'fields_list', 'controls_list', 'widgets_list', 'ui_parts', 'interface_components', 'design_components', 'visual_components', 'ui_controls']);
+      autoMapField('actions', ['actions', 'ui_actions', 'ui-actions', 'uiActions', 'ui.actions', 'buttons', 'action', 'operations', 'functions', 'interactions', 'handlers', 'action_list', 'buttons_list', 'operations_list', 'functions_list', 'ui_buttons', 'interface_actions', 'design_actions', 'visual_actions', 'user_actions', 'click_actions', 'event_handlers']);
 
-      // Additional Context fields
-      autoMapField('operational_notes', ['operational_notes', 'notes', 'operation_notes', 'operation_details', 'summary']);
-      autoMapField('verification_steps', ['verification_steps', 'manual_verification', 'verification.steps', 'steps', 'test_method', 'verification', 'owasp']);
+      // Platform & Enforcement
+      autoMapField('available_platforms', ['available_platforms', 'platforms', 'platform_list', 'supported_platforms', 'platform', 'platforms.available', 'platforms_list', 'compatible_platforms']);
+      autoMapField('platform_implementations', ['platform_implementations', 'implementations', 'enforcer_map', 'implementation', 'enforcer', 'platform.implementations', 'enforcement', 'rules', 'configurations']);
 
-      // NEW: Additional fields for Design Implementation Modal
-      autoMapField('risk_id', ['risk_id', 'id', 'risk identifier', 'risk id']);
-      autoMapField('title', ['title', 'name', 'risk title', 'risk name']);
-      autoMapField('category', ['category', 'type', 'risk category']);
-      autoMapField('owasp_cwe', ['owasp.cwe', 'cwe', 'cwe id', 'cwe identifier']);
-      autoMapField('owasp_top_10_2025', ['owasp.owasp_top_10_2025', 'owasp top 10', 'owasp 2025', 'owasp_top_10_2025', 'owasp']);
+      // Additional Context - Prioritize nested keys and exact matches
+      autoMapField('operational_notes', [
+        'operational_notes.context',  // Highest priority - exact nested key
+        'context.operational_notes',  // Alternative nested structure
+        'operational_notes',          // Exact field name
+        'operational_context',
+        'operation_context',
+        'context',
+        'operation_notes',
+        'operation_details',
+        'notes',
+        'summary',
+        'remarks',
+        'comments',
+        'guidance',
+        'instructions',
+        'documentation',
+        'background',
+        'environment',
+        'contextual',
+        'operationalContext',
+        'operational-context',
+        'op_context',
+        'op_notes',
+        'opnotes',
+        'opcontext',
+        'notes.operational',
+        'description.context',
+        'context.description',
+        'info',
+        'additional_info',
+        'additional_info.context',
+        'context.additional',
+        'notes.context',
+        'context.notes',
+        'operational.context'
+      ]);
 
-      // Verification fields — resolved from enforcer_pattern_library or nested owasp data
-      autoMapField('verification_command', ['verification.command', 'verification_command', 'verification command', 'test command', 'verification']);
-      autoMapField('verification_expected', ['verification.expected', 'verification_expected', 'expected output', 'test result', 'expected', 'verification']);
+      autoMapField('verification_steps', [
+        'testing.verification_steps',  // Highest priority - exact nested key
+        'verification.steps',          // Alternative nested structure
+        'verification_steps',          // Exact field name
+        'manual_verification',
+        'steps',
+        'test_steps',
+        'testing_steps',
+        'validation_steps',
+        'test_method',
+        'verification',
+        'testing',
+        'validation',
+        'checks',
+        'procedures',
+        'manual_testing',
+        'test_procedure',
+        'verificationSteps',
+        'verification-steps',
+        'test.method',
+        'test.methodology',
+        'test.procedure',
+        'steps.verification',
+        'manual_test',
+        'manual.test',
+        'test.manual',
+        'test_manual',
+        'checklist',
+        'test_checklist',
+        'testing.checklist',
+        'validation.checklist',
+        'testing.verification',
+        'verification.testing',
+        'test.verification',
+        'verification.test'
+        // Removed: 'owasp' - causes incorrect matches
+      ]);
+
+      // Risk Identification & Compliance
+      autoMapField('risk_id', ['risk_id', 'id', 'risk identifier', 'risk id', 'identifier', 'risk.identifier', 'risk.id', 'unique_id', 'uid', 'key']);
+      autoMapField('title', ['title', 'name', 'risk title', 'risk name', 'heading', 'label', 'caption', 'risk.title', 'risk_name', 'risk_title']);
+      autoMapField('category', ['category', 'type', 'risk category', 'classification', 'group', 'family', 'risk.category', 'risk_type', 'risk_category']);
+      autoMapField('owasp_cwe', ['owasp.cwe', 'cwe', 'cwe id', 'cwe identifier', 'cwe_id', 'cwe_number', 'cwe-id', 'cwe.id', 'weakness', 'vulnerability']);
+      autoMapField('owasp_top_10_2025', ['owasp.owasp_top_10_2025', 'owasp top 10', 'owasp 2025', 'owasp_top_10_2025', 'owasp', 'owasp_top10', 'owasp.top10', 'owasp_top_10', 'top10', 'top_10']);
+
+      // Verification fields
+      autoMapField('verification_command', ['verification.command', 'verification_command', 'verification command', 'test command', 'verification', 'command', 'test.command', 'test_command', 'cli', 'terminal', 'shell']);
+      autoMapField('verification_expected', ['verification.expected', 'verification_expected', 'expected output', 'test result', 'expected', 'verification', 'output', 'result', 'expected_result', 'expected.output', 'test.expected']);
 
       setFieldMapping(newMapping);
+
+      // Enhanced feedback with details
       if (mappedCount === 0) {
         alert(__('No new matching fields found.', 'vaptsecure'));
       } else {
-        alert(sprintf(__('Auto-mapped %d new fields.', 'vaptsecure'), mappedCount));
+        // Create detailed message
+        let message = sprintf(__('Auto-mapped %d new fields:\n\n', 'vaptsecure'), mappedCount);
+        mappingDetails.forEach((detail, index) => {
+          message += sprintf(__('%d. %s → %s\n', 'vaptsecure'),
+            index + 1,
+            detail.target,
+            detail.source
+          );
+        });
+        message += '\n' + __('Review the mappings in the modal.', 'vaptsecure');
+        alert(message);
+
+        // Also log to console for debugging
+        if (VAPT_DEBUG) {
+          console.log('[VAPT] Auto-map details:', mappingDetails);
+        }
       }
     };
 
@@ -1575,7 +1790,27 @@ window.vaptScriptLoaded = true;
             el('h2', { style: { margin: '0', fontSize: '18px', fontWeight: '600', color: '#1d2327', whiteSpace: 'nowrap' } }, __('Mapping Configuration', 'vaptsecure')),
             el('p', { style: { margin: '0', fontSize: '12px', color: '#646970', lineHeight: '1.4', whiteSpace: 'nowrap' } },
               __('Map JSON fields for context-aware prompts.', 'vaptsecure')
-            )
+            ),
+            // Total Fields Count Display
+            el('div', {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '2px 6px',
+                fontSize: '11px',
+                fontWeight: '600',
+                color: '#1e3a8a',
+                background: '#f0f6fb',
+                border: '1px solid #c8d7e1',
+                borderRadius: '4px',
+                height: '22px',
+                whiteSpace: 'nowrap',
+                marginTop: '4px',
+                width: 'fit-content'
+              },
+              title: __('Total number of mapping fields in the modal', 'vaptsecure')
+            }, sprintf(__('Total Fields: %d', 'vaptsecure'), 16))
           ]),
           el('div', { id: 'vapt-mapping-modal-actions', style: { display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 } }, [
             el(Button, { id: 'vapt-button-automap', isSecondary: true, onClick: handleAutoMap, style: { height: '32px' } }, __('Auto Map', 'vaptsecure')),
@@ -1885,8 +2120,8 @@ window.vaptScriptLoaded = true;
                           el('td', { style: { padding: '8px' } }, f.feature_key),
                           el('td', {
                             style: { padding: '8px', textAlign: 'center', fontSize: '10px', fontWeight: '600' }
-                          }, f.is_broken ? el('span', { style: { color: '#856404' } }, 'BROKEN') : 
-                             (f.is_release ? el('span', { style: { color: '#00a32a' } }, 'Release') : el('span', { style: { color: '#2271b1' } }, 'Develop'))),
+                          }, f.is_broken ? el('span', { style: { color: '#856404' } }, 'BROKEN') :
+                            (f.is_release ? el('span', { style: { color: '#00a32a' } }, 'Release') : el('span', { style: { color: '#2271b1' } }, 'Develop'))),
                           el('td', { style: { padding: '8px', textAlign: 'center' } }, f.history_records),
                           el('td', {
                             style: { padding: '8px', textAlign: 'center', color: f.has_generated_schema ? '#d63638' : '#999' }
@@ -3942,7 +4177,7 @@ window.vaptScriptLoaded = true;
     let driverKey = '';
 
     const selection = f.active_enforcer;
-    
+
     if (selection) {
       const selLower = selection.toLowerCase();
       if (selLower.includes('htaccess') || selLower === 'apache' || selLower === 'litespeed') {
@@ -4151,14 +4386,14 @@ window.vaptScriptLoaded = true;
       const savedOrder = localStorage.getItem(`vaptsecure_col_order_${selectedFile}`);
       const savedVisible = localStorage.getItem(`vaptsecure_visible_cols_${selectedFile}`);
 
-      console.log('[VAPT] Init Check:', { selectedFile, savedOrder: !!savedOrder, savedVisible: !!savedVisible });
+      vaptLog.log('Init Check:', { selectedFile, savedOrder: !!savedOrder, savedVisible: !!savedVisible });
 
       if (!savedOrder && schema?.item_fields) {
-        console.log('[VAPT] Applying default order');
+        vaptLog.log('Applying default order');
         setColumnOrder(['title', 'category', 'severity', 'description']);
       }
       if (!savedVisible && schema?.item_fields) {
-        console.log('[VAPT] Applying default visibility');
+        vaptLog.log('Applying default visibility');
         setVisibleCols(['title', 'category', 'severity', 'description']);
       }
     }, [schema, selectedFile]);
@@ -4307,11 +4542,11 @@ window.vaptScriptLoaded = true;
             if (sourceVal) {
               if (contentField === 'generated_schema' && typeof sourceVal === 'string') {
                 try { sourceVal = JSON.parse(sourceVal); } catch (e) {
-                  console.warn('VAPT: Failed to parse source JSON for mapping', e);
+                  vaptLog.warn('Failed to parse source JSON for mapping', e);
                 }
               }
               updates[contentField] = sourceVal;
-              console.log(`VAPT: Smart Mapping populated ${contentField} from ${sourceKey} `);
+              vaptLog.log(`Smart Mapping populated ${contentField} from ${sourceKey} `);
             }
           }
         }
@@ -4347,38 +4582,229 @@ window.vaptScriptLoaded = true;
 
     const resolveEnforcer = (feature) => {
       const platforms = feature.platform_implementations || {};
-      const optimal = environmentProfile?.optimal_platform || 'php_functions';
-      const capabilities = environmentProfile?.capabilities || {};
 
+      // Fallback: If environment profile not loaded, use default capabilities
+      const optimal = environmentProfile?.optimal_platform || 'php_functions';
+      const capabilities = environmentProfile?.capabilities || {
+        // Default capabilities when profile not loaded - enable all platforms
+        php: true,
+        apache: true,
+        nginx: true,
+        cloudflare_proxy: true,
+        iis: true,
+        caddy: true,
+        wordpress: true,
+        mod_rewrite: true,
+        allowoverride: true
+      };
+
+      // Enhanced compatibility map with priority scores and platform mapping
+      // Includes ALL platform names found in interface_schema_v2.0.json
       const compatibilityMap = {
-        'apache_htaccess': ['.htaccess', 'Apache', 'Litespeed'],
-        'nginx_config': ['Nginx'],
-        'iis_config': ['IIS'],
-        'php_functions': ['PHP Functions', 'WordPress', 'WordPress Core', 'wp-config.php'],
-        'cloudflare_edge': ['Cloudflare'],
-        'server_cron': ['Server Cron'],
-        'caddy_native': ['Caddy'],
-        'fail2ban': ['fail2ban']
+        'apache_htaccess': {
+          enforcers: ['.htaccess', 'Apache', 'Litespeed', 'OpenLiteSpeed'],
+          priority: 90, // High priority - most effective
+          requirements: ['mod_rewrite', 'AllowOverride']
+        },
+        'nginx_config': {
+          enforcers: ['Nginx', 'Nginx'],
+          priority: 85, // High priority - excellent performance
+          requirements: ['nginx.conf writable']
+        },
+        'iis_config': {
+          enforcers: ['IIS', 'IIS'],
+          priority: 80, // Medium priority - good for Windows hosting
+          requirements: ['web.config writable']
+        },
+        'php_functions': {
+          enforcers: ['PHP Functions', 'WordPress', 'WordPress Core', 'wp-config.php'],
+          priority: 70, // Lower priority - universal fallback
+          requirements: ['PHP execution']
+        },
+        'cloudflare_edge': {
+          enforcers: ['Cloudflare', 'Cloudflare'],
+          priority: 100, // Highest priority - edge blocking
+          requirements: ['api_token']
+        },
+        'server_cron': {
+          enforcers: ['Server Cron', 'Server Cron'],
+          priority: 60, // Low priority - background tasks only
+          requirements: ['crontab access']
+        },
+        'caddy_native': {
+          enforcers: ['Caddy', 'Caddy'],
+          priority: 85, // High priority - modern server
+          requirements: ['Caddyfile writable']
+        },
+        'fail2ban': {
+          enforcers: ['fail2ban', 'fail2ban'],
+          priority: 75, // Medium priority - IP blocking
+          requirements: ['jail.local writable']
+        }
       };
 
       // 1. Get ALL supported enforcers for this feature
       const availableEnforcers = new Set();
-      Object.keys(platforms).forEach(k => availableEnforcers.add(k));
-      if (feature.steps && Array.isArray(feature.steps)) {
-        feature.steps.forEach(s => { if (s.enforcer) availableEnforcers.add(s.enforcer); });
+
+      // Add from platform_implementations (primary source)
+      if (platforms && typeof platforms === 'object') {
+        Object.keys(platforms).forEach(k => {
+          if (k && typeof k === 'string') {
+            availableEnforcers.add(k);
+          }
+        });
       }
 
-      // 2. Filter by environment compatibility
+      // Also check for enforcer in steps (legacy support)
+      if (feature.steps && Array.isArray(feature.steps)) {
+        feature.steps.forEach(s => {
+          if (s.enforcer && typeof s.enforcer === 'string') {
+            availableEnforcers.add(s.enforcer);
+          }
+        });
+      }
+
+      // Enhanced debug logging
+      vaptLog.log(`Resolving enforcer for ${feature.key || feature.id}`, {
+        capabilities,
+        compatibilityMap,
+        platformImplementations: feature.platform_implementations,
+        availableEnforcers: Array.from(availableEnforcers),
+        featureData: feature
+      });
+
+      if (availableEnforcers.size === 0) {
+        vaptLog.warn(`No enforcers found for feature ${feature.key || feature.id}`);
+      }
+
+      // 2. Filter by environment compatibility (only if we have valid capabilities)
+      // Define capability mapping outside the callback
+      const capabilityToMap = {
+        'php': 'php_functions',
+        'apache': 'apache_htaccess',
+        'nginx': 'nginx_config',
+        'cloudflare_proxy': 'cloudflare_edge',
+        'iis': 'iis_config',
+        'caddy': 'caddy_native',
+        'wordpress': 'php_functions',
+        'mod_rewrite': 'apache_htaccess',
+        'allowoverride': 'apache_htaccess',
+        // Add fallback mappings for all platform names
+        'nginx_config': 'nginx_config',
+        'apache_htaccess': 'apache_htaccess',
+        'iis_config': 'iis_config',
+        'php_functions': 'php_functions',
+        'cloudflare_edge': 'cloudflare_edge',
+        'server_cron': 'server_cron',
+        'caddy_native': 'caddy_native',
+        'fail2ban': 'fail2ban'
+      };
+
       const compatibleEnforcers = Array.from(availableEnforcers).filter(enf => {
+        // If no environment profile loaded, return ALL enforcers without filtering
+        if (!environmentProfile) {
+          return true;
+        }
+
         const enfLower = enf.toLowerCase();
         return Object.entries(capabilities).some(([cap, enabled]) => {
           if (!enabled) return false;
-          const compatibleList = compatibilityMap[cap] || [];
+
+          const mapKey = capabilityToMap[cap] || cap;
+          const platformConfig = compatibilityMap[mapKey];
+          if (!platformConfig) return false;
+          const compatibleList = platformConfig.enforcers || [];
           return compatibleList.some(c => c.toLowerCase() === enfLower);
         });
       });
 
-      return compatibleEnforcers;
+      vaptLog.log(`Compatible enforcers for ${feature.key || feature.id}:`, {
+        compatibleEnforcers,
+        environmentCapabilities: capabilities,
+        compatibilityMapKeys: Object.keys(compatibilityMap)
+      });
+
+      // 3. Auto-select optimal enforcer if none is currently selected
+      const currentEnforcer = feature.active_enforcer;
+      vaptLog.log(`Current enforcer for ${feature.key || feature.id}:`, currentEnforcer);
+
+      if (!currentEnforcer && compatibleEnforcers.length > 0) {
+        // Try to match optimal platform first
+        const optimalEnforcer = findOptimalEnforcer(compatibleEnforcers, optimal, compatibilityMap);
+        vaptLog.log(`Optimal enforcer for ${feature.key || feature.id}:`, optimalEnforcer);
+
+        if (optimalEnforcer) {
+          // Auto-select the optimal enforcer
+          return [optimalEnforcer];
+        }
+
+        // If no optimal match, select highest priority compatible enforcer
+        const highestPriorityEnforcer = getHighestPriorityEnforcer(compatibleEnforcers, compatibilityMap);
+        vaptLog.log(`Highest priority enforcer for ${feature.key || feature.id}:`, highestPriorityEnforcer);
+
+        if (highestPriorityEnforcer) {
+          return [highestPriorityEnforcer];
+        }
+      }
+
+      const result = compatibleEnforcers;
+      if (result.length === 0) {
+        vaptLog.warn(`No compatible enforcer found for ${feature.key || feature.id}`);
+      }
+      vaptLog.log(`Returning enforcers for ${feature.key || feature.id}:`, result);
+      return result;
+    };
+
+    /**
+     * Find the enforcer that matches the optimal platform
+     */
+    const findOptimalEnforcer = (compatibleEnforcers, optimalPlatform, compatibilityMap) => {
+      // Map optimal platform to capability names
+      const platformToCapability = {
+        'cloudflare_edge': 'cloudflare_edge',
+        'nginx_config': 'nginx_config',
+        'apache_htaccess': 'apache_htaccess',
+        'iis_config': 'iis_config',
+        'caddy_native': 'caddy_native',
+        'php_functions': 'php_functions',
+        'server_cron': 'server_cron',
+        'fail2ban': 'fail2ban'
+      };
+
+      const targetCapability = platformToCapability[optimalPlatform];
+      if (!targetCapability) return null;
+
+      const platformConfig = compatibilityMap[targetCapability];
+      if (!platformConfig) return null;
+
+      // Find enforcer that matches the optimal platform's enforcers
+      return compatibleEnforcers.find(enf => {
+        const enfLower = enf.toLowerCase();
+        return platformConfig.enforcers.some(e => e.toLowerCase() === enfLower);
+      });
+    };
+
+    /**
+     * Get the highest priority enforcer from compatible list
+     */
+    const getHighestPriorityEnforcer = (compatibleEnforcers, compatibilityMap) => {
+      let highestPriority = -1;
+      let selectedEnforcer = null;
+
+      compatibleEnforcers.forEach(enf => {
+        // Find which capability this enforcer belongs to
+        for (const [cap, config] of Object.entries(compatibilityMap)) {
+          if (config.enforcers && config.enforcers.some(e => e.toLowerCase() === enf.toLowerCase())) {
+            if (config.priority > highestPriority) {
+              highestPriority = config.priority;
+              selectedEnforcer = enf;
+            }
+            break;
+          }
+        }
+      });
+
+      return selectedEnforcer;
     };
 
     // Update columnOrder if new keys are found that aren't in there
@@ -5028,27 +5454,67 @@ window.vaptScriptLoaded = true;
                 )));
               } else if (col === 'enforcer') {
                 const choices = resolveEnforcer(f);
+                const isAutoSelected = !f.active_enforcer && choices.length > 0;
+                const current = f.active_enforcer || choices[0];
+
                 if (choices.length === 0) {
                   content = el('span', { style: { color: '#949494', fontStyle: 'italic' } }, '-');
                 } else if (choices.length === 1) {
-                  content = choices[0];
+                  content = el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                    choices[0],
+                    isAutoSelected && el('span', {
+                      title: __('Auto-selected based on environment compatibility and priority', 'vaptsecure'),
+                      style: {
+                        fontSize: '10px',
+                        color: '#2271b1',
+                        background: '#e7f3ff',
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        fontWeight: '500'
+                      }
+                    }, __('AUTO', 'vaptsecure'))
+                  ]);
                 } else {
-                  // Multiple choices - Radio Buttons
-                  const current = f.active_enforcer || choices[0];
-                  content = el('div', { className: 'vapt-enforcer-selector' }, choices.map(choice => el('label', { 
-                    key: choice, 
-                    style: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', marginBottom: '2px', cursor: 'pointer' } 
-                  }, [
-                    el('input', {
-                      type: 'radio',
-                      name: `enforcer-${f.key}`,
-                      value: choice,
-                      checked: current === choice,
-                      onChange: () => updateFeature(f.key || f.id, { active_enforcer: choice }),
-                      style: { margin: 0, width: '13px', height: '13px' }
-                    }),
-                    choice
-                  ])));
+                  // Multiple choices - Radio Buttons with priority indicators
+                  content = el('div', { className: 'vapt-enforcer-selector' }, choices.map(choice => {
+                    const isSelected = current === choice;
+                    const isAutoChoice = isAutoSelected && choice === choices[0];
+
+                    return el('label', {
+                      key: choice,
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '11px',
+                        marginBottom: '2px',
+                        cursor: 'pointer',
+                        background: isAutoChoice ? '#e7f3ff' : 'transparent',
+                        padding: '2px 4px',
+                        borderRadius: '3px'
+                      }
+                    }, [
+                      el('input', {
+                        type: 'radio',
+                        name: `enforcer-${f.key}`,
+                        value: choice,
+                        checked: isSelected,
+                        onChange: () => updateFeature(f.key || f.id, { active_enforcer: choice }),
+                        style: { margin: 0, width: '13px', height: '13px' }
+                      }),
+                      el('span', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                        choice,
+                        isAutoChoice && el('span', {
+                          title: __('Auto-selected: Best match for your environment', 'vaptsecure'),
+                          style: {
+                            fontSize: '9px',
+                            color: '#2271b1',
+                            fontWeight: '600'
+                          }
+                        }, '★')
+                      ])
+                    ]);
+                  }));
                 }
               } else if (typeof f[col] === 'object' && f[col] !== null) {
                 content = el('pre', { style: { fontSize: '10px', margin: 0, background: '#f0f0f0', padding: '4px', whiteSpace: 'pre-wrap' } }, JSON.stringify(f[col], null, 2));
@@ -5226,22 +5692,46 @@ window.vaptScriptLoaded = true;
     }, [fieldMapping]);
 
     const allKeys = useMemo(() => {
-      if (!features || features.length === 0) return [];
+      // Collect keys from multiple data sources
+      const sources = [];
+
+      // 1. Features data (existing source)
+      if (features && features.length > 0) {
+        sources.push(...features);
+      }
+
+      // 2. AI Agent Instructions (contains patterns, verification steps, etc.)
+      if (rootAiInstructions && Object.keys(rootAiInstructions).length > 0) {
+        sources.push(rootAiInstructions);
+      }
+
+      // 3. Global Settings (may contain operational context, verification steps)
+      if (rootGlobalSettings && Object.keys(rootGlobalSettings).length > 0) {
+        sources.push(rootGlobalSettings);
+      }
+
+      if (sources.length === 0) return [];
 
       const flattenKeys = (obj, prefix = '', depth = 0) => {
         let keys = [];
-        if (depth > 1) return keys; // Restrict nesting depth to keep dropdown clean
+        // Increase depth limit to 3 to capture deeper nested keys
+        // This allows us to get keys like patterns.RISK-001.wp_config.verification
+        if (depth > 3) return keys;
         for (const key in obj) {
           if (!obj.hasOwnProperty(key)) continue;
           const newKey = prefix ? `${prefix}.${key}` : key;
 
           if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
             const childKeys = flattenKeys(obj[key], newKey, depth + 1);
-            // Include parent nested keys? Let's include child keys primarily
+            // Include child keys
             if (childKeys.length > 0) keys = keys.concat(childKeys);
             // Also include the object key itself if it might be used directly
-            keys.push(newKey);
+            // But skip very generic keys like 'patterns' unless they have specific value
+            if (depth < 2 || !['patterns', 'enforcer_key_map', 'bundle_files'].includes(key)) {
+              keys.push(newKey);
+            }
           } else {
+            // For leaf values, include the key
             keys.push(newKey);
           }
         }
@@ -5249,12 +5739,26 @@ window.vaptScriptLoaded = true;
       };
 
       const keys = new Set();
-      features.forEach(f => {
-        const flat = flattenKeys(f);
+      sources.forEach(source => {
+        const flat = flattenKeys(source);
         flat.forEach(k => keys.add(k));
       });
+
+      // Add some common variations that might not be in the data
+      const additionalKeys = [
+        'operational_notes.context',
+        'testing.verification_steps',
+        'verification_steps',
+        'context',
+        'steps',
+        'verification',
+        'operational_context',
+        'implementation_context'
+      ];
+      additionalKeys.forEach(k => keys.add(k));
+
       return Array.from(keys).sort();
-    }, [features]);
+    }, [features, rootAiInstructions, rootGlobalSettings]);
 
     // Status Auto-clear helper
     useEffect(() => {
@@ -5265,7 +5769,7 @@ window.vaptScriptLoaded = true;
     }, [saveStatus]);
 
     const fetchData = (file = selectedFile, silent = false) => {
-      console.log('VAPT Secure: Fetching data for file:', file);
+      vaptLog.log('Fetching data for file:', file);
       if (!silent) setLoading(true);
       setSchema({ item_fields: [] }); // Clear previous schema while loading
 
@@ -5284,11 +5788,11 @@ window.vaptScriptLoaded = true;
           }
           return res;
         })
-        .catch(err => { console.error('VAPT Secure: Features fetch error:', err); return []; });
+        .catch(err => { vaptLog.error('Features fetch error:', err); return []; });
       const fetchDomains = apiFetch({ path: 'vaptsecure/v1/domains' })
-        .catch(err => { console.error('VAPT Secure: Domains fetch error:', err); return []; });
+        .catch(err => { vaptLog.error('Domains fetch error:', err); return []; });
       const fetchDataFiles = apiFetch({ path: 'vaptsecure/v1/data-files' })
-        .catch(err => { console.error('VAPT Secure: Data files fetch error:', err); return []; });
+        .catch(err => { vaptLog.error('Data files fetch error:', err); return []; });
 
       return Promise.all([fetchFeatures, fetchDomains, fetchDataFiles])
         .then(([res, domainData, files]) => {
@@ -5304,7 +5808,7 @@ window.vaptScriptLoaded = true;
           setLoading(false);
         })
         .catch((err) => {
-          console.error('VAPT Secure: Dashboard data fetch error:', err);
+          vaptLog.error('Dashboard data fetch error:', err);
           setError(sprintf(__('Critical error loading dashboard data: %s', 'vaptsecure'), err.message || 'Unknown error'));
           setLoading(false);
         });
@@ -5352,7 +5856,7 @@ window.vaptScriptLoaded = true;
         path: 'vaptsecure/v1/active-file',
         method: 'POST',
         data: { file: nextFileStr }
-      }).catch(err => console.error('Failed to sync active file:', err));
+      }).catch(err => vaptLog.error('Failed to sync active file:', err));
     };
 
     const updateFeature = (key, data) => {
@@ -5367,7 +5871,7 @@ window.vaptScriptLoaded = true;
       }).then(() => {
         setSaveStatus({ message: __('Saved', 'vaptsecure'), type: 'success' });
       }).catch(err => {
-        console.error('Update failed:', err);
+        vaptLog.error('Update failed:', err);
         const errMsg = err.message || (err.data && err.data.message) || err.error || __('Error saving!', 'vaptsecure');
         setSaveStatus({ message: errMsg, type: 'error' });
       });
@@ -5406,10 +5910,10 @@ window.vaptScriptLoaded = true;
           const schema = Generator.generate(feature.remediation, dev_instruct);
           if (schema) {
             updates.generated_schema = schema;
-            console.log('VAPT Secure: Auto-generated schema for ' + key, schema);
+            vaptLog.log('Auto-generated schema for ' + key, schema);
           }
         } catch (e) {
-          console.error('VAPT Secure: Generation error', e);
+          vaptLog.error('Generation error', e);
         }
       }
 
@@ -5499,7 +6003,7 @@ window.vaptScriptLoaded = true;
       }).then(() => {
         setSaveStatus({ message: __('Saved', 'vaptsecure'), type: 'success' });
       }).catch(err => {
-        console.error('Domain features update failed:', err);
+        vaptLog.error('Domain features update failed:', err);
         setSaveStatus({ message: __('Error saving!', 'vaptsecure'), type: 'error' });
       });
     };
@@ -5514,15 +6018,15 @@ window.vaptScriptLoaded = true;
         method: 'POST',
         body: formData,
       }).then((res) => {
-        console.log('VAPT Secure: JSON uploaded', res);
+        vaptLog.log('JSON uploaded', res);
         // Fetch fresh data (including file list) THEN update selection
         fetchData().then(() => { // Call fetchData without arguments to refresh all data, including dataFiles
           setSelectedFile(res.filename);
         });
       }).catch(err => {
-        console.error('VAPT Secure: Upload error full object:', JSON.stringify(err));
-        console.error('VAPT Secure: Upload error raw:', err);
-        console.error('VAPT Secure: Upload error keys:', Object.keys(err));
+        vaptLog.error('Upload error full object:', JSON.stringify(err));
+        vaptLog.error('Upload error raw:', err);
+        vaptLog.error('Upload error keys:', Object.keys(err));
         const errMsg = err.message || (err.data && err.data.message) || err.error || __('Error uploading JSON', 'vaptsecure');
         setAlertState({ message: errMsg });
         setLoading(false);
@@ -5607,7 +6111,7 @@ window.vaptScriptLoaded = true;
       const incRelease = overrides.includeRelease !== undefined ? overrides.includeRelease : includeRelease;
 
       setBatchRevertModal(prev => ({ ...(prev || {}), previewData: (prev ? prev.previewData : null), isLoading: true, isExecuting: false }));
-      
+
       apiFetch({
         path: 'vaptsecure/v1/features/preview-revert?include_broken=' + (incBroken ? '1' : '0') + '&include_release=' + (incRelease ? '1' : '0'),
         method: 'GET',
@@ -5892,14 +6396,14 @@ window.vaptScriptLoaded = true;
   const init = () => {
     const container = document.getElementById('vapt-admin-root');
     if (!container) {
-      console.debug('VAPT Secure: Root container #vapt-admin-root not found.');
+      vaptLog.debug('Root container #vapt-admin-root not found.');
       return;
     }
 
-    console.log('VAPT Secure: Starting React mount...');
+    vaptLog.log('Starting React mount...');
 
     if (typeof wp === 'undefined' || !wp.element) {
-      console.error('VAPT Secure: WordPress React environment (wp.element) missing!');
+      vaptLog.error('WordPress React environment (wp.element) missing!');
       container.innerHTML = '<div class="notice notice-error"><p>Error: WordPress React components failed to load. Please check plugin dependencies.</p></div>';
       return;
     }
@@ -5911,14 +6415,14 @@ window.vaptScriptLoaded = true;
       } else {
         wp.element.render(el(ErrorBoundary, null, el(VAPTAdmin)), container);
       }
-      console.log('VAPT Secure: React app mounted successfully.');
+      vaptLog.log('React app mounted successfully.');
 
       // Remove the loading notice if present
       const loadingNotice = container.querySelector('.notice-info');
       if (loadingNotice) loadingNotice.remove();
 
     } catch (err) {
-      console.error('VAPT Secure: Mounting exception:', err);
+      vaptLog.error('Mounting exception:', err);
       container.innerHTML = `<div class="notice notice-error"><p>Critical UI Mounting Error: ${err.message}</p></div>`;
     }
   };
@@ -5927,10 +6431,10 @@ window.vaptScriptLoaded = true;
   window.vaptInit = init;
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    console.log('VAPT Secure: Document ready, running init');
+    vaptLog.log('Document ready, running init');
     init();
   } else {
-    console.log('VAPT Secure: Waiting for DOMContentLoaded');
+    vaptLog.log('Waiting for DOMContentLoaded');
     document.addEventListener('DOMContentLoaded', init);
   }
 })();

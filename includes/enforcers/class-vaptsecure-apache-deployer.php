@@ -41,12 +41,22 @@ class VAPTSECURE_Apache_Deployer
         }
 
         $rules = trim($this->extract_rules($implementation));
+        
+        error_log("VAPT APACHE DEPLOYER: Extracted rules for {$risk_id}: " . strlen($rules) . " chars, enabled=" . ($is_enabled ? 'true' : 'false'));
     
         // 🛡️ SECURITY GUARD: Validate rules before writing (v4.0.1)
         $validation = $this->validate_rules($rules);
         if (is_wp_error($validation)) {
             error_log("VAPT: Rejecting deployment for $risk_id - " . $validation->get_error_message());
             return $validation;
+        }
+        
+        // [FIX v4.0.x] Skip writing if rules are empty - prevents empty markers
+        if (empty($rules)) {
+            error_log("VAPT APACHE DEPLOYER: No rules extracted for {$risk_id}, skipping write");
+            // Try to undeploy any existing rules for this risk_id
+            $this->undeploy($risk_id, $target);
+            return ['status' => 'skipped', 'platform' => 'apache_htaccess', 'reason' => 'no_rules_extracted'];
         }
     
         // If rules are empty and we are NOT enabled, it means we should undeploy
@@ -65,21 +75,82 @@ class VAPTSECURE_Apache_Deployer
     {
         // Try the standard format from platform_matrix
         if (isset($implementation['rules'])) {
-            return is_array($implementation['rules']) ? implode("\n", $implementation['rules']) : $implementation['rules'];
+            $rules = is_array($implementation['rules']) ? implode("\n", $implementation['rules']) : $implementation['rules'];
+        } elseif (isset($implementation['code'])) {
+            // 🛡️ Compatibility: Support 'code' field (v3.13.14)
+            $rules = is_array($implementation['code']) ? implode("\n", $implementation['code']) : $implementation['code'];
+        } elseif (class_exists('VAPTSECURE_Enforcer')) {
+            // Fallback to legacy extraction logic
+            $rules = VAPTSECURE_Enforcer::extract_code_from_mapping($implementation, 'htaccess');
+        } else {
+            $rules = '';
         }
 
-        // 🛡️ Compatibility: Support 'code' field (v3.13.14)
-        if (isset($implementation['code'])) {
-            return is_array($implementation['code']) ? implode("\n", $implementation['code']) : $implementation['code'];
-        }
+        // [GLOBAL FIX] Defensively wrap bare Header directives in <IfModule mod_headers.c>
+        // This prevents 500 Internal Server Errors when mod_headers is not loaded.
+        // The pattern library should already wrap these, but this is a safety net.
+        $rules = $this->ensure_ifmodule_header_wrapper($rules);
 
-        // Fallback to legacy extraction logic
-        if (class_exists('VAPTSECURE_Enforcer')) {
-            return VAPTSECURE_Enforcer::extract_code_from_mapping($implementation, 'htaccess');
-        }
-
-        return '';
+        return $rules;
     }
+
+    /**
+     * Wraps bare Apache `Header` directives in <IfModule mod_headers.c>.
+     * Safe to call multiple times — skips blocks already wrapped.
+     *
+     * @param  string $rules Raw .htaccess rules
+     * @return string        Rules with Header directives safely wrapped
+     */
+    private function ensure_ifmodule_header_wrapper($rules)
+    {
+        if (empty($rules)) {
+            return $rules;
+        }
+
+        // If already wrapped, don't double-wrap
+        if (stripos($rules, '<IfModule mod_headers') !== false) {
+            return $rules;
+        }
+
+        // Check if any bare Header directives exist
+        if (!preg_match('/^\s*Header\s+/im', $rules)) {
+            return $rules;
+        }
+
+        // Split into lines and group Header directives into a single IfModule block
+        $lines = explode("\n", $rules);
+        $header_lines = [];
+        $other_lines  = [];
+
+        foreach ($lines as $line) {
+            if (preg_match('/^\s*Header\s+/i', $line)) {
+                $header_lines[] = '    ' . trim($line);
+            } else {
+                // Flush collected header lines before adding this non-header line
+                if (!empty($header_lines)) {
+                    $other_lines[] = "<IfModule mod_headers.c>";
+                    foreach ($header_lines as $hl) {
+                        $other_lines[] = $hl;
+                    }
+                    $other_lines[] = "</IfModule>";
+                    $header_lines  = [];
+                }
+                $other_lines[] = $line;
+            }
+        }
+
+        // Flush any remaining header lines
+        if (!empty($header_lines)) {
+            $other_lines[] = "<IfModule mod_headers.c>";
+            foreach ($header_lines as $hl) {
+                $other_lines[] = $hl;
+            }
+            $other_lines[] = "</IfModule>";
+        }
+
+        return implode("\n", $other_lines);
+    }
+
 
     private function write_rules($risk_id, $rules, $is_enabled = true)
     {

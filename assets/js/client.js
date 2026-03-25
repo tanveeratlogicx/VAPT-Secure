@@ -1,7 +1,20 @@
 // Client Dashboard Entry Point
 // Phase 6 Implementation - IDE Workbench Redesign
+
+// Debug mode control - set to true to enable console logs for debugging
+var VAPT_DEBUG = window.VAPT_DEBUG || false;
+
+// Helper function for conditional logging
+var vaptLog = window.vaptLog || {
+  log: (...args) => VAPT_DEBUG && console.log('[VAPT]', ...args),
+  warn: (...args) => VAPT_DEBUG && console.warn('[VAPT]', ...args),
+  error: (...args) => console.error('[VAPT]', ...args), // Always show errors
+  debug: (...args) => VAPT_DEBUG && console.debug('[VAPT]', ...args),
+  info: (...args) => VAPT_DEBUG && console.info('[VAPT]', ...args)
+};
+
 (function () {
-  console.log('VAPT Secure: client.js loaded');
+  vaptLog.log('client.js loaded');
   if (typeof wp === 'undefined') return;
 
   const { render, useState, useEffect, useMemo, useRef, Fragment, createElement: el } = wp.element || {};
@@ -67,7 +80,7 @@
           consecutiveFailsRef.current = 0;
         })
         .catch(err => {
-          console.error('Failed to fetch security stats:', err);
+          vaptLog.error('Failed to fetch security stats:', err);
           consecutiveFailsRef.current++;
         });
 
@@ -79,18 +92,18 @@
           setLogsLoading(false);
         })
         .catch(err => {
-          console.error('Failed to fetch security logs:', err);
+          vaptLog.error('Failed to fetch security logs:', err);
           setLogsLoading(false);
           consecutiveFailsRef.current++;
         });
-      
+
       return true;
     };
 
     const fetchGlobalSettings = () => {
       apiFetch({ path: 'vaptsecure/v1/settings/enforcement' })
         .then(data => setGlobalProtection(data.enabled))
-        .catch(err => console.error('Failed to fetch global settings:', err));
+        .catch(err => vaptLog.error('Failed to fetch global settings:', err));
     };
 
     useEffect(() => {
@@ -102,11 +115,11 @@
       const interval = setInterval(() => {
         const keepPolling = fetchSecurityInsights();
         if (!keepPolling) {
-          console.warn('VAPT Secure: Background polling stopped due to consecutive network/REST errors.');
+          vaptLog.warn('Background polling stopped due to consecutive network/REST errors.');
           clearInterval(interval);
         }
       }, 30000);
-      
+
       return () => clearInterval(interval);
     }, []);
 
@@ -353,7 +366,7 @@
                 checked: globalProtection,
                 disabled: globalSaving,
                 onChange: (val) => {
-                  console.log('VAPT: Global Toggle (Optimistic):', val);
+                  vaptLog.log('Global Toggle (Optimistic):', val);
 
                   // Optimistic Update
                   const previousState = globalProtection;
@@ -365,12 +378,12 @@
                     method: 'POST',
                     data: { enabled: val }
                   }).then(res => {
-                    console.log('VAPT: Global Toggle Success:', res);
+                    vaptLog.log('Global Toggle Success:', res);
                     setSaveStatus({ message: __('Settings Saved', 'vaptsecure'), type: 'success' });
                     // Refresh data to show consistency
                     fetchData(true);
                   }).catch(err => {
-                    console.error('VAPT: Global Toggle Error:', err);
+                    vaptLog.error('Global Toggle Error:', err);
                     setGlobalProtection(previousState); // Revert on failure
                     setSaveStatus({ message: __('Failed to update protection', 'vaptsecure'), type: 'error' });
                   });

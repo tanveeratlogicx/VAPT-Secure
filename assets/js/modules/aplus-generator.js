@@ -130,20 +130,46 @@
 
             if (feature.platform_implementations) {
               const activeEnforcer = feature.active_enforcer;
-              const envProfile = window.vaptEnvironmentProfile; // Use global profile if available
+              const envProfile = window.vaptEnvironmentProfile;
+
+              // Normalize enforcer name for flexible matching
+              const normalizeEnforcerName = (name) => {
+                if (!name) return '';
+                const n = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                // Map variations to canonical names
+                if (n === 'htaccess' || n === 'apachehtaccess' || n === 'apache') return 'htaccess';
+                if (n === 'nginx' || n === 'nginxconfig') return 'nginx';
+                if (n === 'wpconfig' || n === 'wpconfigphp' || n === 'config') return 'wp_config';
+                if (n === 'phpfunctions' || n === 'phpheaders' || n === 'hook' || n === 'wordpress') return 'php_functions';
+                if (n === 'iis' || n === 'webconfig') return 'iis';
+                if (n === 'cloudflare') return 'cloudflare';
+                return n;
+              };
+
+              // Check if enforcer is compatible with environment capabilities
+              const isEnforcerCompatible = (key, capabilities) => {
+                if (!capabilities) return true; // No capabilities info, allow all
+                const normalizedKey = normalizeEnforcerName(key);
+                if (normalizedKey === 'htaccess' && capabilities.apache_with_htaccess) return true;
+                if (normalizedKey === 'nginx' && capabilities.nginx_with_config) return true;
+                if (normalizedKey === 'iis' && !capabilities.iis) return false;
+                if (normalizedKey === 'cloudflare' && !capabilities.cloudflare) return false;
+                // php_functions is universal (WordPress hooks)
+                if (normalizedKey === 'php_functions') return true;
+                return true; // Unknown enforcers allowed by default
+              };
 
               for (const [key, details] of Object.entries(feature.platform_implementations)) {
-                // Determine if this implementation is relevant to show in notes
                 let isRelevant = true;
-                
+
                 if (activeEnforcer) {
-                   // If user selected an enforcer, only show that one
-                   isRelevant = (key === activeEnforcer || (key === '.htaccess' && activeEnforcer === 'htaccess'));
+                  // Active enforcer set: ONLY show that specific enforcer
+                  const normalizedKey = normalizeEnforcerName(key);
+                  const normalizedActive = normalizeEnforcerName(activeEnforcer);
+                  isRelevant = (normalizedKey === normalizedActive);
                 } else if (envProfile && envProfile.capabilities) {
-                   // Otherwise, skip enforcers strictly incompatible with environment
-                   if (key === 'Nginx' && !envProfile.capabilities.nginx_with_config) isRelevant = false;
-                   if ((key === '.htaccess' || key === 'htaccess') && !envProfile.capabilities.apache_with_htaccess) isRelevant = false;
-                   if (key === 'fail2ban' && !envProfile.capabilities.fail2ban) isRelevant = false;
+                  // No active enforcer: filter by environment compatibility
+                  isRelevant = isEnforcerCompatible(key, envProfile.capabilities);
                 }
 
                 if (isRelevant) {
@@ -162,7 +188,13 @@
               ? `It modifies the following systems: ${platformTargetList.join(', ')}.`
               : "It leverages dynamic capabilities based on your runtime environment.";
 
-            return `${summaryText} \n\nImplementation Details: ${targetedSystems}`;
+            // Only show Implementation Details for superadmins (debugging purpose)
+            const isSuperAdmin = window.vaptSecureSettings && window.vaptSecureSettings.isSuper;
+            const implementationDetails = isSuperAdmin 
+              ? `\n\nImplementation Details: ${targetedSystems}` 
+              : '';
+
+            return `${summaryText}${implementationDetails}`;
           })()
         } : {}),
         controls: [
@@ -174,7 +206,7 @@
             html: (() => {
               const baseDesc = feature.summary || feature.description || `protection against ${title} based on your primary environment configuration`;
               const cleanedDesc = baseDesc.replace(/\.$/, '') + '.'; // Ensure it ends with exactly one period
-              
+
               let codePreview = '';
               if (feature.platform_implementations) {
                 const implEntries = Object.entries(feature.platform_implementations);
@@ -183,9 +215,9 @@
                   if (implDetails && (implDetails.code || implDetails.code_ref)) {
                     let previewTarget = implDetails.target_file || implTarget;
                     let previewCode = implDetails.code || 'Code snippet reference is loading...';
-                    
+
                     // Technical preview now strictly shows the exact target and code.
-                    
+
                     codePreview = `
                       <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; overflow-x: auto;">
                         <div style="font-weight: 600; color: #334155; margin-bottom: 6px;">Injecting into: <span style="font-family: monospace; color: #0ea5e9;">${previewTarget}</span></div>
@@ -220,7 +252,7 @@
           enforcement: (() => {
             const apacheRules = this.suggestApacheRules(feature);
             const isConfigBased = feature.key === 'RISK-001' || (feature.platform_implementations && (feature.platform_implementations['wp-config.php'] || feature.platform_implementations['wp_config']));
-            
+
             if (apacheRules && apacheRules.length > 10 && !isConfigBased) {
               return {
                 driver: "htaccess",
@@ -229,7 +261,7 @@
                 mappings: { feat_enabled: apacheRules }
               };
             }
-            
+
             // If it's RISK-001 or has wp-config implementation, use 'config' driver
             if (isConfigBased) {
               return {
@@ -254,10 +286,10 @@
 
     suggestApacheRules: function (feature) {
       const title = feature.label || feature.title || 'Feature';
-      
+
       // Extract the actual protection logic from multiple possible fields
       let ruleCode = '';
-      
+
       // Priority 1: Check remediation field (legacy/direct)
       if (feature.remediation) {
         ruleCode = feature.remediation
@@ -266,27 +298,27 @@
           .replace(/^#.*$/gm, '')
           .trim();
       }
-      
+
       // Priority 2: Check platform_implementations for .htaccess (interface_schema v2.0)
       if (!ruleCode && feature.platform_implementations) {
-        const htaccessImpl = feature.platform_implementations['.htaccess'] || 
-                            feature.platform_implementations['htaccess'] || 
-                            feature.platform_implementations['apache_htaccess'];
+        const htaccessImpl = feature.platform_implementations['.htaccess'] ||
+          feature.platform_implementations['htaccess'] ||
+          feature.platform_implementations['apache_htaccess'];
         if (htaccessImpl && htaccessImpl.code) {
           ruleCode = htaccessImpl.code;
         }
       }
-      
+
       // Priority 3: Check enforcement.mappings.feat_enabled (generated schema from workbench)
       if (!ruleCode && feature.enforcement && feature.enforcement.mappings) {
-        const mappingCode = feature.enforcement.mappings.feat_enabled || 
-                           feature.enforcement.mappings.rules || 
-                           feature.enforcement.mappings.code;
+        const mappingCode = feature.enforcement.mappings.feat_enabled ||
+          feature.enforcement.mappings.rules ||
+          feature.enforcement.mappings.code;
         if (mappingCode && typeof mappingCode === 'string' && mappingCode.includes('RewriteRule')) {
           ruleCode = mappingCode;
         }
       }
-      
+
       // If no valid rule code found after all checks, use placeholder
       if (!ruleCode || ruleCode.length < 10) {
         // Fallback: Try to construct from common patterns
@@ -296,23 +328,23 @@
           ruleCode = '<Files "xmlrpc.php">\n    Order Deny,Allow\n    Deny from all\n</Files>';
         }
       }
-      
+
       // Final fallback
       if (!ruleCode || ruleCode.length < 10) {
         ruleCode = '';
       }
-      
+
       return ruleCode;
     },
 
     suggestNginxRules: function (feature) {
       const title = feature.label || feature.title || 'Feature';
-      const ruleCode = (feature.remediation && feature.remediation.includes('return 403')) 
-        ? feature.remediation 
+      const ruleCode = (feature.remediation && feature.remediation.includes('return 403'))
+        ? feature.remediation
         : (feature.remediation || '');
 
       if (!ruleCode || ruleCode.length < 10) return '';
-      
+
       return `# VAPT Nginx Protection: ${title}\nif ($vapt_whitelist = 1) { set $vapt_block 0; }\n${ruleCode.trim()}\nif ($vapt_block = 1) {\n    return 403;\n}`;
     },
 
@@ -330,7 +362,7 @@
         test_logic: 'check_headers',
         test_config: {
           path: '/?vapt_header_check=1',
-          expected_headers: { 
+          expected_headers: {
             'x-vapt-enforced': 'htaccess|nginx|php-headers'
           }
         },
