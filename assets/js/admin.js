@@ -2888,69 +2888,93 @@ var vaptLog = window.vaptLog || {
           onRequestClose: () => setViewFeaturesModalOpen(false),
           style: { maxWidth: '1200px', width: '90%' }
         }, [
-          el('div', {
-            id: 'vapt-view-features-grid-wrap',
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '20px',
-              padding: '20px',
-              maxHeight: '70vh',
-              overflowY: 'auto'
-            }
-          },
-            (features || []).filter(f => (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key)).map(f =>
-              el(Card, {
-                key: f.key,
-                style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }
-              }, [
-                el(CardHeader, {
-                  style: {
-                    background: '#f8fafc',
-                    borderBottom: '1px solid #e2e8f0',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: '5px'
-                  }
-                }, [
-                  el('span', {
-                    style: {
-                      fontSize: '9px',
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      background: '#e2e8f0',
-                      color: '#475569'
-                    }
-                  }, f.category || 'General'),
-                  el('strong', { style: { fontSize: '13px', color: '#1e293b' } }, f.label)
-                ]),
-                el(CardBody, { style: { padding: '16px' } }, [
-                  el('div', { style: { marginBottom: '10px' } }, [
-                    el('span', {
+          (() => {
+            // Filter features to only show Release state features enabled for this domain
+            const releaseFeatures = (features || []).filter(f => {
+              // Check if feature is enabled for this domain
+              const isEnabledForDomain = (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key);
+              // Check if feature is in Release state (same logic as status display)
+              const isReleaseState = f.status && (
+                f.status === 'Release' ||
+                f.status === 'release' ||
+                f.status === 'implemented'
+              );
+              return isEnabledForDomain && isReleaseState;
+            });
+
+            return releaseFeatures.length > 0
+              ? el('div', {
+                id: 'vapt-view-features-grid-wrap',
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '20px',
+                  padding: '20px',
+                  maxHeight: '70vh',
+                  overflowY: 'auto'
+                }
+              },
+                releaseFeatures.map(f =>
+                  el(Card, {
+                    key: f.key,
+                    style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }
+                  }, [
+                    el(CardHeader, {
                       style: {
-                        display: 'inline-block',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '3px 8px',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
-                          (f.status === 'Test' || f.status === 'test') ? '#eab308' :
-                            (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        background: '#f8fafc',
+                        borderBottom: '1px solid #e2e8f0',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: '5px'
                       }
-                    }, f.status || 'Unknown')
-                  ]),
-                  el('p', { style: { fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.5' } }, f.description)
-                ])
-              ])
-            )
-          ),
+                    }, [
+                      el('span', {
+                        style: {
+                          fontSize: '9px',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: '#e2e8f0',
+                          color: '#475569'
+                        }
+                      }, f.category || 'General'),
+                      el('strong', { style: { fontSize: '13px', color: '#1e293b' } }, f.label)
+                    ]),
+                    el(CardBody, { style: { padding: '16px' } }, [
+                      el('div', { style: { marginBottom: '10px' } }, [
+                        el('span', {
+                          style: {
+                            display: 'inline-block',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
+                              (f.status === 'Test' || f.status === 'test') ? '#eab308' :
+                                (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                          }
+                        }, f.status || 'Unknown')
+                      ]),
+                      el('p', { style: { fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.5' } }, f.description)
+                    ])
+                  ])
+                )
+              )
+              : el('div', {
+                style: {
+                  padding: '40px 20px',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  fontSize: '14px'
+                }
+              }, __('No Release State features enabled for this domain.', 'vaptsecure'));
+          })(),
           el('div', { style: { marginTop: '20px', textAlign: 'right', borderTop: '1px solid #e2e8f0', paddingTop: '15px' } },
             el(Button, { isPrimary: true, onClick: () => setViewFeaturesModalOpen(false) }, __('Close', 'vaptsecure'))
           )
