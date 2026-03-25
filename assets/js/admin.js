@@ -2321,7 +2321,7 @@ var vaptLog = window.vaptLog || {
     const [newDomain, setNewDomain] = useState('');
     const [isWildcardNew, setIsWildcardNew] = useState(false);
     const [activeCategory, setActiveCategory] = useState('all');
-    const [statusFilters, setStatusFilters] = useState(['draft', 'develop', 'test', 'release']);
+    const [severityFilters, setSeverityFilters] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'domain', direction: 'asc' });
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editDomainData, setEditDomainData] = useState({ id: '', domain: '', is_wildcard: false, is_enabled: true });
@@ -2375,7 +2375,7 @@ var vaptLog = window.vaptLog || {
       });
     };
 
-    const filteredByStatus = useMemo(() => {
+    const filteredBySeverity = useMemo(() => {
       return (features || []).filter(f => {
         // 1. Inactive File Visibility Check (Superadmin)
         if (isSuper && !f.is_from_active_file) {
@@ -2383,22 +2383,67 @@ var vaptLog = window.vaptLog || {
           if (s === 'draft' || s === 'default' || !s) return false;
         }
 
+        // 2. Only show Release State features
         const s = f.status ? f.status.toLowerCase() : 'draft';
-        const normalized = (s === 'implemented') ? 'release' : s;
-        return (statusFilters || []).includes(normalized);
+        const normalizedStatus = (s === 'implemented') ? 'release' : s;
+        if (normalizedStatus !== 'release') return false;
+
+        // 3. Filter by severity level
+        let severityLevel = 'medium';
+        if (f.severity !== null && f.severity !== undefined) {
+          if (typeof f.severity === 'object' && f.severity.level !== undefined) {
+            severityLevel = f.severity.level.toLowerCase();
+          } else if (typeof f.severity === 'string') {
+            severityLevel = f.severity.toLowerCase();
+          }
+        }
+        return (severityFilters || []).includes(severityLevel);
       });
-    }, [features, statusFilters]);
+    }, [features, severityFilters]);
+
+    // Compute available severity levels from Release State features
+    const availableSeverityLevels = useMemo(() => {
+      const releaseStateFeatures = (features || []).filter(f => {
+        const s = f.status ? f.status.toLowerCase() : 'draft';
+        const normalizedStatus = (s === 'implemented') ? 'release' : s;
+        return normalizedStatus === 'release';
+      });
+
+      const severitySet = new Set();
+      releaseStateFeatures.forEach(f => {
+        let severityLevel = 'medium';
+        if (f.severity !== null && f.severity !== undefined) {
+          if (typeof f.severity === 'object' && f.severity.level !== undefined) {
+            severityLevel = f.severity.level.toLowerCase();
+          } else if (typeof f.severity === 'string') {
+            severityLevel = f.severity.toLowerCase();
+          }
+        }
+        severitySet.add(severityLevel);
+      });
+
+      // Return in a consistent order: critical, high, medium, low
+      const orderedSeverities = ['critical', 'high', 'medium', 'low'];
+      return orderedSeverities.filter(level => severitySet.has(level));
+    }, [features]);
+
+    // Sync severityFilters with availableSeverityLevels when modal opens
+    useEffect(() => {
+      if (isDomainModalOpen && availableSeverityLevels.length > 0) {
+        setSeverityFilters([...availableSeverityLevels]);
+      }
+    }, [isDomainModalOpen, availableSeverityLevels]);
 
     const categories = useMemo(() => {
-      const cats = [...new Set(filteredByStatus.map(f => f.category || 'Uncategorized'))].sort();
+      const cats = [...new Set(filteredBySeverity.map(f => f.category || 'Uncategorized'))].sort();
       return cats;
-    }, [filteredByStatus]);
+    }, [filteredBySeverity]);
 
     const displayFeatures = useMemo(() => {
-      const filtered = filteredByStatus || [];
+      const filtered = filteredBySeverity || [];
       if (activeCategory === 'all') return filtered;
       return filtered.filter(f => (f.category || 'Uncategorized') === activeCategory);
-    }, [filteredByStatus, activeCategory]);
+    }, [filteredBySeverity, activeCategory]);
 
     const featuresByCategory = useMemo(() => {
       const grouped = {};
@@ -2634,7 +2679,7 @@ var vaptLog = window.vaptLog || {
           className: 'vapt-domain-features-modal',
           style: { maxWidth: '1400px', width: '90%' }
         }, [
-          // Status Visibility Filters
+          // Severity Level Filters
           el('div', {
             style: {
               marginBottom: '20px',
@@ -2647,35 +2692,41 @@ var vaptLog = window.vaptLog || {
               gap: '20px'
             }
           }, [
-            el('span', { style: { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' } }, __('Status Visibility:')),
+            el('span', { style: { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' } }, __('Severity Level:')),
             el(Button, {
-              isPrimary: (statusFilters || []).length !== 4,
-              variant: (statusFilters || []).length === 4 ? 'secondary' : 'primary',
+              isPrimary: (severityFilters || []).length !== availableSeverityLevels.length,
+              variant: (severityFilters || []).length === availableSeverityLevels.length ? 'secondary' : 'primary',
               onClick: () => {
-                if ((statusFilters || []).length === 4) setStatusFilters([]);
-                else setStatusFilters(['draft', 'develop', 'test', 'release']);
+                if ((severityFilters || []).length === availableSeverityLevels.length) setSeverityFilters([]);
+                else setSeverityFilters([...availableSeverityLevels]);
               },
               style: {
                 fontWeight: 700,
                 padding: '8px 20px',
                 height: 'auto',
-                boxShadow: (statusFilters || []).length !== 4 ? '0 2px 4px rgba(34, 113, 177, 0.2)' : 'none'
+                boxShadow: (severityFilters || []).length !== availableSeverityLevels.length ? '0 2px 4px rgba(34, 113, 177, 0.2)' : 'none'
               }
-            }, (statusFilters || []).length === 4 ? __('Reset All Filters', 'vaptsecure') : __('Select All Statuses', 'vaptsecure')),
-            el('div', { style: { display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '2px solid #e2e8f0' } }, [
-              { label: __('Draft', 'vaptsecure'), value: 'draft' },
-              { label: __('Develop', 'vaptsecure'), value: 'develop' },
-              { label: __('Release', 'vaptsecure'), value: 'release' }
-            ].filter(o => o.value).map(opt => el(CheckboxControl, {
-              key: opt.value,
-              label: opt.label,
-              checked: statusFilters.includes(opt.value),
-              onChange: (val) => {
-                if (val) setStatusFilters([...statusFilters, opt.value]);
-                else if ((statusFilters || []).length > 1) setStatusFilters(statusFilters.filter(v => v !== opt.value));
-              },
-              __nextHasNoMarginBottom: true
-            })))
+            }, (severityFilters || []).length === availableSeverityLevels.length ? __('Reset All Filters', 'vaptsecure') : __('Select All Severities', 'vaptsecure')),
+            el('div', { style: { display: 'flex', gap: '15px', paddingLeft: '20px', borderLeft: '2px solid #e2e8f0' } },
+              availableSeverityLevels.map(level => {
+                const labelMap = {
+                  'critical': __('Critical', 'vaptsecure'),
+                  'high': __('High', 'vaptsecure'),
+                  'medium': __('Medium', 'vaptsecure'),
+                  'low': __('Low', 'vaptsecure')
+                };
+                return el(CheckboxControl, {
+                  key: level,
+                  label: labelMap[level] || level,
+                  checked: severityFilters.includes(level),
+                  onChange: (val) => {
+                    if (val) setSeverityFilters([...severityFilters, level]);
+                    else if ((severityFilters || []).length > 1) setSeverityFilters(severityFilters.filter(v => v !== level));
+                  },
+                  __nextHasNoMarginBottom: true
+                });
+              })
+            )
           ]),
 
           el('div', { style: { display: 'flex', gap: '0', height: '60vh', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' } }, [
@@ -2712,11 +2763,11 @@ var vaptLog = window.vaptLog || {
                   }
                 }, [
                   el('span', null, __('All Categories', 'vaptsecure')),
-                  el('span', { style: { fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: activeCategory === 'all' ? '#dbeafe' : '#f1f5f9' } }, (Array.isArray(filteredByStatus) ? filteredByStatus : []).length)
+                  el('span', { style: { fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: activeCategory === 'all' ? '#dbeafe' : '#f1f5f9' } }, (Array.isArray(filteredBySeverity) ? filteredBySeverity : []).length)
                 ]),
                 // Category Links
                 ...categories.map(cat => {
-                  const count = (Array.isArray(filteredByStatus) ? filteredByStatus : []).filter(f => (f.category || 'Uncategorized') === cat).length;
+                  const count = (Array.isArray(filteredBySeverity) ? filteredBySeverity : []).filter(f => (f.category || 'Uncategorized') === cat).length;
                   const isActive = activeCategory === cat;
                   return el('a', {
                     key: cat,
@@ -2837,69 +2888,93 @@ var vaptLog = window.vaptLog || {
           onRequestClose: () => setViewFeaturesModalOpen(false),
           style: { maxWidth: '1200px', width: '90%' }
         }, [
-          el('div', {
-            id: 'vapt-view-features-grid-wrap',
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '20px',
-              padding: '20px',
-              maxHeight: '70vh',
-              overflowY: 'auto'
-            }
-          },
-            (features || []).filter(f => (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key)).map(f =>
-              el(Card, {
-                key: f.key,
-                style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }
-              }, [
-                el(CardHeader, {
-                  style: {
-                    background: '#f8fafc',
-                    borderBottom: '1px solid #e2e8f0',
-                    padding: '12px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: '5px'
-                  }
-                }, [
-                  el('span', {
-                    style: {
-                      fontSize: '9px',
-                      fontWeight: 600,
-                      textTransform: 'uppercase',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      background: '#e2e8f0',
-                      color: '#475569'
-                    }
-                  }, f.category || 'General'),
-                  el('strong', { style: { fontSize: '13px', color: '#1e293b' } }, f.label)
-                ]),
-                el(CardBody, { style: { padding: '16px' } }, [
-                  el('div', { style: { marginBottom: '10px' } }, [
-                    el('span', {
+          (() => {
+            // Filter features to only show Release state features enabled for this domain
+            const releaseFeatures = (features || []).filter(f => {
+              // Check if feature is enabled for this domain
+              const isEnabledForDomain = (Array.isArray(viewFeaturesModalDomain.features) ? viewFeaturesModalDomain.features : []).includes(f.key);
+              // Check if feature is in Release state (same logic as status display)
+              const isReleaseState = f.status && (
+                f.status === 'Release' ||
+                f.status === 'release' ||
+                f.status === 'implemented'
+              );
+              return isEnabledForDomain && isReleaseState;
+            });
+
+            return releaseFeatures.length > 0
+              ? el('div', {
+                id: 'vapt-view-features-grid-wrap',
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '20px',
+                  padding: '20px',
+                  maxHeight: '70vh',
+                  overflowY: 'auto'
+                }
+              },
+                releaseFeatures.map(f =>
+                  el(Card, {
+                    key: f.key,
+                    style: { border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'sm' }
+                  }, [
+                    el(CardHeader, {
                       style: {
-                        display: 'inline-block',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        padding: '3px 8px',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
-                          (f.status === 'Test' || f.status === 'test') ? '#eab308' :
-                            (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        background: '#f8fafc',
+                        borderBottom: '1px solid #e2e8f0',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: '5px'
                       }
-                    }, f.status || 'Unknown')
-                  ]),
-                  el('p', { style: { fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.5' } }, f.description)
-                ])
-              ])
-            )
-          ),
+                    }, [
+                      el('span', {
+                        style: {
+                          fontSize: '9px',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: '#e2e8f0',
+                          color: '#475569'
+                        }
+                      }, f.category || 'General'),
+                      el('strong', { style: { fontSize: '13px', color: '#1e293b' } }, f.label)
+                    ]),
+                    el(CardBody, { style: { padding: '16px' } }, [
+                      el('div', { style: { marginBottom: '10px' } }, [
+                        el('span', {
+                          style: {
+                            display: 'inline-block',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            background: (f.status === 'Develop' || f.status === 'develop') ? '#10b981' :
+                              (f.status === 'Test' || f.status === 'test') ? '#eab308' :
+                                (f.status === 'Release' || f.status === 'release' || f.status === 'implemented') ? '#f97316' : '#94a3b8',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                          }
+                        }, f.status || 'Unknown')
+                      ]),
+                      el('p', { style: { fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.5' } }, f.description)
+                    ])
+                  ])
+                )
+              )
+              : el('div', {
+                style: {
+                  padding: '40px 20px',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  fontSize: '14px'
+                }
+              }, __('No Release State features enabled for this domain.', 'vaptsecure'));
+          })(),
           el('div', { style: { marginTop: '20px', textAlign: 'right', borderTop: '1px solid #e2e8f0', paddingTop: '15px' } },
             el(Button, { isPrimary: true, onClick: () => setViewFeaturesModalOpen(false) }, __('Close', 'vaptsecure'))
           )
