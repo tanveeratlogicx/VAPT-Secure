@@ -1248,11 +1248,11 @@ var vaptLog = window.vaptLog || {
 
           return el('div', {
             style: {
-              marginTop: '10px',
-              padding: '10px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '6px',
+              marginTop: '12px',
+              padding: '0',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '0',
               fontSize: '11px',
               color: '#334155',
               lineHeight: '1.4',
@@ -1260,13 +1260,13 @@ var vaptLog = window.vaptLog || {
               overflow: 'hidden'
             }
           }, [
-            el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' } }, [
+            el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' } }, [
               el(Icon, { icon: 'info', size: 12, style: { color: '#64748b', flexShrink: 0 } }),
-              el('strong', { style: { fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' } }, __('Verification Details', 'vaptsecure'))
+              el('strong', { style: { fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', fontWeight: '800' } }, __('Verification Details', 'vaptsecure'))
             ]),
-            el('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' } }, [
+            el('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px' } }, [
               // Row 1: URL span full width
-              el('div', { style: { padding: '8px 12px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' } }, [
+              el('div', { style: { padding: '4px 0', background: 'transparent', borderRadius: '0', border: 'none', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' } }, [
                 el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('URL:', 'vaptsecure')),
                 el('a', {
                   href: targetUrl,
@@ -1286,7 +1286,7 @@ var vaptLog = window.vaptLog || {
                 }, displayUrl || targetUrl)
               ]),
               // Row 2: Status, Toggle, Enforcement
-              el('div', { style: { padding: '8px 12px', background: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', color: '#475569' } }, [
+              el('div', { style: { padding: '4px 0', background: 'transparent', borderRadius: '0', border: 'none', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', color: '#475569' } }, [
                 // Status box
                 el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
                   el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Status:', 'vaptsecure')),
@@ -1454,6 +1454,7 @@ var vaptLog = window.vaptLog || {
   };
 
   const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, globalProtection = true, showTechnicalTrace = false, showVerificationDetails = true }) => {
+    const isWorkbench = window.location.search.includes('page=vaptsecure-workbench');
     vaptLog.log('GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
     let schema = useMemo(() => {
       if (!feature.generated_schema) return {};
@@ -1877,7 +1878,7 @@ var vaptLog = window.vaptLog || {
       }
     };
 
-    const verificationTypes = ['verification_action', 'automated_test', 'risk_indicators', 'assurance_badges'];
+    const verificationTypes = ['verification_action', 'automated_test', 'test_action', 'risk_indicators', 'assurance_badges'];
     const guideTypes = ['test_checklist', 'evidence_list', 'remediation_steps', 'evidence_uploader'];
 
     const mainControlsRaw = schema.controls.filter(c => {
@@ -1943,13 +1944,19 @@ var vaptLog = window.vaptLog || {
 
     const riskControls = schema.controls.filter(c => c.type === 'risk_indicators');
     const badgeControls = schema.controls.filter(c => c.type === 'assurance_badges');
-    const otherVerificationControls = schema.controls.filter(c =>
-      verificationTypes.includes(c.type) &&
-      c.type !== 'risk_indicators' &&
-      c.type !== 'assurance_badges' &&
-      c.type !== 'verification_action' &&
-      c.type !== 'automated_test'
-    );
+    const otherVerificationControls = schema.controls.filter(c => {
+      const isVerification = verificationTypes.includes(c.type);
+      if (!isVerification) return false;
+      
+      if (c.type === 'risk_indicators' || c.type === 'assurance_badges' || c.type === 'verification_action' || c.type === 'automated_test') {
+        return false;
+      }
+      
+      // 🛡️ Hide "Active Protection Probe" from Client Dashboard (v2.5.21)
+      if (!isWorkbench && c.key === 'verify_active_protection') return false;
+      
+      return true;
+    });
 
     const getBadgeIcon = (text) => {
       const t = (text || '').toString().toLowerCase();
@@ -1974,12 +1981,47 @@ var vaptLog = window.vaptLog || {
 
     let opNotes = feature.operational_notes || schema.operational_notes;
 
-    // 🛡️ Dynamically strip out legacy "Implementation Details" from DB payloads on Client Dashboard
-    const isWorkbench = window.location.search.includes('page=vaptsecure-workbench');
-    if (!isWorkbench && typeof opNotes === 'string') {
-      opNotes = opNotes.replace(/\n\n(<strong>)?Implementation Details:(<\/strong>)?.*$/i, '').trim();
-      opNotes = opNotes.replace(/Implementation Details: It modifies.*$/i, '').trim();
+    // 🛡️ Logic to handle "Implementation Details" visibility and styling (v2.5.19)
+    let processedNotes = opNotes;
+    let detailElement = null;
+    
+    if (typeof opNotes === 'string') {
+        const marker = 'Implementation Details:';
+        const markerIndex = opNotes.indexOf(marker);
+        
+        if (markerIndex !== -1) {
+            // Found implementation details
+            if (!isWorkbench) {
+                // Client Dashboard: Strip them out
+                processedNotes = opNotes.substring(0, markerIndex).trim().replace(/\n+$/, '');
+            } else {
+                // Workbench: Extract for styling and keep the rest as processedNotes
+                processedNotes = opNotes.substring(0, markerIndex).trim().replace(/\n+$/, '');
+                const detailContent = opNotes.substring(markerIndex + marker.length).trim();
+                
+                detailElement = el('div', {
+                    style: {
+                        marginTop: '14px',
+                        fontSize: '12px'
+                    }
+                }, [
+                    el('strong', {
+                        style: {
+                            fontWeight: '800',
+                            color: '#1e293b',
+                            textTransform: 'uppercase',
+                            fontSize: '10px',
+                            letterSpacing: '0.05em',
+                            display: 'block',
+                            marginBottom: '6px'
+                        }
+                    }, __('Implementation Details:', 'vaptsecure')),
+                    el('div', { style: { color: '#4b5563' } }, detailContent)
+                ]);
+            }
+        }
     }
+
     const protocolData = feature.manual_protocol || schema.manual_protocol;
 
     // 🛡️ Robust Protocol Parsing (v3.12.19)
@@ -2065,9 +2107,10 @@ var vaptLog = window.vaptLog || {
           el(Icon, { icon: 'info', size: 16 }),
           __('Business Impact & Security Benefit', 'vaptsecure')
         ]),
-        el('div', { style: { color: '#475569' } },
-          typeof opNotes === 'string' ? linkify(opNotes) : JSON.stringify(opNotes)
-        )
+        el('div', { style: { color: '#475569' } }, [
+          typeof processedNotes === 'string' ? linkify(processedNotes) : JSON.stringify(processedNotes),
+          detailElement
+        ])
       ]),
 
       // Functional Controls Panel

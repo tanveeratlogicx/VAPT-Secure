@@ -191,7 +191,7 @@
             // Only show Implementation Details for superadmins (debugging purpose)
             const isSuperAdmin = window.vaptSecureSettings && window.vaptSecureSettings.isSuper;
             const implementationDetails = isSuperAdmin 
-              ? `\n\n<strong>Implementation Details:</strong> ${targetedSystems}` 
+              ? `\n\nImplementation Details: ${targetedSystems}` 
               : '';
 
             return `${summaryText}${implementationDetails}`;
