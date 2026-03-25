@@ -422,6 +422,7 @@ class VAPTSECURE_REST
 
             $is_superadmin = is_vaptsecure_superadmin();
             $scope = $request->get_param('scope');
+            $severity_param = $request->get_param('severity');
 
             $features = [];
             $schema = [];
@@ -692,6 +693,21 @@ class VAPTSECURE_REST
                         if ($s === 'release') { return true; // Display all release features on the dashboard
                         }
                         return $is_superadmin && in_array($s, ['draft', 'develop', 'test']);
+                    }
+                );
+                $features = array_values($features);
+            }
+
+            // Apply severity filtering if severity parameter is provided
+            if (!empty($severity_param)) {
+                $severity_values = array_map('trim', explode(',', $severity_param));
+                $severity_values = array_map('strtolower', $severity_values);
+                
+                $features = array_filter(
+                    $features,
+                    function ($f) use ($severity_values) {
+                        $feature_severity = isset($f['severity']) ? strtolower($f['severity']) : 'medium';
+                        return in_array($feature_severity, $severity_values);
                     }
                 );
                 $features = array_values($features);
