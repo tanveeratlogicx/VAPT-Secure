@@ -78,7 +78,7 @@ class VAPTSECURE_Build
         self::generate_docs($plugin_dir, $domain, $version, $features);
 
         // 7. Create ZIP Archive
-        $zip_filename = "{$plugin_slug}-{$version}.zip";
+        $zip_filename = "{$plugin_slug}-{$domain}-{$version}.zip";
         $zip_path = $build_dir . '/' . $zip_filename;
 
         $zip = new ZipArchive();
