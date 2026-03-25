@@ -993,13 +993,36 @@ var vaptLog = window.vaptLog || {
       }
     }
 
+    // Format headers to appear on separate lines
+    if (typeof displayContent === 'string') {
+      // Ensure each header starts on a new line for clarity
+      // Match headers that might be concatenated without proper line breaks
+      const headerPatterns = [
+        'x-powered-by:', 'x-frame-options:', 'x-content-type-options:', 'x-xss-protection:',
+        'strict-transport-security:', 'content-security-policy:', 'referrer-policy:', 'permissions-policy:',
+        'server:', 'cache-control:', 'pragma:', 'expires:', 'vary:',
+        'access-control-allow-origin:', 'access-control-allow-methods:', 'access-control-allow-headers:',
+        'access-control-expose-headers:', 'access-control-max-age:', 'access-control-allow-credentials:',
+        'x-vapt-enforced:', 'x-vapt-feature:'
+      ];
+
+      // For each header pattern, ensure it's preceded by a newline if not already
+      headerPatterns.forEach(pattern => {
+        const regex = new RegExp(`([^\\n])\\s*(${pattern})`, 'gi');
+        displayContent = displayContent.replace(regex, '$1\n$2');
+      });
+
+      // Clean up multiple consecutive newlines
+      displayContent = displayContent.replace(/\n\s*\n/g, '\n').trim();
+    }
+
     // Auto-detect if content implies a directory listing
     const isDir = typeof displayContent === 'string' && (displayContent.includes('Index of /') || displayContent.includes('Parent Directory'));
     const isTrace = label === __('Verification Trace', 'vaptsecure');
     const displayLabel = isDir ? __('Directory Listing Exposed', 'vaptsecure') : label;
     const resolvedIcon = isTrace ? 'info' : 'media-code';
 
-    return (isTrace && typeof displayContent === 'string' && displayContent.startsWith('URL: ')) ? el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px' } }, [
+    return (isTrace && typeof displayContent === 'string' && displayContent.startsWith('URL: ')) ? el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', maxWidth: '100%', overflow: 'hidden' } }, [
       el(Tooltip, {
         text: el('div', { style: { textAlign: 'left', maxWidth: '300px' } }, [
           testContext ? el('div', { style: { marginBottom: '8px', lineHeight: '1.4' } }, testContext) : null,
@@ -1011,7 +1034,7 @@ var vaptLog = window.vaptLog || {
           el('span', { style: { color: '#94a3b8' } }, displayLabel)
         ])
       )
-    ]) : el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column' } }, [
+    ]) : el('div', { className: 'vapt-file-inspector', style: { marginTop: '10px', display: 'flex', flexDirection: 'column', maxWidth: '100%', overflow: 'hidden' } }, [
       el('div', { style: { fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' } }, [
         el(Icon, { icon: resolvedIcon, size: 14 }),
         displayLabel
@@ -1025,7 +1048,10 @@ var vaptLog = window.vaptLog || {
           padding: '10px',
           color: '#334155',
           fontFamily: 'monospace',
-          textAlign: 'left'
+          textAlign: 'left',
+          maxWidth: '100%',
+          overflow: 'hidden',
+          wordBreak: 'break-word'
         }
       }, displayContent.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         part.match(/^https?:\/\//)
@@ -1040,9 +1066,11 @@ var vaptLog = window.vaptLog || {
           borderRadius: '4px',
           padding: '10px',
           maxHeight: '200px',
+          maxWidth: '100%',
           overflow: 'auto',
           whiteSpace: 'pre-wrap',
-          color: '#334155'
+          color: '#334155',
+          wordBreak: 'break-word'
         }
       }, typeof displayContent === 'string' ? displayContent.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         part.match(/^https?:\/\//)
@@ -1058,7 +1086,7 @@ var vaptLog = window.vaptLog || {
    */
 
 
-  const TestRunnerControl = ({ control, featureData, featureKey, globalProtection }) => {
+  const TestRunnerControl = ({ control, featureData, featureKey, globalProtection, showTechnicalTrace = false, showVerificationDetails = true }) => {
     const [status, setStatus] = useState('idle');
     const [result, setResult] = useState(null);
     const [progress, setProgress] = useState(null);
@@ -1197,71 +1225,123 @@ var vaptLog = window.vaptLog || {
 
         el('div', { style: { fontSize: '13px', color: '#334155', lineHeight: '1.5', marginBottom: '12px', fontWeight: 500 } }, result.message),
 
-        // 🛡️ Technical Details: Clean, Collapsible (v3.4.0)
-        el('details', { style: { marginTop: '10px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '10px' } }, [
-          el('summary', {
+        // 🛡️ Clean Summary Display: URL, Status, Toggle, Enforcement (v3.4.0+)
+        showVerificationDetails && (typeof result.raw === 'string' && result.raw.includes('URL: ')) && (() => {
+          // Parse the raw string to extract key information
+          const urlMatch = result.raw.match(/URL:\s*([^\s|]+)/i);
+          const statusMatch = result.raw.match(/Status:\s*([^\s|]+)/i);
+          const toggleMatch = result.raw.match(/Toggle:\s*([^\s|]+)/i);
+          const enforcementMatch = result.raw.match(/Enforcement:\s*([^\s|]+)/i);
+
+          const targetUrl = urlMatch ? urlMatch[1].trim() : '';
+          const status = statusMatch ? statusMatch[1].trim() : '';
+          const toggle = toggleMatch ? toggleMatch[1].trim() : '';
+          const enforcement = enforcementMatch ? enforcementMatch[1].trim() : '';
+
+          const displayUrl = (() => {
+            try {
+              return new URL(targetUrl).hostname;
+            } catch (e) {
+              return targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            }
+          })();
+
+          return el('div', {
             style: {
+              marginTop: '10px',
+              padding: '10px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '6px',
               fontSize: '11px',
-              fontWeight: 700,
-              color: '#64748b',
-              cursor: 'pointer',
-              listStyle: 'none',
-              outline: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
+              color: '#334155',
+              lineHeight: '1.4',
+              maxWidth: '100%',
+              overflow: 'hidden'
             }
           }, [
-            el(Icon, { icon: 'editor-code', size: 14 }),
-            __('Technical Trace', 'vaptsecure')
-          ]),
-
-          el('div', { style: { marginTop: '10px', padding: '10px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' } }, [
-            (typeof result.raw === 'string' && result.raw.includes('URL: ')) && (() => {
-              // Extract URL from raw result and make it clickable
-              const urlMatch = result.raw.match(/URL:\s*([^\s|]+)/i);
-              const targetUrl = urlMatch ? urlMatch[1].trim() : '';
-              const displayUrl = targetUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-
-              // 🛡️ Restrict Internal Signal IDs (v3.13.20+)
-              let finalRaw = result.raw;
-              const isSuperAdmin = window.vaptSecureSettings && window.vaptSecureSettings.isSuper;
-              if (!isSuperAdmin) {
-                // Safely remove any x-vapt-feature data from the trace blob
-                finalRaw = finalRaw.replace(/(?:^|\n|\|?\s*)x-vapt-feature:[^\n]*(?=\n|$)/gi, '');
-                // Handle cases where it is dumped as Active Features: X (v2.4 legacy)
-                finalRaw = finalRaw.replace(/(?:^|\n|\|?\s*)[Aa]ctive\s+[Ff]eatures?:[^\n]*(?=\n|$)/gi, '');
-              }
-
-              return el('div', { style: { fontSize: '11px', marginBottom: '8px', color: '#64748b' } }, [
-                el('strong', { style: { color: '#475569' } }, 'Target: '),
+            el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' } }, [
+              el(Icon, { icon: 'info', size: 12, style: { color: '#64748b', flexShrink: 0 } }),
+              el('strong', { style: { fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' } }, __('Verification Details', 'vaptsecure'))
+            ]),
+            el('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' } }, [
+              // Row 1: URL span full width
+              el('div', { style: { padding: '8px 12px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' } }, [
+                el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('URL:', 'vaptsecure')),
                 el('a', {
                   href: targetUrl,
                   target: '_blank',
                   rel: 'noopener noreferrer',
                   style: {
                     color: '#0284c7',
-                    textDecoration: 'underline',
-                    textDecorationColor: '#0ea5e9',
-                    textUnderlineOffset: '2px'
+                    textDecoration: 'none',
+                    fontWeight: '700',
+                    wordBreak: 'break-all',
+                    fontSize: '11px'
                   },
                   onClick: (e) => {
                     e.stopPropagation();
                     window.open(targetUrl, '_blank');
                   }
-                }, displayUrl),
-                el('pre', { style: { margin: '4px 0 0', padding: '8px', background: 'white', borderRadius: '4px', overflowX: 'auto', border: '1px solid #f1f5f9', fontSize: '10px' } }, finalRaw)
-              ]);
-            })(),
-
-            result.meta && el('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' } }, [
-              el('div', { style: { color: '#059669', background: '#ecfdf5', padding: '4px 8px', borderRadius: '4px' } }, [__('Accepted: '), el('strong', null, result.meta.accepted)]),
-              el('div', { style: { color: '#dc2626', background: '#fef2f2', padding: '4px 8px', borderRadius: '4px' } }, [__('Blocked: '), el('strong', null, result.meta.blocked)]),
-              el('div', { style: { color: '#64748b', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' } }, [__('Errors: '), el('strong', null, result.meta.errors)]),
-              el('div', { style: { color: '#64748b', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px' } }, [__('Total: '), el('strong', null, result.meta.total)])
+                }, displayUrl || targetUrl)
+              ]),
+              // Row 2: Status, Toggle, Enforcement
+              el('div', { style: { padding: '8px 12px', background: '#ffffff', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', color: '#475569' } }, [
+                // Status box
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                  el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Status:', 'vaptsecure')),
+                  el('span', {
+                    style: {
+                      color: status === '200' ? '#059669' : '#dc2626',
+                      fontWeight: '700'
+                    }
+                  }, status)
+                ]),
+                // Separator
+                el('span', { style: { color: '#cbd5e1' } }, '|'),
+                // Toggle box
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                  el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Toggle:', 'vaptsecure')),
+                  el('span', {
+                    style: {
+                      color: toggle === 'ON' ? '#059669' : '#dc2626',
+                      fontWeight: '700'
+                    }
+                  }, toggle)
+                ]),
+                // Enforcement conditionally generated
+                enforcement ? el('span', { style: { color: '#cbd5e1' } }, '|') : null,
+                enforcement ? el('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+                  el('span', { style: { color: '#64748b', fontWeight: '600' } }, __('Enforcement:', 'vaptsecure')),
+                  el('span', {
+                    style: {
+                      color: enforcement.includes('php') ? '#7c3aed' : '#0284c7',
+                      fontWeight: '700',
+                      background: enforcement.includes('php') ? '#f5f3ff' : '#f0f9ff',
+                      padding: '1px 4px',
+                      borderRadius: '3px'
+                    }
+                  }, enforcement)
+                ]) : null
+              ])
             ])
-          ])
-        ]),
+          ]);
+        })(),
+
+        // Technical Trace section (restored for workbench)
+        showTechnicalTrace && result.raw && el('div', {
+          style: {
+            maxWidth: '100%',
+            overflow: 'hidden',
+            marginTop: '10px',
+            borderTop: '1px solid #e2e8f0',
+            paddingTop: '10px'
+          }
+        }, el(FileInspector, {
+          content: result.raw,
+          label: __('Technical Trace', 'vaptsecure'),
+          testContext: control.test_logic
+        })),
 
         // v3.5.2: Multiple Evidence Gallery Renderer (v3.13.16 Safety Fix)
         (result.screenshot_paths || (result.meta && result.meta.screenshot_paths)) &&
@@ -1373,7 +1453,7 @@ var vaptLog = window.vaptLog || {
     ]);
   };
 
-  const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, globalProtection = true }) => {
+  const GeneratedInterface = ({ feature, onUpdate, isGuidePanel = false, hideMonitor = false, hideOpNotes = false, hideProtocol = false, globalProtection = true, showTechnicalTrace = false, showVerificationDetails = true }) => {
     vaptLog.log('GeneratedInterface Render:', { key: feature?.key, controls: feature?.generated_schema?.controls, isGuidePanel });
     let schema = useMemo(() => {
       if (!feature.generated_schema) return {};
@@ -1451,7 +1531,7 @@ var vaptLog = window.vaptLog || {
 
       switch (type) {
         case 'test_action':
-          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection: globalProtection });
+          return el(TestRunnerControl, { key: uniqueKey, control, featureData: currentData, featureKey: feature.key || feature.id, globalProtection: globalProtection, showTechnicalTrace: showTechnicalTrace, showVerificationDetails: showVerificationDetails });
 
         case 'button':
           return el('div', { key: uniqueKey, style: { marginBottom: '15px' } }, [
@@ -1892,7 +1972,14 @@ var vaptLog = window.vaptLog || {
 
     const metadata = schema.metadata || {};
 
-    const opNotes = feature.operational_notes || schema.operational_notes;
+    let opNotes = feature.operational_notes || schema.operational_notes;
+
+    // 🛡️ Dynamically strip out legacy "Implementation Details" from DB payloads on Client Dashboard
+    const isWorkbench = window.location.search.includes('page=vaptsecure-workbench');
+    if (!isWorkbench && typeof opNotes === 'string') {
+      opNotes = opNotes.replace(/\n\n(<strong>)?Implementation Details:(<\/strong>)?.*$/i, '').trim();
+      opNotes = opNotes.replace(/Implementation Details: It modifies.*$/i, '').trim();
+    }
     const protocolData = feature.manual_protocol || schema.manual_protocol;
 
     // 🛡️ Robust Protocol Parsing (v3.12.19)
