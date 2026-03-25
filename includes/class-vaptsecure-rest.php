@@ -1479,7 +1479,17 @@ class VAPTSECURE_REST
 
         foreach ($domains as &$domain) {
             $domain_id = $domain['id'];
-            $feat_rows = $wpdb->get_results($wpdb->prepare("SELECT feature_key FROM {$wpdb->prefix}vaptsecure_domain_features WHERE domain_id = %d AND enabled = 1", $domain_id), ARRAY_N);
+            // Only get features that are in Release state
+            $feat_rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT df.feature_key
+                 FROM {$wpdb->prefix}vaptsecure_domain_features df
+                 INNER JOIN {$wpdb->prefix}vaptsecure_feature_status fs
+                 ON df.feature_key = fs.feature_key
+                 WHERE df.domain_id = %d
+                 AND df.enabled = 1
+                 AND fs.status = 'Release'",
+                $domain_id
+            ), ARRAY_N);
             $domain['features'] = array_column($feat_rows, 0);
             $domain['imported_at'] = get_option('vaptsecure_imported_at_' . $domain['domain'], null);
         }
