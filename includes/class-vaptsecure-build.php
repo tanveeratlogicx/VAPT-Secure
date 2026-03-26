@@ -180,6 +180,16 @@ class VAPTSECURE_Build
                 }
             }
 
+            // Exclude test files (files starting with "test-")
+            if (strpos($filename, 'test-') === 0) {
+                continue;
+            }
+
+            // Exclude domain-specific configuration files (vapt-*-config-*.php)
+            if (preg_match('/^vapt-.*-config-.*\.php$/i', $filename)) {
+                continue;
+            }
+
             if ($item->isDir()) {
                 if (!file_exists($dest . DIRECTORY_SEPARATOR . $subPath)) {
                     mkdir($dest . DIRECTORY_SEPARATOR . $subPath);
