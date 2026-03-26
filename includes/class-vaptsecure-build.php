@@ -126,10 +126,32 @@ class VAPTSECURE_Build
             RecursiveIteratorIterator::SELF_FIRST
         );
 
-        $exclusions = ['.git', '.vscode', 'node_modules', 'brain', 'tests', 'vapt-debug.txt', 'Implementation Plan'];
+        // Core exclusions - development and testing files
+        $exclusions = [
+            '.git', '.vscode', 'node_modules', 'brain', 'tests', 'vapt-debug.txt',
+            'Implementation Plan', 'plans', 'tools', 'archive', 'Debug', 'backup_debug_cleanup',
+            // AI/Agent configuration directories
+            '.ai', '.roo', '.claude', '.cursor', '.gemini', '.kilocode', '.qoder', '.trae',
+            '.windsurf', '.opencode', '.agent', '.kilo',
+            // Specific AI subdirectories
+            '.ai/workflows', '.ai/skills', '.ai/rules',
+            '.claude/skills', '.cursor/skills', '.gemini/antigravity/skills',
+            '.kilocode/rules', '.qoder/skills', '.trae/skills', '.windsurf/skills',
+            '.roo/rules', '.roo/skills',
+            // Deployment directory
+            'deployment'
+        ];
+
+        // Documentation files to exclude (keep only README.md and How to User.md)
+        $doc_exclusions = [
+            'CLAUDE.md', 'DEBUG-MODE.md', 'VERSION_HISTORY.md', 'SOUL.md', 'SOUL_Claude-Notes.md',
+            'SOUL_comprehensive.md', 'SOUL_enhanced.md', 'SOUL_with_selfcheck.md', 'SOUL-Claude-Ext.md',
+            'SOUL-Claude.md', 'AGENTS.md', 'README-Claude-Ext.md'
+        ];
 
         foreach ($iterator as $item) {
             $subPath = $iterator->getSubPathName();
+            $filename = basename($subPath);
 
             // Check Exclusions
             foreach ($exclusions as $exclude) {
@@ -146,6 +168,17 @@ class VAPTSECURE_Build
                 }
             }
 
+            // Exclude documentation files (except README.md and How to User.md)
+            if (in_array($filename, $doc_exclusions, true)) {
+                continue;
+            }
+
+            // Special case: exclude .md files in root except README.md and "How to User.md"
+            if (strpos($subPath, '.md') !== false && strpos($subPath, '/') === false && strpos($subPath, '\\') === false) {
+                if ($filename !== 'README.md' && $filename !== 'How to User.md') {
+                    continue;
+                }
+            }
 
             if ($item->isDir()) {
                 if (!file_exists($dest . DIRECTORY_SEPARATOR . $subPath)) {

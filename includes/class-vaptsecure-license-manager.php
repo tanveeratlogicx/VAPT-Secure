@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) { exit; }
 class VAPTSECURE_License_Manager
 {
     const CACHE_PREFIX = 'vaptsecure_license_cache_';
-    const GRACE_PERIOD = 86400; // 24 hours in seconds
+    const GRACE_PERIOD = 1296000; // 15 days in seconds (15 * 24 * 60 * 60)
     const CACHE_DURATION = 30 * DAY_IN_SECONDS; // 30 days
 
     /**
