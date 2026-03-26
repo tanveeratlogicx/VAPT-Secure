@@ -47,7 +47,10 @@ wp-config.php
 # uncomment the next line
 #/wp-content/themes
 
-vapt-debug.txt
+/vapt-debug.txt
+/test-*.php
+/test-*.txt
+/debug-*
 .git_vapt-secure/COMMIT_EDITMSG
 .git_vapt-secure/config
 .git_vapt-secure/description

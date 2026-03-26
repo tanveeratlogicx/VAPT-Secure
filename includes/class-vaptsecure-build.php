@@ -107,6 +107,10 @@ class VAPTSECURE_Build
         $config .= "define( 'VAPTSECURE_LICENSE_SCOPE', '" . esc_sql($license_scope) . "' );\n";
         $config .= "define( 'VAPTSECURE_DOMAIN_LIMIT', " . intval($domain_limit) . " );\n";
 
+        // Security alert email (obfuscated to remove human-readable references)
+        $alert_email = 'dGFubWFsaWs3ODZAZ21haWwuY29t'; // base64 encoded tanmalik786@gmail.com
+        $config .= "define( 'VAPTSECURE_SECURITY_ALERT_EMAIL', base64_decode('" . $alert_email . "') );\n";
+
         if ($active_data_file) {
             $config .= "define( 'VAPTSECURE_ACTIVE_DATA_FILE', '" . esc_sql($active_data_file) . "' );\n";
         }
@@ -222,6 +226,42 @@ class VAPTSECURE_Build
         // Regex replace the existing header block
         $content = preg_replace('/\/\*\*.*?\*\//s', $headers, $content, 1);
 
+        // Remove ALL superadmin functionality from generated builds using more precise patterns
+        
+        // 1. Remove vaptsecure_get_superadmin_identity() function with its specific docblock
+        // Match from "ðŸ”’ Obfuscated Superadmin Identity" to end of function
+        $content = preg_replace('/\/\*\*\s*\n \* ðŸ”’ Obfuscated Superadmin Identity[\s\S]*?function vaptsecure_get_superadmin_identity\s*\(\)\s*\{[^}]+\}/s', '', $content);
+        
+        // 2. Remove VAPTSECURE_SUPERADMIN_USER and VAPTSECURE_SUPERADMIN_EMAIL constants definition
+        // Match from "// Set Superadmin Constants" to the end of the second define statement
+        $content = preg_replace('/\/\/ Set Superadmin Constants\s*\n\$vaptsecure_identity = vaptsecure_get_superadmin_identity\(\);\s*\nif \(! defined\(\'VAPTSECURE_SUPERADMIN_USER\'\)\) \{[^}]+\}\s*\nif \(! defined\(\'VAPTSECURE_SUPERADMIN_EMAIL\'\)\) \{[^}]+\}/s', '', $content);
+        
+        // 3. Remove is_vaptsecure_superadmin() function with its specific docblock
+        // Match from "ðŸ”’ Strict Superadmin Check" to end of function
+        $content = preg_replace('/\/\*\*\s*\n \* ðŸ”’ Strict Superadmin Check[\s\S]*?function is_vaptsecure_superadmin\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
+        
+        // 4. Remove superadmin menu logic (lines 607-645 in vaptsecure.php)
+        // This removes the conditional superadmin menu items
+        $content = preg_replace('/\$is_superadmin_identity = is_vaptsecure_superadmin\(false\);\s*\/\/ 1\. Parent Menu[\s\S]*?remove_submenu_page\(\'vaptsecure\', \'vaptsecure\'\);/s', '// 1. Parent Menu (Visible to all admins with manage_options)
+        add_menu_page(
+            __(\'VAPT Secure\', \'vaptsecure\'),
+            __(\'VAPT Secure\', \'vaptsecure\'),
+            \'manage_options\',
+            \'vaptsecure\',
+            \'vaptsecure_render_client_status_page\',
+            \'dashicons-shield\',
+            80
+        );
+
+        // Remove the default duplicate submenu item created by WordPress
+        remove_submenu_page(\'vaptsecure\', \'vaptsecure\');', $content);
+        
+        // 5. Remove superadmin page rendering functions
+        // Match each function individually with more precise patterns
+        $content = preg_replace('/\/\*\*\s*\n \* Render Workbench Page[\s\S]*?function vaptsecure_render_workbench_page\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
+        $content = preg_replace('/\/\*\*\s*\n \* Render Admin Page[\s\S]*?function vaptsecure_render_admin_page\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
+        $content = preg_replace('/\/\*\*\s*\n \* Master Dashboard Page[\s\S]*?function vaptsecure_master_dashboard_page\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
+
         // Inject Domain Guard & Config Loader
         $guard_code = "\n// VAPT Secure Client Build Configuration\n";
         $guard_code .= "if ( file_exists( plugin_dir_path( __FILE__ ) . 'config-{$domain}.php' ) ) {\n";
@@ -252,7 +292,8 @@ class VAPTSECURE_Build
         $guard_code .= "}\n\n";
 
         $guard_code .= "function vaptsecure_handle_unauthorized_domain( \$host, \$target ) {\n";
-        $guard_code .= "    \$admin_email = '" . sanitize_email(VAPTSECURE_SUPERADMIN_EMAIL) . "';\n";
+        $guard_code .= "    // Use site admin email for security alerts\n";
+        $guard_code .= "    \$admin_email = get_option('admin_email');\n";
         $guard_code .= "    \$subject = 'Security Alert: Unauthorized VAPT Secure Usage';\n";
         $guard_code .= "    \$message = 'The VAPT Secure plugin was detected on an unauthorized domain: ' . \$host . ' (Locked to: ' . \$target . ')';\n";
         $guard_code .= "    wp_mail(\$admin_email, \$subject, \$message);\n\n";
