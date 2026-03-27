@@ -225,6 +225,25 @@ class VAPTSECURE_REST
             'methods'  => 'POST',
             'callback' => array($this, 'generate_build'),
             'permission_callback' => array($this, 'check_permission'),
+            'args' => array(
+                'installation_limit' => array(
+                    'type' => 'integer',
+                    'default' => 1,
+                    'sanitize_callback' => 'absint',
+                ),
+                'license_scope' => array(
+                    'type' => 'string',
+                    'default' => 'single',
+                ),
+                'include_config' => array(
+                    'type' => 'boolean',
+                    'default' => true,
+                ),
+                'include_data' => array(
+                    'type' => 'boolean',
+                    'default' => false,
+                ),
+            ),
             )
         );
 

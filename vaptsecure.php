@@ -52,7 +52,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-define('VAPTSECURE_VERSION', '2.6.0');
+define('VAPTSECURE_VERSION', '2.6.1');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
