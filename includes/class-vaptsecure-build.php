@@ -140,6 +140,7 @@ class VAPTSECURE_Build
         // Core exclusions - development and testing files
         $exclusions = [
             '.git', '.vscode', 'node_modules', 'brain', 'tests', 'vapt-debug.txt',
+            '.clinerules', 'null',
             'Implementation Plan', 'plans', 'tools', 'archive', 'Debug', 'backup_debug_cleanup',
             // AI/Agent configuration directories
             '.ai', '.roo', '.claude', '.cursor', '.gemini', '.kilocode', '.qoder', '.trae',
@@ -187,12 +188,12 @@ class VAPTSECURE_Build
                         strpos($subPath, 'data/' . $active_data_file) !== false) {
                         $active_file_allowed = true;
                     }
-                    // Allow top-level JSON files in data folder (files with exactly one slash)
+                    // Allow top-level non-ZIP files in data folder (files with exactly one slash)
                     elseif ((strpos($subPath, 'data/') === 0 || strpos($subPath, 'data\\') === 0) &&
                              (substr_count($subPath, '/') === 1 || substr_count($subPath, '\\') === 1) &&
                              !$item->isDir()) {
-                        // Check if it's a JSON file (not ZIP)
-                        if (preg_match('/\.json$/i', $filename)) {
+                        // Allow all files except ZIP
+                        if (!preg_match('/\.zip$/i', $filename)) {
                             $active_file_allowed = true;
                         }
                     }
@@ -202,8 +203,8 @@ class VAPTSECURE_Build
                         if ($item->isDir()) {
                             $active_file_allowed = true;
                         }
-                        // Allow JSON template files in Enforcers
-                        elseif (preg_match('/\.json$/i', $filename)) {
+                        // Allow all files except ZIP in Enforcers
+                        elseif (!preg_match('/\.zip$/i', $filename)) {
                             $active_file_allowed = true;
                         }
                     }
