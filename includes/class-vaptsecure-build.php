@@ -64,11 +64,12 @@ class VAPTSECURE_Build
         }
 
         // 3. Full Build: Copy Plugin Files Recursively
-        self::copy_plugin_files(VAPTSECURE_PATH, $plugin_dir, $active_data_file_name);
+        self::copy_plugin_files(VAPTSECURE_PATH, $plugin_dir, $active_data_file_name, $generate_type, $data);
 
         // 4. Inject Config File (If Requested)
         if (!isset($data['include_config']) || $data['include_config'] === true || $data['include_config'] === 'true' || $data['include_config'] === 1) {
-            file_put_contents($plugin_dir . "/config-{$domain}.php", $config_content);
+            $config_filename = "vapt-{$domain}-config-{$version}.php";
+            file_put_contents($plugin_dir . "/" . $config_filename, $config_content);
         }
 
         // 5. Rewrite Main Plugin File Headers & Logic
@@ -119,12 +120,18 @@ class VAPTSECURE_Build
         return $config;
     }
 
-    private static function copy_plugin_files($source, $dest, $active_data_file = null)
+    private static function copy_plugin_files($source, $dest, $active_data_file = null, $generate_type = 'full_build', $build_data = [])
     {
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::SELF_FIRST
         );
+
+        // Determine if config should be included
+        $include_config = isset($build_data['include_config']) &&
+                          ($build_data['include_config'] === true ||
+                           $build_data['include_config'] === 'true' ||
+                           $build_data['include_config'] === 1);
 
         // Core exclusions - development and testing files
         $exclusions = [
@@ -139,7 +146,9 @@ class VAPTSECURE_Build
             '.kilocode/rules', '.qoder/skills', '.trae/skills', '.windsurf/skills',
             '.roo/rules', '.roo/skills',
             // Deployment directory
-            'deployment'
+            'deployment',
+            // Debug and search files
+            'debug-field-mapping.js', 'debug-field-structure.js', 'search-enforcer-fields.js'
         ];
 
         // Documentation files to exclude (keep only README.md and How to User.md)
@@ -161,10 +170,53 @@ class VAPTSECURE_Build
 
             // Handle Data Directory
             if (strpos($subPath, 'data') === 0) {
-                if ($active_data_file && strpos($subPath, 'data\\' . $active_data_file) !== false || $active_data_file && strpos($subPath, 'data/' . $active_data_file) !== false) {
-                    // Allow this specific file
-                } else {
-                    continue;
+                // When active data file is specified (Include Active Data enabled)
+                if ($active_data_file) {
+                    $active_file_allowed = false;
+
+                    // Allow the data directory itself (root of data folder)
+                    if ($item->isDir() && (strcasecmp($subPath, 'data') === 0 || strcasecmp($subPath, 'data/') === 0 || strcasecmp($subPath, 'data\\') === 0)) {
+                        $active_file_allowed = true;
+                    }
+                    // Allow specific active data file
+                    elseif (strpos($subPath, 'data\\' . $active_data_file) !== false ||
+                        strpos($subPath, 'data/' . $active_data_file) !== false) {
+                        $active_file_allowed = true;
+                    }
+                    // Allow top-level JSON files in data folder (files with exactly one slash)
+                    elseif ((strpos($subPath, 'data/') === 0 || strpos($subPath, 'data\\') === 0) &&
+                             (substr_count($subPath, '/') === 1 || substr_count($subPath, '\\') === 1) &&
+                             !$item->isDir()) {
+                        // Check if it's a JSON file (not ZIP)
+                        if (preg_match('/\.json$/i', $filename)) {
+                            $active_file_allowed = true;
+                        }
+                    }
+                    // Allow Enforcers directory and its files (case-insensitive)
+                    elseif (stripos($subPath, 'data/Enforcers/') === 0 || stripos($subPath, 'data\\Enforcers\\') === 0) {
+                        // Allow the Enforcers directory itself so files can be copied into it
+                        if ($item->isDir()) {
+                            $active_file_allowed = true;
+                        }
+                        // Allow JSON template files in Enforcers
+                        elseif (preg_match('/\.json$/i', $filename)) {
+                            $active_file_allowed = true;
+                        }
+                    }
+                    // Allow the Enforcers directory itself (case-insensitive, for directory creation)
+                    elseif (strcasecmp($subPath, 'data/Enforcers') === 0 || strcasecmp($subPath, 'data\\Enforcers') === 0) {
+                        if ($item->isDir()) {
+                            $active_file_allowed = true;
+                        }
+                    }
+
+                    if (!$active_file_allowed) {
+                        continue;
+                    }
+                }
+                // When no active data file (Include Active Data disabled)
+                else {
+                    continue; // Skip entire data folder
                 }
             }
 
@@ -186,13 +238,27 @@ class VAPTSECURE_Build
             }
 
             // Exclude domain-specific configuration files (vapt-*-config-*.php)
+            // In config-only builds, allow all config files
             if (preg_match('/^vapt-.*-config-.*\.php$/i', $filename)) {
+                // In config-only builds, allow config files
+                if ($generate_type === 'config_only') {
+                    // Allow - config files are purpose of this build
+                }
+                // When config inclusion is enabled, still exclude existing ones
+                // (a new one will be generated in the generate() method)
+                else {
+                    continue;
+                }
+            }
+
+            // Exclude ZIP files globally
+            if (preg_match('/\.zip$/i', $filename)) {
                 continue;
             }
 
             if ($item->isDir()) {
                 if (!file_exists($dest . DIRECTORY_SEPARATOR . $subPath)) {
-                    mkdir($dest . DIRECTORY_SEPARATOR . $subPath);
+                    mkdir($dest . DIRECTORY_SEPARATOR . $subPath, 0755, true);
                 }
             } else {
                 copy($item, $dest . DIRECTORY_SEPARATOR . $subPath);
@@ -224,8 +290,8 @@ class VAPTSECURE_Build
 
         // Inject Domain Guard & Config Loader
         $guard_code = "\n// VAPT Secure Client Build Configuration\n";
-        $guard_code .= "if ( file_exists( plugin_dir_path( __FILE__ ) . 'config-{$domain}.php' ) ) {\n";
-        $guard_code .= "    require_once plugin_dir_path( __FILE__ ) . 'config-{$domain}.php';\n";
+        $guard_code .= "if ( file_exists( plugin_dir_path( __FILE__ ) . 'vapt-{$domain}-config-{$version}.php' ) ) {\n";
+        $guard_code .= "    require_once plugin_dir_path( __FILE__ ) . 'vapt-{$domain}-config-{$version}.php';\n";
         $guard_code .= "}\n\n";
 
         $guard_code .= "// Domain Integrity & Multi-Site Guard\n";
