@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version: 2.6.1
+ * Version: 2.6.2
  * Author: Tanveer H. Malik
  * Author URI: https://vapt.copilot.com
  * License: GPL-2.0+
@@ -52,7 +52,7 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-define('VAPTSECURE_VERSION', '2.6.1');
+define('VAPTSECURE_VERSION', '2.6.2');
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
@@ -157,6 +157,7 @@ require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-admin.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-license-manager.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-config-cleaner.php';
 
 /**
  * Initialize Global Services
@@ -391,12 +392,12 @@ function vaptsecure_auto_update_db()
  * Manual database schema fix.
  * Can be triggered via ?vaptsecure_fix_db=1.
  */
-if (! function_exists('vaptsecure_manual_db_fix')) {
-    function vaptsecure_manual_db_fix()
-    {
-        if (isset($_GET['vaptsecure_fix_db']) && current_user_can('manage_options')) {
+function vaptsecure_run_manual_migrations()
+{
+    if (isset($_GET['vaptsecure_fix_db']) && current_user_can('manage_options')) {
             include_once ABSPATH . 'wp-admin/includes/upgrade.php';
             global $wpdb;
+            $charset_collate = $wpdb->get_charset_collate();
             // 1. Run standard dbDelta
             vaptsecure_activate_plugin();
             // 2. Force add column just in case dbDelta missed it
@@ -455,6 +456,7 @@ if (! function_exists('vaptsecure_manual_db_fix')) {
             if (empty($col_notes)) {
                 $wpdb->query("ALTER TABLE {$meta_table} ADD COLUMN include_operational_notes TINYINT(1) DEFAULT 1");
             }
+            $col_dev = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM {$meta_table} LIKE %s", 'dev_instruct'));
             if (empty($col_dev)) {
                 $wpdb->query("ALTER TABLE {$meta_table} ADD COLUMN dev_instruct LONGTEXT DEFAULT NULL");
             }
@@ -537,7 +539,6 @@ if (! function_exists('vaptsecure_manual_db_fix')) {
             wp_die(sprintf("<h1>VAPT Secure Database Updated</h1><p>Schema refresh run. %s</p><p>Please go back to the dashboard.</p>", esc_html($msg)));
         }
     }
-}
 
 /**
  * Workbench Action Handler (Ajax-Alternative via GET)

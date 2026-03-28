@@ -1,3 +1,12 @@
+## [2.6.2] - 2026-03-28
+
+### Bug Fixes
+
+- **Fixed duplicate vaptsecure_manual_db_fix() function**: Renamed second definition to `vaptsecure_run_manual_migrations()` and removed `function_exists()` guard
+- **Fixed undefined $col_dev variable**: Added missing column check for `dev_instruct` column in migration handler
+- **Fixed undefined $charset_collate variable**: Added `$charset_collate = $wpdb->get_charset_collate();` in migration handler
+- **Extracted duplicated config cleaning logic**: Consolidated `clean_all_config_files()` methods from Enforcer and License Manager classes into shared `VAPTSECURE_Config_Cleaner` class
+
 ## [2.6.1] - 2026-03-27
 
 ### Bug Fixes
