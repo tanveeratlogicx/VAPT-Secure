@@ -1,3 +1,27 @@
+## [2.6.3] - 2026-03-28
+
+### Database Migration System
+
+- **Versioned Migration Runner**: Created comprehensive migration system with `VAPTSECURE_Migrations` class
+- **Migration Tracking Table**: Added `vaptsecure_migrations` table to track applied migrations
+- **Ordered Migration Sequence**: Implemented 27 migrations preserving existing schema evolution
+- **Idempotent Migrations**: Each migration checks if changes are needed before applying
+- **Replaced Scattered ALTER TABLE**: Consolidated all database modifications into versioned system
+- **Updated Activation Hook**: `vaptsecure_activate_plugin()` now uses migration runner
+- **Updated Manual Migration Handler**: `vaptsecure_run_manual_migrations()` uses migration system
+- **Removed Redundant Functions**: Eliminated `vaptsecure_manual_db_fix()` function
+
+### Migration Sequence
+001_create_domains_table, 002_create_domain_features_table, 003_create_feature_status_table, 
+004_create_feature_meta_table, 005_create_feature_history_table, 006_create_domain_builds_table, 
+007_create_security_events_table, 008_add_is_enabled_to_feature_meta, 009_add_is_enforced_to_feature_meta,
+010_add_active_enforcer_to_feature_meta, 011_add_wireframe_url_to_feature_meta, 012_add_generated_schema_to_feature_meta,
+013_add_implementation_data_to_feature_meta, 014_add_dev_instruct_to_feature_meta, 015_add_is_adaptive_deployment_to_feature_meta,
+016_add_override_schema_to_feature_meta, 017_add_override_impl_data_to_feature_meta, 018_add_manual_expiry_to_domains,
+019_add_assigned_to_to_feature_status, 020_normalize_status_enum_to_title_case, 021_add_license_scope_to_domains,
+022_add_installation_limit_to_domains, 023_add_id_pk_to_domains, 024_add_include_verification_engine_to_meta,
+025_add_include_verification_guidance_to_meta, 026_add_include_manual_protocol_to_meta, 027_add_include_operational_notes_to_meta
+
 ## [2.6.2] - 2026-03-28
 
 ### Bug Fixes
