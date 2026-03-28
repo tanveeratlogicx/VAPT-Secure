@@ -1,3 +1,21 @@
+## [2.6.4] - 2026-03-28
+
+### Architecture Improvements: REST API Modularization
+
+- **REST API Controller Split**: Decomposed monolithic `class-vaptsecure-rest.php` (2,791 lines) into focused controllers
+- **Base Controller**: Created `class-vaptsecure-rest-base.php` with shared authentication, validation, and helper methods
+- **Domain-Specific Controllers**: 
+  - `class-vaptsecure-rest-features.php` - Feature management endpoints
+  - `class-vaptsecure-rest-domains.php` - Domain CRUD and feature assignment
+  - `class-vaptsecure-rest-builds.php` - Build generation and config sync
+  - `class-vaptsecure-rest-data-files.php` - JSON file upload and management
+  - `class-vaptsecure-rest-security.php` - Security stats and cache clearing
+  - `class-vaptsecure-rest-license.php` - License status and validation
+  - `class-vaptsecure-rest-settings.php` - Global enforcement and settings
+- **Router Pattern**: Main `class-vaptsecure-rest.php` now serves as router (~100 lines) delegating to controllers
+- **Backward Compatibility**: All existing REST endpoints remain at same paths with same functionality
+- **Improved Maintainability**: Each controller focused on specific domain with clear separation of concerns
+
 ## [2.6.3] - 2026-03-28
 
 ### Database Migration System
