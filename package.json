@@ -1,0 +1,38 @@
+{
+  "name": "vapt-secure",
+  "version": "1.0.0",
+  "description": "VAPT Secure - WordPress Security Plugin",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint:js": "eslint assets/js/",
+    "lint:js:fix": "eslint assets/js/ --fix"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "eslint": "^8.57.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "roots": [
+      "<rootDir>/assets/js"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/?(*.)+(spec|test).js"
+    ],
+    "collectCoverageFrom": [
+      "assets/js/**/*.js",
+      "!assets/js/**/*.test.js",
+      "!assets/js/**/__tests__/**"
+    ],
+    "coverageDirectory": "tests/coverage-js",
+    "moduleDirectories": [
+      "node_modules",
+      "assets/js"
+    ]
+  }
+}

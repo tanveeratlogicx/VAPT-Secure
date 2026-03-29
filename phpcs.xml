@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<ruleset name="VAPT Secure Coding Standards">
+    <description>PHP CodeSniffer ruleset for VAPT Secure plugin</description>
+
+    <!-- Scan all PHP files in the project -->
+    <file>./</file>
+    
+    <!-- Exclude common directories -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*/.git/*</exclude-pattern>
+    <exclude-pattern>*/assets/*</exclude-pattern>
+    <exclude-pattern>*/archive/*</exclude-pattern>
+    <exclude-pattern>*/data/*</exclude-pattern>
+    <exclude-pattern>*/Debug/*</exclude-pattern>
+    <exclude-pattern>*/backup_debug_cleanup/*</exclude-pattern>
+    <exclude-pattern>*/deployment/*</exclude-pattern>
+    <exclude-pattern>*/tools/*</exclude-pattern>
+    <exclude-pattern>*/plans/*</exclude-pattern>
+    <exclude-pattern>*/.*/skills/*</exclude-pattern>
+    
+    <!-- Exclude test and debug files -->
+    <exclude-pattern>*test*.js</exclude-pattern>
+    <exclude-pattern>*debug*.txt</exclude-pattern>
+    <exclude-pattern>*.zip</exclude-pattern>
+
+    <!-- Use WordPress Coding Standards -->
+    <rule ref="WordPress">
+        <!-- Exclude rules that are too strict for existing codebase -->
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid"/>
+        <exclude name="WordPress.NamingConventions.ValidVariableName.NotSnakeCase"/>
+        <exclude name="WordPress.NamingConventions.ValidVariableName.MemberNotSnakeCase"/>
+    </rule>
+
+    <!-- Additional security sniffs -->
+    <rule ref="WordPress.Security"/>
+    
+    <!-- Check for deprecated functions -->
+    <rule ref="WordPress.WP.DeprecatedFunctions"/>
+    
+    <!-- Minimum PHP version -->
+    <config name="minimum_supported_wp_version" value="5.8"/>
+    <config name="testVersion" value="7.4-"/>
+
+    <!-- Show progress and colors -->
+    <arg value="ps"/>
+    <arg name="colors"/>
+    
+    <!-- Show sniff codes in all reports -->
+    <arg value="ns"/>
+    
+    <!-- Use parallel processing -->
+    <arg name="parallel" value="8"/>
+    
+    <!-- Only check PHP files -->
+    <arg name="extensions" value="php"/>
+</ruleset>

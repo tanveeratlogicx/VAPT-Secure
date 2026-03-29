@@ -1,3 +1,13 @@
+## [2.9.0] - 2026-03-29
+
+### Quality Infrastructure & Development Standards
+- **PHP Coding Standards**: Added `squizlabs/php_codesniffer` with `wp-coding-standards` and `phpcs.xml` configuration.
+- **Static Analysis**: Integrated `phpstan/phpstan` at level 5 with `phpstan.neon` configuration for WordPress.
+- **PHP Unit Testing**: Added PHPUnit 9.6 with mock-based bootstrap and initial unit tests for core logic (Workflow, Enforcer, Build).
+- **JavaScript Testing**: Integrated Jest with `jsdom` and added initial tests for UI logic (Interface/APlus generators).
+- **CI/CD Readiness**: Added `composer.json` and `package.json` scripts for automated linting, analysis, and testing.
+- **Documentation**: Updated `CLAUDE.md` with comprehensive quality tool commands.
+
 ## [2.8.0] - 2026-03-29
 
 ### REST API & Architecture Enhancements
