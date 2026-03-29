@@ -7,8 +7,33 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Apache_Deployer
+class VAPTSECURE_Apache_Deployer implements VAPTSECURE_Driver_Interface
 {
+    /**
+     * Static wrapper for generate_rules - delegates to htaccess driver
+     */
+    public static function generate_rules($impl_data, $schema)
+    {
+        return VAPTSECURE_Htaccess_Driver::generate_rules($impl_data, $schema);
+    }
+
+    /**
+     * Static wrapper for write_batch - delegates to htaccess driver
+     */
+    public static function write_batch($rules, $target = 'root')
+    {
+        return VAPTSECURE_Htaccess_Driver::write_batch($rules, $target);
+    }
+
+    /**
+     * Static wrapper for clean - delegates to htaccess driver
+     */
+    public static function clean($target = 'root')
+    {
+        return VAPTSECURE_Htaccess_Driver::clean($target);
+    }
+
+    // Instance methods below...
     private $htaccess_path;
 
     public function __construct()

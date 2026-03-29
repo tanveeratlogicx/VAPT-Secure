@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_PHP_Driver
+class VAPTSECURE_PHP_Driver implements VAPTSECURE_Driver_Interface
 {
     /**
      * Generates valid PHP code blocks for vapt-functions.php
@@ -160,5 +160,16 @@ class VAPTSECURE_PHP_Driver
         @file_put_contents($path, $content);
 
         return true;
+    }
+
+    /**
+     * Cleans/removes all VAPT rules from the PHP functions file.
+     *
+     * @param string $target Target location (unused for PHP driver, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        return self::write_batch([]);
     }
 }

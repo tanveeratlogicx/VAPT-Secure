@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Nginx_Driver
+class VAPTSECURE_Nginx_Driver implements VAPTSECURE_Driver_Interface
 {
     /**
      * Generates a list of valid Nginx directives based on the provided data and schema.
@@ -150,5 +150,30 @@ class VAPTSECURE_Nginx_Driver
         }
 
         return false;
+    }
+
+    /**
+     * Cleans/removes all VAPT rules from the nginx rules file.
+     *
+     * @param string $target Target location (unused for nginx, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        $upload_dir = wp_upload_dir();
+        $file_path = $upload_dir['basedir'] . '/vapt-nginx-rules.conf';
+
+        if (!file_exists($file_path)) {
+            return true; // Nothing to clean
+        }
+
+        // Write empty content (just header)
+        $content = "# VAPT Secure - Auto Generated Nginx Rules\n";
+        $content .= "# Include this file in your nginx.conf server block.\n";
+        $content .= "# Last Updated: " . date('Y-m-d H:i:s') . "\n";
+        $content .= "# All rules have been cleaned.\n";
+
+        $result = @file_put_contents($file_path, $content);
+        return $result !== false;
     }
 }

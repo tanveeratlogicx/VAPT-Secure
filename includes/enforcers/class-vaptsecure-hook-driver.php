@@ -9,7 +9,7 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
-class VAPTSECURE_Hook_Driver
+class VAPTSECURE_Hook_Driver implements VAPTSECURE_Driver_Interface
 {
     private static $feature_configs = [];
     private static $enforced_keys = [];
@@ -1164,5 +1164,22 @@ class VAPTSECURE_Hook_Driver
         // We don't block at the authentication level to avoid breaking core functionality
         // Each endpoint should use 'permission_callback' => [$this, 'check_permission']
         // to properly verify capabilities (e.g., manage_options for admin endpoints)
+    }
+
+    /**
+     * Cleans/disables all hook-based enforcements.
+     *
+     * Note: Hook driver operates at runtime via PHP hooks.
+     * Cleaning is achieved by removing the vapt-functions.php file
+     * and clearing internal enforcement state.
+     *
+     * @param string $target Target location (unused for hook driver, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        // Hook-based enforcement is runtime-only
+        // We clean by clearing the PHP functions file
+        return VAPTSECURE_PHP_Driver::clean($target);
     }
 }

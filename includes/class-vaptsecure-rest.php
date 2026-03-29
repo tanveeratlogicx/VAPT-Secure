@@ -662,7 +662,7 @@ class VAPTSECURE_REST
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                                 $schema_data = $decoded;
                                 // [v3.12.17] Translate URL placeholders when returning schema to UI
-                                $schema_data = self::translate_url_placeholders($schema_data);
+                                $schema_data = VAPTSECURE_Schema_Validator::translate_url_placeholders($schema_data);
                                 if ($use_override_schema) { $feature['is_overridden'] = true;
                                 }
                             }
@@ -974,8 +974,8 @@ class VAPTSECURE_REST
 
                 if (!$is_legacy_format) {
                     $schema['is_adaptive_deployment'] = $is_adaptive ? 1 : 0;
-                    $schema = self::sanitize_and_fix_schema($schema);
-                    $validation = self::validate_schema($schema);
+                    $schema = VAPTSECURE_Schema_Validator::sanitize_and_fix_schema($schema);
+                    $validation = VAPTSECURE_Schema_Validator::validate_schema($schema);
                     if (is_wp_error($validation)) {
                         return new WP_REST_Response(
                             array(
@@ -1002,10 +1002,10 @@ class VAPTSECURE_REST
 
                     // 🛡️ URL TRANSLATION (v3.12.17)
                     // Translate {{site_url}} and other placeholders to fully qualified URLs
-                    $schema = self::translate_url_placeholders($schema);
+                    $schema = VAPTSECURE_Schema_Validator::translate_url_placeholders($schema);
 
                     // 🛡️ INTELLIGENT ENFORCEMENT (v3.3.9)
-                    $schema = self::analyze_enforcement_strategy($schema, $key);
+                    $schema = VAPTSECURE_Schema_Validator::analyze_enforcement_strategy($schema, $key);
 
                     // [FIX] Self-Healing for XML-RPC (v3.12.13)
                     // Detected missing enforcement in legacy schema, patching from catalog.
@@ -1072,7 +1072,7 @@ class VAPTSECURE_REST
             }
 
             if ($schema_for_val) {
-                $val_result = self::validate_implementation_data($implementation_data, $schema_for_val);
+                $val_result = VAPTSECURE_Schema_Validator::validate_implementation_data($implementation_data, $schema_for_val);
                 if (is_wp_error($val_result)) {
                     // [FIX] Proactive Error Reporting
                     return new WP_REST_Response(
@@ -1912,882 +1912,76 @@ class VAPTSECURE_REST
     }
 
     /**
+     * ========================================================================
+     * SCHEMA VALIDATION METHODS
+     * ========================================================================
+     * 
+     * The following validation methods have been extracted to 
+     * class-vaptsecure-schema-validator.php for shared usage:
+     * 
+     * - analyze_enforcement_strategy() -> VAPTSECURE_Schema_Validator::analyze_enforcement_strategy()
+     * - sanitize_and_fix_schema() -> VAPTSECURE_Schema_Validator::sanitize_and_fix_schema()
+     * - validate_schema() -> VAPTSECURE_Schema_Validator::validate_schema()
+     * - validate_implementation_data() -> VAPTSECURE_Schema_Validator::validate_implementation_data()
+     * - translate_url_placeholders() -> VAPTSECURE_Schema_Validator::translate_url_placeholders()
+     * 
+     * @deprecated Use VAPTSECURE_Schema_Validator methods directly
+     */
+
+    /**
      * 🛡️ INTELLIGENT ENFORCEMENT STRATEGY (v3.3.9)
      * Analyzes the schema and automatically corrects driver selection 
      * if it detects physical file targets being handled by PHP hooks.
+     * 
+     * @deprecated Use VAPTSECURE_Schema_Validator::analyze_enforcement_strategy()
      */
     private static function analyze_enforcement_strategy($schema, $feature_key)
     {
-        if (!isset($schema['enforcement'])) {
-            // 🛡️ Adaptive Awareness (v4.0.0): Check for client_deployment block first
-            if (isset($schema['client_deployment']['enforcement'])) {
-                $schema['enforcement'] = $schema['client_deployment']['enforcement'];
-            } else {
-                $schema['enforcement'] = [
-                'driver' => 'hook',
-                'mappings' => []
-                ];
-            }
-        } else {
-            // [v4.0.1] Even if it exists, if it is 'hook' and empty, check for adaptive alternative
-            if (($schema['enforcement']['driver'] ?? '') === 'hook' && empty($schema['enforcement']['mappings']) && isset($schema['client_deployment']['enforcement'])) {
-                 $schema['enforcement'] = $schema['client_deployment']['enforcement'];
-            }
-        }
-    
-        $driver = $schema['enforcement']['driver'] ?? 'hook';
-        $mappings = $schema['enforcement']['mappings'] ?? array();
-
-        $physical_file_patterns = [
-        'readme.html',
-        'license.txt',
-        'xmlrpc.php',
-        'wp-config.php',
-        '.env',
-        'wp-links-opml.php',
-        'debug.log',
-        '.htaccess'
-        ];
-
-        $block_indicators = ['<Files', 'Require all', 'Deny from', 'Order allow,deny', 'Options -Indexes'];
-
-        $needs_htaccess = false;
-        foreach ($mappings as $key => $value) {
-            $val_to_test = '';
-            if (is_string($value)) {
-                $val_to_test = $value;
-            } elseif (is_array($value)) {
-                // v1.1 rich mapping detection - Generalize for multi-server (v4.0.2)
-                $web_server_keys = ['.htaccess', 'nginx', 'iis', 'caddy', 'web_server'];
-                foreach ($web_server_keys as $server_key) {
-                    if (isset($value[$server_key])) {
-                        $needs_htaccess = true;
-                        $inner = $value[$server_key];
-                        $val_to_test = is_array($inner) ? ($inner['code'] ?? '') : $inner;
-                        break;
-                    }
-                }
-            }
-
-            if (!$val_to_test) { continue;
-            }
-
-            // Check for physical file mentions or Apache/Nginx directives in mappings
-            $web_server_indicators = array_merge($block_indicators, ['location ', 'proxy_pass', 'fastcgi_pass', '<configuration', '<system.webServer']);
-      
-            foreach ($physical_file_patterns as $file) {
-                if (stripos($val_to_test, $file) !== false) {
-                    $needs_htaccess = true;
-                    break 2;
-                }
-            }
-
-            foreach ($web_server_indicators as $indicator) {
-                if (stripos($val_to_test, $indicator) !== false) {
-                    $needs_htaccess = true;
-                    break 2;
-                }
-            }
-        }
-
-        // Auto-Correct if driver is 'hook' but needs 'htaccess' or 'wp-config'
-        if ($needs_htaccess && $driver === 'hook') {
-            error_log("VAPT Intelligence: Auto-switching driver to 'htaccess' for feature $feature_key based on physical file target.");
-            $schema['enforcement']['driver'] = 'htaccess';
-            $schema['enforcement']['target'] = $schema['enforcement']['target'] ?? 'root';
-            $driver = 'htaccess'; // Update local variable for subsequent logic
-        }
-
-        // [v3.13.2] Auto-Correct for wp-config constants
-        $needs_config = false;
-        foreach ($mappings as $key => $value) {
-            $val_to_test = '';
-            if (is_string($value)) {
-                $val_to_test = $value;
-            } elseif (is_array($value)) {
-                if (isset($value['wp-config.php']) || isset($value['wp_config'])) {
-                    $needs_config = true;
-                    $inner = $value['wp-config.php'] ?? $value['wp_config'];
-                    $val_to_test = is_array($inner) ? ($inner['code'] ?? '') : $inner;
-                }
-            }
-
-            if ($val_to_test && strpos($val_to_test, 'define(') !== false) {
-                $needs_config = true;
-                break;
-            }
-        }
-
-        if ($needs_config && $driver === 'hook') {
-            error_log("VAPT Intelligence: Auto-switching driver to 'wp-config' for feature $feature_key based on define constant.");
-            $schema['enforcement']['driver'] = 'wp-config';
-            $driver = 'wp-config'; // Update local
-        }
-
-        // [v3.13.26] Auto-Correct for PHP Functions enforcer (RISK-004, etc)
-        // Check if mappings contain action hook patterns or function definitions
-        $needs_php_functions = false;
-        foreach ($mappings as $key => $value) {
-            $val_to_test = is_string($value) ? $value : '';
-      
-            // Detect action/filter hooks
-            if ($val_to_test && (  strpos($val_to_test, 'add_action(') !== false 
-                || strpos($val_to_test, 'add_filter(') !== false 
-                || strpos($val_to_test, 'function ') !== false          )
-            ) {
-                $needs_php_functions = true;
-                break;
-            }
-        }
-
-        if ($needs_php_functions && $driver === 'hook') {
-            error_log("VAPT Intelligence: Confirmed 'hook' driver for feature $feature_key based on action/filter pattern.");
-            // Keep as 'hook' - this is correct for PHP Functions enforcer
-            // The hook driver will verify runtime hook registration
-        }
-
-        // [v3.13.27] CRITICAL: Force hook driver for PHP Functions features
-        // If schema says htaccess but mappings contain PHP code, switch to hook
-        if ($needs_php_functions && ($driver === 'htaccess' || $driver === '')) {
-            error_log("VAPT Intelligence: AUTO-CORRECTING driver from '$driver' to 'hook' for feature $feature_key (PHP Functions detected).");
-            $schema['enforcement']['driver'] = 'hook';
-            $driver = 'hook';
-        }
-
-        // Auto-Correct Mapping Key Mismatch (feat_key vs feat_enabled)
-        if (isset($mappings['feat_key'])) {
-            $has_feat_key = false;
-            $primary_toggle = null;
-            $items = $schema['controls'] ?? ($schema['components'] ?? []);
-
-            foreach ($items as $ctrl) {
-                $ctrl_key = $ctrl['key'] ?? ($ctrl['component_id'] ?? null);
-                if ($ctrl_key === 'feat_key') { $has_feat_key = true;
-                }
-                if (isset($ctrl['type']) && $ctrl['type'] === 'toggle' && $ctrl_key) {
-                    $primary_toggle = $ctrl_key;
-                }
-            }
-
-            if (!$has_feat_key && $primary_toggle) {
-                error_log("VAPT Intelligence: Auto-correcting mapping key 'feat_key' to '$primary_toggle' for feature $feature_key.");
-                $schema['enforcement']['mappings'][$primary_toggle] = $mappings['feat_key'];
-                unset($schema['enforcement']['mappings']['feat_key']);
-            }
-        }
-
-        // [v3.12.3] Ensure Production Defaults
-        if ($driver === 'htaccess') {
-            $schema['enforcement']['backup'] = $schema['enforcement']['backup'] ?? true;
-            $schema['enforcement']['rollback_on_disable'] = $schema['enforcement']['rollback_on_disable'] ?? true;
-        }
-
-        // 🛡️ SUB-DIRECTORY ENFORCEMENT (v1.1)
-        if ($driver === 'htaccess' && !isset($schema['enforcement']['target_file'])) {
-            $target_file = self::resolve_target_file_from_catalogue($feature_key);
-            if ($target_file !== '.htaccess') {
-                error_log("VAPT Intelligence: Setting custom target_file $target_file for $feature_key");
-                $schema['enforcement']['target_file'] = $target_file;
-            }
-        }
-
-        // 🛡️ GLOBAL ENFORCEMENT BRIDGE (v1.1)
-        // If mappings are empty or incomplete, resolve them from the pattern library or catalogue
-        if ($driver === 'htaccess' || $driver === 'wp-config' || $driver === 'hook') {
-            if (empty($schema['enforcement']['mappings'])) {
-                // Try htaccess first if hook
-                $bridge_driver = ($driver === 'hook') ? 'htaccess' : $driver;
-                $code = self::resolve_enforcement_from_catalogue($feature_key, $bridge_driver);
-
-                if ($code) {
-                    $mapping_key = 'feat_key'; // Default
-                    if (isset($schema['components'])) {
-                        foreach ($schema['components'] as $comp) {
-                            if (isset($comp['type']) && $comp['type'] === 'toggle' && isset($comp['component_id'])) {
-                                $mapping_key = $comp['component_id'];
-                                break;
-                            }
-                        }
-                    } elseif (isset($schema['controls'])) {
-                        foreach ($schema['controls'] as $ctrl) {
-                            if (isset($ctrl['type']) && $ctrl['type'] === 'toggle' && isset($ctrl['key'])) {
-                                $mapping_key = $ctrl['key'];
-                                break;
-                            }
-                        }
-                    }
-                    $schema['enforcement']['mappings'][$mapping_key] = $code;
-                    $schema['enforcement']['driver'] = $bridge_driver;
-                    error_log("VAPT Intelligence: Bridged missing enforcement code for $feature_key using $bridge_driver driver.");
-                }
-            }
-        }
-
-        // 🛡️ HTACCESS SYNTAX GUARD (v1.1)
-        if ($driver === 'htaccess' && !empty($schema['enforcement']['mappings'])) {
-            foreach ($schema['enforcement']['mappings'] as $key => &$code) {
-                if (!is_string($code)) { continue;
-                }
-
-                // 1. Forbidden <Directory> replacement
-                if (stripos($code, '<Directory') !== false) {
-                    error_log("VAPT Syntax Guard: Replacing forbidden <Directory> block in $feature_key");
-                    $code = preg_replace('/<Directory\s+[^>]+>/i', '<FilesMatch ".*">', $code);
-                    $code = str_ireplace('</Directory>', '</FilesMatch>', $code);
-                }
-
-                // 2. Forbidden Server-Level Directives
-                $forbidden = ['TraceEnable', 'ServerSignature', 'ServerTokens', 'UseCanonicalName'];
-                foreach ($forbidden as $directive) {
-                    if (stripos($code, $directive) !== false) {
-                        error_log("VAPT Syntax Guard: Stripping forbidden server directive $directive from $feature_key");
-                        $code = preg_replace('/' . $directive . '\s+\w+/i', '# [REMOVED BY GUARD] ' . $directive, $code);
-                    }
-                }
-
-                // 3. Ensure RewriteEngine On is present if RewriteRule/RewriteCond is used
-                if ((stripos($code, 'RewriteRule') !== false || stripos($code, 'RewriteCond') !== false) && stripos($code, 'RewriteEngine On') === false) {
-                    $code = "RewriteEngine On\n" . $code;
-                }
-            }
-        }
-
-        return $schema;
-    }
-
-    /**
-     * 🛡️ RESOLVE ENFORCEMENT FROM CATALOGUE (v3.13.5)
-     */
-    private static function resolve_enforcement_from_catalogue($feature_key, $driver)
-    {
-        // 🛡️ v1.1 Pattern Library Priority
-        $pattern_lib_path = VAPTSECURE_PATH . 'data/' . (defined('VAPTSECURE_PATTERN_LIBRARY') ? VAPTSECURE_PATTERN_LIBRARY : 'enforcer_pattern_library_v1.1.json');
-        if (file_exists($pattern_lib_path)) {
-            $lib = json_decode(file_get_contents($pattern_lib_path), true);
-            if (isset($lib['patterns'][$feature_key])) {
-                $p = $lib['patterns'][$feature_key];
-
-                // Handle corrected htaccess
-                if ($driver === 'htaccess' && isset($p['htaccess_corrected']['code'])) {
-                    return $p['htaccess_corrected']['code'];
-                }
-
-                // Handle wp-config enriched
-                if ($driver === 'wp-config' && isset($p['wp_config_enriched']['code'])) {
-                    return $p['wp_config_enriched']['code'];
-                }
-
-                // Fallback to platform-specific keys if direct corrected not found
-                if (isset($p[$driver]['code'])) {
-                    return $p[$driver]['code'];
-                }
-            }
-        }
-
-        // 🛡️ Legacy Fallback (v3.13.5)
-        $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
-        if (!file_exists($catalog_path)) { return null;
-        }
-
-        $catalog = json_decode(file_get_contents($catalog_path), true);
-        if (!isset($catalog['risk_catalog'])) { return null;
-        }
-
-        foreach ($catalog['risk_catalog'] as $item) {
-            $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
-            if ($id === $feature_key) {
-                $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
-                foreach ($steps as $step) {
-                    $enforcer = strtolower($step['enforcer'] ?? '');
-                    if (($driver === 'htaccess' && strpos($enforcer, 'htaccess') !== false) 
-                        || ($driver === 'wp-config' && strpos($enforcer, 'config') !== false)
-                    ) {
-                        if (!empty($step['code'])) { return $step['code'];
-                        }
-                    }
-                }
-                $examples = $item['code_examples'] ?? [];
-                foreach ($examples as $ex) {
-                    $desc = strtolower($ex['description'] ?? '');
-                    if (($driver === 'htaccess' && (strpos($desc, 'htaccess') !== false || strpos($desc, 'apache') !== false)) 
-                        || ($driver === 'wp-config' && strpos($desc, 'config') !== false)
-                    ) {
-                        $code = $ex['code'] ?? '';
-                        if (preg_match('/```(?:apache|php|htaccess)?\s*(.*?)\s*```/is', $code, $m)) {
-                            $code = $m[1];
-                        }
-                        return trim($code);
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 🛡️ RESOLVE TARGET ENDPOINT (v3.13.5)
-     */
-    private static function resolve_target_endpoint_from_catalogue($feature_key)
-    {
-        $catalog_path = VAPTSECURE_PATH . 'data/VAPT-Risk-Catalogue-Full-125-v3.4.1.json';
-        if (!file_exists($catalog_path)) { return null;
-        }
-
-        $catalog = json_decode(file_get_contents($catalog_path), true);
-        if (!isset($catalog['risk_catalog'])) { return null;
-        }
-
-        foreach ($catalog['risk_catalog'] as $item) {
-            $id = $item['risk_id'] ?? $item['id'] ?? $item['key'] ?? '';
-            if ($id === $feature_key) {
-                $steps = $item['protection']['automated_protection']['implementation_steps'] ?? [];
-                foreach ($steps as $step) {
-                    $path = !empty($step['target_pattern']) ? $step['target_pattern'] : (!empty($step['target']) ? $step['target'] : '');
-                    if ($path) { return trim(ltrim(rtrim($path, '$'), '^'));
-                    }
-                }
-                $rollback = $item['protection']['rollback_steps'] ?? [];
-                foreach ($rollback as $rb) {
-                    if (!empty($rb['target'])) { return trim(ltrim(rtrim($rb['target'], '$'), '^'));
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 🛡️ RESOLVE TARGET FILE (v1.1)
-     * Resolves the physical file target, supporting sub-directories (e.g. uploads/.htaccess)
-     */
-    private static function resolve_target_file_from_catalogue($feature_key)
-    {
-        $pattern_lib_path = VAPTSECURE_PATH . 'data/' . (defined('VAPTSECURE_PATTERN_LIBRARY') ? VAPTSECURE_PATTERN_LIBRARY : 'enforcer_pattern_library_v1.1.json');
-        if (file_exists($pattern_lib_path)) {
-            $lib = json_decode(file_get_contents($pattern_lib_path), true);
-            if (isset($lib['patterns'][$feature_key]['htaccess_corrected']['target_file'])) {
-                return $lib['patterns'][$feature_key]['htaccess_corrected']['target_file'];
-            }
-        }
-        return '.htaccess'; // Default
+        return VAPTSECURE_Schema_Validator::analyze_enforcement_strategy($schema, $feature_key);
     }
 
     /**
      * Auto-fix common schema issues before validation.
+     * 
+     * @deprecated Use VAPTSECURE_Schema_Validator::sanitize_and_fix_schema()
      */
     private static function sanitize_and_fix_schema($schema)
     {
-        if (!isset($schema['controls']) || !is_array($schema['controls'])) {
-            return $schema;
-        }
-
-        $no_key_types = ['button', 'info', 'alert', 'section', 'group', 'divider', 'html', 'header', 'label', 'evidence_uploader', 'risk_indicators', 'assurance_badges', 'remediation_steps', 'test_checklist', 'evidence_list'];
-
-        foreach ($schema['controls'] as $index => &$control) {
-            if (!is_array($control)) { continue;
-            }
-
-            // Map 'dropdown' to 'select' for backward compatibility
-            if (isset($control['type']) && $control['type'] === 'dropdown') {
-                $control['type'] = 'select';
-            }
-
-            // Fix missing key
-            if (empty($control['key']) && !empty($control['type']) && !in_array($control['type'], $no_key_types)) {
-                // Try to find a meaningful ID
-                $base = $control['id'] ?? ($control['component_id'] ?? 'control');
-                $control['key'] = sanitize_key($base . '_' . $index . '_' . wp_generate_password(4, false));
-            }
-        }
-
-        return $schema;
+        return VAPTSECURE_Schema_Validator::sanitize_and_fix_schema($schema);
     }
 
+    /**
+     * Validates the feature schema structure.
+     * 
+     * @deprecated Use VAPTSECURE_Schema_Validator::validate_schema()
+     */
     private static function validate_schema($schema)
     {
-        if (!is_array($schema)) {
-            return new WP_Error('invalid_schema', 'Schema must be an object/array', array('status' => 400));
-        }
-
-        if (!isset($schema['controls']) || !is_array($schema['controls'])) {
-            return new WP_Error(
-                'invalid_schema',
-                'Schema must have a "controls" array',
-                array('status' => 400)
-            );
-        }
-
-        foreach ($schema['controls'] as $index => $control) {
-            if (!is_array($control)) {
-                return new WP_Error(
-                    'invalid_schema',
-                    sprintf('Control at index %d must be an object', $index),
-                    array('status' => 400)
-                );
-            }
-
-            if (empty($control['type'])) {
-                return new WP_Error(
-                    'invalid_schema',
-                    sprintf('Control at index %d must have a "type" field', $index),
-                    array('status' => 400)
-                );
-            }
-
-            $no_key_types = ['button', 'info', 'alert', 'section', 'group', 'divider', 'html', 'header', 'label', 'evidence_uploader', 'risk_indicators', 'assurance_badges', 'remediation_steps', 'test_checklist', 'evidence_list'];
-            if (empty($control['key']) && !in_array($control['type'], $no_key_types)) {
-                return new WP_Error(
-                    'invalid_schema',
-                    sprintf('Control at index %d must have a "key" field', $index),
-                    array('status' => 400)
-                );
-            }
-
-            $valid_types = ['toggle', 'input', 'select', 'textarea', 'code', 'test_action', 'button', 'info', 'alert', 'section', 'group', 'divider', 'html', 'header', 'label', 'password', 'evidence_uploader', 'risk_indicators', 'assurance_badges', 'remediation_steps', 'test_checklist', 'evidence_list'];
-            if (!in_array($control['type'], $valid_types)) {
-                return new WP_Error(
-                    'invalid_schema',
-                    sprintf(
-                        'Control at index %d has invalid type "%s". Valid types: %s',
-                        $index,
-                        $control['type'],
-                        implode(', ', $valid_types)
-                    ),
-                    array('status' => 400)
-                );
-            }
-
-            if ($control['type'] === 'test_action') {
-                if (empty($control['test_logic'])) {
-                    return new WP_Error(
-                        'invalid_schema',
-                        sprintf(
-                            'Test action control "%s" must have a "test_logic" field',
-                            $control['key'] ?? $index
-                        ),
-                        array('status' => 400)
-                    );
-                }
-            }
-        }
-
-        if (isset($schema['enforcement'])) {
-            if (!is_array($schema['enforcement'])) {
-                return new WP_Error(
-                    'invalid_schema',
-                    'Enforcement section must be an object',
-                    array('status' => 400)
-                );
-            }
-
-            if (empty($schema['enforcement']['driver'])) {
-                return new WP_Error(
-                    'invalid_schema',
-                    'Enforcement must specify a "driver" (hook or htaccess)',
-                    array('status' => 400)
-                );
-            }
-
-            $valid_drivers = ['hook', 'htaccess', 'universal', 'manual', 'config', 'wp-config'];
-            if (!in_array($schema['enforcement']['driver'], $valid_drivers)) {
-                return new WP_Error(
-                    'invalid_schema',
-                    sprintf(
-                        'Invalid enforcement driver "%s". Valid drivers: %s',
-                        $schema['enforcement']['driver'],
-                        implode(', ', $valid_drivers)
-                    ),
-                    array('status' => 400)
-                );
-            }
-
-            if ($schema['enforcement']['driver'] === 'htaccess' && empty($schema['enforcement']['target'])) {
-                return new WP_Error(
-                    'invalid_schema',
-                    'Htaccess driver must specify a "target" (root or uploads)',
-                    array('status' => 400)
-                );
-            }
-
-            if (isset($schema['enforcement']['mappings']) && !is_array($schema['enforcement']['mappings'])) {
-                return new WP_Error(
-                    'invalid_schema',
-                    'Enforcement mappings must be an object/array',
-                    array('status' => 400)
-                );
-            }
-        }
-
-        return true;
+        return VAPTSECURE_Schema_Validator::validate_schema($schema);
     }
 
     /**
      * 🛡️ IMPLEMENTATION VALIDATOR (v3.6.19)
      * Validates user-provided implementation settings against the feature's JSON schema.
+     * 
+     * @deprecated Use VAPTSECURE_Schema_Validator::validate_implementation_data()
      */
     private static function validate_implementation_data($data, $schema)
     {
-        if (!isset($schema['controls']) || !is_array($schema['controls'])) {
-            return true; // No controls to validate against (dynamic features)
-        }
-
-        if (!is_array($data)) {
-            return new WP_Error('invalid_impl_data', 'Implementation data must be an object/array', array('status' => 400));
-        }
-
-        foreach ($schema['controls'] as $control) {
-            $key = $control['key'] ?? null;
-            if (!$key) { continue;
-            }
-
-            if (!isset($data[$key])) {
-                // Only error if it's marked as required (non-existent field currently, but for future proofing)
-                if (!empty($control['required'])) {
-                    return new WP_Error('missing_field', sprintf('Missing required field: %s', $key), array('status' => 400));
-                }
-                continue;
-            }
-
-            $value = $data[$key];
-            $type = $control['type'] ?? 'text';
-
-            switch ($type) {
-            case 'toggle':
-                if (!is_bool($value) && $value !== 0 && $value !== 1 && $value !== '0' && $value !== '1') {
-                    return new WP_Error('invalid_type', sprintf('Field %s must be a boolean/toggle', $key), array('status' => 400));
-                }
-                break;
-
-            case 'input':
-            case 'password':
-                if ($control['input_type'] === 'number') {
-                    if (!is_numeric($value)) {
-                        return new WP_Error('invalid_type', sprintf('Field %s must be numeric', $key), array('status' => 400));
-                    }
-                    if (isset($control['min']) && (float)$value < (float)$control['min']) {
-                        return new WP_Error('out_of_range', sprintf('Field %s is below minimum (%s)', $key, $control['min']), array('status' => 400));
-                    }
-                    if (isset($control['max']) && (float)$value > (float)$control['max']) {
-                        return new WP_Error('out_of_range', sprintf('Field %s is above maximum (%s)', $key, $control['max']), array('status' => 400));
-                    }
-                }
-                break;
-
-            case 'select':
-                if (isset($control['options'])) {
-                    $valid_values = array_map(
-                        function ($opt) {
-                            return is_array($opt) ? $opt['value'] : $opt;
-                        }, $control['options']
-                    );
-                    if (!in_array($value, $valid_values)) {
-                          return new WP_Error('invalid_option', sprintf('Field %s contains an invalid option', $key), array('status' => 400));
-                    }
-                }
-                break;
-
-            case 'code':
-            case 'textarea':
-                if (!is_string($value) && $value !== null) {
-                    return new WP_Error('invalid_type', sprintf('Field %s must be a string', $key), array('status' => 400));
-                }
-                break;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * 🔍 VERIFICATION PING (v3.6.19)
-     * Two-Way Activation/Deactivation check.
-     */
-    public function verify_implementation($request)
-    {
-        $key = $request['key'];
-        $meta = VAPTSECURE_DB::get_feature_meta($key);
-        if (!$meta) {
-            return new WP_Error('not_found', 'Feature not found', array('status' => 404));
-        }
-
-        $current_feat = VAPTSECURE_DB::get_feature($key);
-        $current_status = $current_feat ? strtolower($current_feat['status']) : 'draft';
-
-        $schema_raw = ($current_status === 'test' ? ($meta['override_schema'] ?? $meta['generated_schema']) : $meta['generated_schema']);
-        $impl_raw = ($current_status === 'test' ? ($meta['override_implementation_data'] ?? $meta['implementation_data']) : $meta['implementation_data']);
-
-        $schema = json_decode($schema_raw, true);
-        $impl_data = json_decode($impl_raw, true);
-
-        if (!$schema) {
-            return new WP_REST_Response(
-                array(
-                'success'  => false,
-                'message'  => 'No schema generated for this feature.',
-                'status'   => 'unconfigured'
-                ), 200
-            );
-        }
-
-        $driver = $schema['enforcement']['driver'] ?? 'hook';
-        $is_active = false;
-
-        // Instantiate appropriate driver for verification
-        switch ($driver) {
-        case 'hook':
-            $is_active = VAPTSECURE_Hook_Driver::verify($key, $impl_data, $schema);
-            break;
-        case 'htaccess':
-            $is_active = VAPTSECURE_Htaccess_Driver::verify($key, $impl_data, $schema);
-            break;
-        default:
-            // For nginx/iis, we might just check if the implementation data exists and is enabled
-            $is_active = isset($impl_data['enabled']) ? (bool)$impl_data['enabled'] : false;
-        }
-
-        // Two-Way Strategy: If UI says disabled, we expect is_active to be false
-        $expected_enabled = isset($impl_data['enabled']) ? (bool)$impl_data['enabled'] : false;
-        $sync_status = ($is_active === $expected_enabled) ? 'in_sync' : 'out_of_sync';
-
-        return new WP_REST_Response(
-            array(
-            'success'     => true,
-            'is_active'   => $is_active,
-            'expected'    => $expected_enabled,
-            'sync_status' => $sync_status,
-            'timestamp'   => current_time('mysql'),
-            'driver'      => $driver
-            ), 200
-        );
-    }
-
-    public function handle_active_file($request)
-    {
-        if ($request->get_method() === 'POST') {
-            $file = $request->get_param('file');
-            if (!$file) {
-                return new WP_REST_Response(array('error' => 'No file specified'), 400);
-            }
-
-            $files = array_filter(explode(',', $file));
-            $sanitized_files = array_map('sanitize_file_name', $files);
-
-            // v3.12.1: Strict existence check
-            $valid_files = [];
-            foreach ($sanitized_files as $f) {
-                if (file_exists(VAPTSECURE_PATH . 'data/' . $f)) {
-                    $valid_files[] = $f;
-                }
-            }
-
-            if (empty($valid_files)) {
-                return new WP_REST_Response(array('error' => 'None of the specified files exist on the server'), 400);
-            }
-
-            $filename = implode(',', $valid_files);
-            update_option('vaptsecure_active_feature_file', $filename);
-            return new WP_REST_Response(array('success' => true, 'active_file' => $filename), 200);
-        }
-
-        $active = get_option('vaptsecure_active_feature_file');
-        if (!$active && defined('VAPTSECURE_ACTIVE_DATA_FILE')) {
-            $active = VAPTSECURE_ACTIVE_DATA_FILE;
-        }
-        if (!$active) {
-            $active = 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json';
-        }
-
-
-        return new WP_REST_Response(
-            array(
-            'active_file' => $active
-            ), 200
-        );
-    }
-
-    /**
-     * v3.12.1: Strictly sanitize the active file option against existence
-     */
-    private function sanitize_active_file()
-    {
-        $active = get_option('vaptsecure_active_feature_file');
-        if (!$active) { return;
-        }
-
-        $files = array_filter(explode(',', $active));
-        $valid_files = [];
-        foreach ($files as $f) {
-            if (file_exists(VAPTSECURE_PATH . 'data/' . sanitize_file_name($f))) {
-                $valid_files[] = $f;
-            }
-        }
-
-        if (count($valid_files) !== count($files)) {
-            if (empty($valid_files)) {
-                update_option('vaptsecure_active_feature_file', 'VAPT-SixTee-Risk-Catalogue-12-EntReady_v3.4.json');
-            } else {
-                update_option('vaptsecure_active_feature_file', implode(',', $valid_files));
-            }
-        }
+        return VAPTSECURE_Schema_Validator::validate_implementation_data($data, $schema);
     }
 
     /**
      * Translate URL placeholders in schema to fully qualified URLs (v3.12.17)
      * 
-     * @param  array $schema The schema array
-     * @return array The schema with translated URLs
+     * @deprecated Use VAPTSECURE_Schema_Validator::translate_url_placeholders()
      */
     private static function translate_url_placeholders($schema)
     {
-        $site_url = get_site_url();
-        $home_url = get_home_url();
-        $admin_url = get_admin_url();
-
-        $replacements = array(
-        '{{site_url}}' => $site_url,
-        '{{home_url}}' => $home_url,
-        '{{admin_url}}' => $admin_url,
-        );
-
-        // Recursively walk through the schema and replace placeholders
-        array_walk_recursive(
-            $schema, function (&$value) use ($replacements) {
-                if (is_string($value)) {
-                    $value = str_replace(array_keys($replacements), array_values($replacements), $value);
-                }
-            }
-        );
-
-        return $schema;
-    }
-    /**
-     * GET /vaptsecure/v1/security/stats
-     */
-    public function get_security_stats()
-    {
-        return new WP_REST_Response(VAPTSECURE_DB::get_security_stats_summary(), 200);
+        return VAPTSECURE_Schema_Validator::translate_url_placeholders($schema);
     }
 
-    /**
-     * GET /vaptsecure/v1/security/logs
-     */
-    public function get_security_logs($request)
-    {
-        $limit = $request->get_param('limit') ?: 50;
-        $offset = $request->get_param('offset') ?: 0;
-        return new WP_REST_Response(VAPTSECURE_DB::get_security_events($limit, $offset), 200);
-    }
+    // ========================================================================
+    // ORIGINAL METHOD IMPLEMENTATIONS REMOVED
 
-    /**
-     * Get Global Enforcement
-     *
-     * @v3.13.20
-     */
-    public function get_global_enforcement($request)
-    {
-        return new WP_REST_Response(
-            array(
-            'enabled' => VAPTSECURE_DB::get_global_enforcement()
-            ), 200
-        );
-    }
-
-    /**
-     * Update Global Enforcement
-     *
-     * @v3.13.20
-     */
-    public function update_global_enforcement($request)
-    {
-        $params = $request->get_json_params();
-        $enabled = isset($params['enabled']) ? (bool)$params['enabled'] : true;
-
-        VAPTSECURE_DB::update_global_enforcement($enabled);
-
-        // [v3.13.20] Trigger immediate rebuild of all config files
-        include_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
-        VAPTSECURE_Enforcer::rebuild_all();
-
-        return new WP_REST_Response(
-            array(
-                'success' => true,
-                'enabled' => $enabled
-            ),
-            200
-        );
-    }
-    
-    /**
-     * Get license status for current domain
-     *
-     * @return WP_REST_Response
-     */
-    public function get_license_status()
-    {
-        $domain = parse_url(get_site_url(), PHP_URL_HOST);
-        
-        if (class_exists('VAPTSECURE_License_Manager')) {
-            $info = VAPTSECURE_License_Manager::get_license_info($domain);
-            return new WP_REST_Response($info, 200);
-        }
-        
-        return new WP_REST_Response(array(
-            'status' => 'unknown',
-            'message' => 'License manager not available'
-        ), 200);
-    }
-    
-    /**
-     * Restore settings from cache (manual trigger)
-     *
-     * @param WP_REST_Request $request
-     * @return WP_REST_Response
-     */
-    public function restore_license_cache($request)
-    {
-        $domain = $request->get_param('domain');
-        
-        if (empty($domain)) {
-            $domain = parse_url(get_site_url(), PHP_URL_HOST);
-        }
-        
-        if (class_exists('VAPTSECURE_License_Manager')) {
-            $result = VAPTSECURE_License_Manager::restore_from_cache($domain);
-            
-            if ($result) {
-                return new WP_REST_Response(array(
-                    'success' => true,
-                    'message' => 'Settings restored successfully'
-                ), 200);
-            } else {
-                return new WP_REST_Response(array(
-                    'success' => false,
-                    'message' => 'No cached settings found or restoration failed'
-                ), 400);
-            }
-        }
-        
-        return new WP_REST_Response(array(
-            'success' => false,
-            'message' => 'License manager not available'
-        ), 500);
-    }
-    
-    /**
-     * Force license check and handle expiration
-     *
-     * @return WP_REST_Response
-     */
-    public function force_license_check()
-    {
-        if (class_exists('VAPTSECURE_License_Manager')) {
-            $result = VAPTSECURE_License_Manager::force_license_check();
-            return new WP_REST_Response($result, 200);
-        }
-        
-        return new WP_REST_Response(array(
-            'status' => 'unknown',
-            'message' => 'License manager not available'
-        ), 500);
-    }
-    }
+}

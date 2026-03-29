@@ -7,8 +7,38 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Nginx_Deployer
+class VAPTSECURE_Nginx_Deployer implements VAPTSECURE_Driver_Interface
 {
+    /**
+     * Static wrapper for generate_rules - delegates to nginx driver
+     */
+    public static function generate_rules($impl_data, $schema)
+    {
+        return VAPTSECURE_Nginx_Driver::generate_rules($impl_data, $schema);
+    }
+
+    /**
+     * Static wrapper for write_batch - delegates to nginx driver
+     */
+    public static function write_batch($rules, $target = 'root')
+    {
+        return VAPTSECURE_Nginx_Driver::write_batch($rules);
+    }
+
+    /**
+     * Static wrapper for clean - delegates to nginx driver
+     */
+    public static function clean($target = 'root')
+    {
+        $upload_dir = wp_upload_dir();
+        $file_path = $upload_dir['basedir'] . '/vapt-nginx-rules.conf';
+        if (file_exists($file_path)) {
+            return @unlink($file_path);
+        }
+        return true;
+    }
+
+    // Instance methods below...
     private $nginx_rules_path;
 
     public function __construct()

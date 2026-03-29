@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Htaccess_Driver
+class VAPTSECURE_Htaccess_Driver implements VAPTSECURE_Driver_Interface
 {
     /**
      * Whitelist of allowed .htaccess directives for security
@@ -572,5 +572,17 @@ class VAPTSECURE_Htaccess_Driver
         }
 
         return ['valid' => true, 'reason' => ''];
+    }
+
+    /**
+     * Cleans/removes all VAPT rules from the .htaccess file.
+     *
+     * @param string $target Target location ('root' or 'uploads')
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        // Simply call write_batch with empty array to strip all VAPT rules
+        return self::write_batch([], $target);
     }
 }

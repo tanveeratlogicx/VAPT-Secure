@@ -1,3 +1,12 @@
+## [2.10.0] - 2026-03-29
+
+### Extensibility & Driver Architecture
+- **Driver Interface**: Defined `VAPTSECURE_Driver_Interface` to standardize all enforcement platforms (Apache, Nginx, PHP, etc.).
+- **Interface Implementation**: Updated all 11 existing enforcers to implement the new driver contract.
+- **Schema Validation Pipeline**: Extracted schema validation, sanitization, and analysis logic into a standalone `VAPTSECURE_Schema_Validator` service.
+- **Shared Validation**: Enabled both REST API and Build generator to use the same intelligent enforcement strategy and validation logic.
+- **Core Refactoring**: Reduced complexity in `VAPTSECURE_REST` by delegating validation tasks to the new service.
+
 ## [2.9.0] - 2026-03-29
 
 ### Quality Infrastructure & Development Standards

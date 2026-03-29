@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Config_Driver
+class VAPTSECURE_Config_Driver implements VAPTSECURE_Driver_Interface
 {
     /**
      * Generates a list of valid wp-config.php defines based on the provided data and schema.
@@ -291,5 +291,16 @@ class VAPTSECURE_Config_Driver
         }
 
         return true;
+    }
+
+    /**
+     * Cleans/removes all VAPT rules from wp-config.php.
+     *
+     * @param string $target Target location (unused for config driver, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        return self::write_batch([]);
     }
 }

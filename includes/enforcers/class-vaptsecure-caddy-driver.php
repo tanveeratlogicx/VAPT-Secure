@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Caddy_Driver
+class VAPTSECURE_Caddy_Driver implements VAPTSECURE_Driver_Interface
 {
     /**
      * Generates a list of valid Caddy directives based on the provided data and schema.
@@ -84,6 +84,30 @@ class VAPTSECURE_Caddy_Driver
         $content .= "# Last Updated: " . date('Y-m-d H:i:s') . "\n\n";
 
         $content .= implode("\n", $all_rules_array);
+
+        return @file_put_contents($file_path, $content) !== false;
+    }
+
+    /**
+     * Cleans/removes all VAPT rules from the Caddy rules file.
+     *
+     * @param string $target Target location (unused for caddy driver, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        $upload_dir = wp_upload_dir();
+        $file_path = $upload_dir['basedir'] . '/vapt-caddy-rules.conf';
+
+        if (!file_exists($file_path)) {
+            return true; // Nothing to clean
+        }
+
+        // Write empty content (just header)
+        $content = "# VAPT Secure - Auto Generated Caddy Rules\n";
+        $content .= "# Import this file in your Caddyfile site block.\n";
+        $content .= "# Last Updated: " . date('Y-m-d H:i:s') . "\n";
+        $content .= "# All rules have been cleaned.\n";
 
         return @file_put_contents($file_path, $content) !== false;
     }
