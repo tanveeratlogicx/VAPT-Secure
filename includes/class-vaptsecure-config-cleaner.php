@@ -1,97 +1,280 @@
 <?php
-/**
- * VAPTSECURE Config Cleaner
- *
- * Shared class for cleaning VAPT Secure configuration blocks from various files.
- * Extracts duplicated logic from Enforcer and License Manager classes.
- *
- * @package VAPT-Secure
- * @since 1.0.0
- */
-
-if (!defined('ABSPATH')) {
-    exit;
-}
 
 /**
- * Class VAPTSECURE_Config_Cleaner
+ * VAPTSECURE_Config_Cleaner: Shared utility for cleaning VAPT rules from config files
+ * 
+ * Centralizes the config file cleaning logic to avoid duplication between
+ * the License Manager (when handling expired licenses) and the Enforcer
+ * (when rebuilding or removing protections).
  */
+
+if (!defined('ABSPATH')) { exit; }
+
 class VAPTSECURE_Config_Cleaner
 {
     /**
-     * Clean all configuration files of VAPT Secure blocks.
-     *
-     * Removes VAPT configuration blocks from:
-     * - .htaccess
-     * - wp-config.php
-     * - vapt-functions.php
-     * - nginx.conf
-     * - web.config
-     * - Caddyfile
-     *
-     * @return void
+     * Clean all configuration files of VAPT rules
+     * 
+     * Used when:
+     * - License expires (called from License Manager)
+     * - Removing all protections (called from Enforcer)
+     * - Rebuilding with $remove_only = true (called from Enforcer)
+     * 
+     * @return array Results of cleaning operations
      */
     public static function clean_all()
     {
-        // Clean .htaccess
+        $results = array(
+            'htaccess' => self::clean_htaccess(),
+            'wp_config' => self::clean_wp_config(),
+            'php_functions' => self::clean_php_functions(),
+            'nginx' => self::clean_nginx(),
+            'iis' => self::clean_iis(),
+            'caddy' => self::clean_caddy(),
+        );
+
+        $success_count = count(array_filter($results));
+        error_log(sprintf(
+            '[VAPT Secure] Config cleaning complete. %d/%d files cleaned.',
+            $success_count,
+            count($results)
+        ));
+
+        return $results;
+    }
+
+    /**
+     * Clean .htaccess file of VAPT rules
+     * 
+     * @return bool True if successful (or file doesn't exist)
+     */
+    public static function clean_htaccess()
+    {
         $htaccess = ABSPATH . '.htaccess';
-        if (file_exists($htaccess) && is_writable($htaccess)) {
-            $content = file_get_contents($htaccess);
-            
-            // Remove VAPT blocks (both single and multi-line)
-            $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            $content = preg_replace('/# BEGIN VAPT-RISK[^\n]*\n.*?# END VAPT-RISK[^\n]*/s', '', $content);
-            
-            // Clean up extra newlines
-            $content = preg_replace('/\n{3,}/', "\n\n", $content);
-            
-            file_put_contents($htaccess, $content);
+        
+        if (!file_exists($htaccess)) {
+            return true;
         }
-    
-        // Clean wp-config.php
+
+        if (!is_writable($htaccess)) {
+            error_log('[VAPT Secure] Cannot clean .htaccess: file not writable');
+            return false;
+        }
+
+        $content = file_get_contents($htaccess);
+        if ($content === false) {
+            error_log('[VAPT Secure] Cannot clean .htaccess: failed to read file');
+            return false;
+        }
+
+        // Remove VAPT blocks (both single and multi-line)
+        $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
+        $content = preg_replace('/# BEGIN VAPT-RISK[^\n]*\n.*?# END VAPT-RISK[^\n]*/s', '', $content);
+        
+        // Clean up extra newlines
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        $result = file_put_contents($htaccess, $content);
+        
+        if ($result !== false) {
+            error_log('[VAPT Secure] Cleaned .htaccess');
+            return true;
+        }
+        
+        error_log('[VAPT Secure] Failed to write cleaned .htaccess');
+        return false;
+    }
+
+    /**
+     * Clean wp-config.php file of VAPT rules
+     * 
+     * @return bool True if successful (or file doesn't exist)
+     */
+    public static function clean_wp_config()
+    {
         $wp_config = ABSPATH . 'wp-config.php';
-        if (file_exists($wp_config) && is_writable($wp_config)) {
-            $content = file_get_contents($wp_config);
-            
-            // Remove VAPT blocks (both PHP comments and line comments)
-            $content = preg_replace('/\/\/ BEGIN VAPT[^\n]*\n.*?\/\/ END VAPT[^\n]*/s', '', $content);
-            $content = preg_replace('/\/\* BEGIN VAPT[^\n]*\*\/.*?\/\* END VAPT[^\n]*\*\//s', '', $content);
-            
-            // Clean up extra newlines
-            $content = preg_replace('/\n{3,}/', "\n\n", $content);
-            
-            file_put_contents($wp_config, $content);
+        
+        // Try alternate location if not in ABSPATH
+        if (!file_exists($wp_config)) {
+            $wp_config = dirname(ABSPATH) . '/wp-config.php';
         }
-    
-        // Clean vapt-functions.php
+        
+        if (!file_exists($wp_config)) {
+            return true;
+        }
+
+        if (!is_writable($wp_config)) {
+            error_log('[VAPT Secure] Cannot clean wp-config.php: file not writable');
+            return false;
+        }
+
+        $content = file_get_contents($wp_config);
+        if ($content === false) {
+            error_log('[VAPT Secure] Cannot clean wp-config.php: failed to read file');
+            return false;
+        }
+
+        // Remove VAPT blocks (both PHP comments and line comments)
+        $content = preg_replace('/\/\/ BEGIN VAPT[^\n]*\n.*?\/\/ END VAPT[^\n]*/s', '', $content);
+        $content = preg_replace('/\/\* BEGIN VAPT[^\n]*\*\/.*?\/\* END VAPT[^\n]*\*\//s', '', $content);
+        
+        // Clean up extra newlines
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        $result = file_put_contents($wp_config, $content);
+        
+        if ($result !== false) {
+            error_log('[VAPT Secure] Cleaned wp-config.php');
+            return true;
+        }
+        
+        error_log('[VAPT Secure] Failed to write cleaned wp-config.php');
+        return false;
+    }
+
+    /**
+     * Clean vapt-functions.php file
+     * 
+     * @return bool True if successful
+     */
+    public static function clean_php_functions()
+    {
         $vapt_func = VAPTSECURE_PATH . 'vapt-functions.php';
-        if (file_exists($vapt_func) && is_writable($vapt_func)) {
-            $content = "<?php\n\n/**\n * VAPT Secure Functions\n * License Expired - Functions Disabled\n */\n\nif (!defined('ABSPATH')) { exit; }\n\n";
-            file_put_contents($vapt_func, $content);
+        
+        if (!file_exists($vapt_func)) {
+            return true;
         }
-    
-        // Clean nginx.conf if exists
+
+        if (!is_writable($vapt_func)) {
+            error_log('[VAPT Secure] Cannot clean vapt-functions.php: file not writable');
+            return false;
+        }
+
+        // Write minimal stub file indicating license expired
+        $content = "<?php\n\n/**\n * VAPT Secure Functions\n * License Expired - Functions Disabled\n */\n\nif (!defined('ABSPATH')) { exit; }\n\n";
+        
+        $result = file_put_contents($vapt_func, $content);
+        
+        if ($result !== false) {
+            error_log('[VAPT Secure] Cleaned vapt-functions.php');
+            return true;
+        }
+        
+        error_log('[VAPT Secure] Failed to write cleaned vapt-functions.php');
+        return false;
+    }
+
+    /**
+     * Clean nginx.conf file of VAPT rules
+     * 
+     * @return bool True if successful (or file doesn't exist)
+     */
+    public static function clean_nginx()
+    {
         $nginx_conf = ABSPATH . 'nginx.conf';
-        if (file_exists($nginx_conf) && is_writable($nginx_conf)) {
-            $content = file_get_contents($nginx_conf);
-            $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            file_put_contents($nginx_conf, $content);
+        
+        if (!file_exists($nginx_conf)) {
+            return true;
         }
-    
-        // Clean web.config if exists (IIS)
+
+        if (!is_writable($nginx_conf)) {
+            error_log('[VAPT Secure] Cannot clean nginx.conf: file not writable');
+            return false;
+        }
+
+        $content = file_get_contents($nginx_conf);
+        if ($content === false) {
+            error_log('[VAPT Secure] Cannot clean nginx.conf: failed to read file');
+            return false;
+        }
+
+        $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        $result = file_put_contents($nginx_conf, $content);
+        
+        if ($result !== false) {
+            error_log('[VAPT Secure] Cleaned nginx.conf');
+            return true;
+        }
+        
+        error_log('[VAPT Secure] Failed to write cleaned nginx.conf');
+        return false;
+    }
+
+    /**
+     * Clean web.config file (IIS) of VAPT rules
+     * 
+     * @return bool True if successful (or file doesn't exist)
+     */
+    public static function clean_iis()
+    {
         $web_config = ABSPATH . 'web.config';
-        if (file_exists($web_config) && is_writable($web_config)) {
-            $content = file_get_contents($web_config);
-            $content = preg_replace('/<!-- BEGIN VAPT[^\n]*-->.*?<!-- END VAPT[^\n]*-->/s', '', $content);
-            file_put_contents($web_config, $content);
+        
+        if (!file_exists($web_config)) {
+            return true;
         }
-    
-        // Clean Caddyfile if exists
+
+        if (!is_writable($web_config)) {
+            error_log('[VAPT Secure] Cannot clean web.config: file not writable');
+            return false;
+        }
+
+        $content = file_get_contents($web_config);
+        if ($content === false) {
+            error_log('[VAPT Secure] Cannot clean web.config: failed to read file');
+            return false;
+        }
+
+        $content = preg_replace('/<!-- BEGIN VAPT[^\n]*-->.*?<!-- END VAPT[^\n]*-->/s', '', $content);
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        $result = file_put_contents($web_config, $content);
+        
+        if ($result !== false) {
+            error_log('[VAPT Secure] Cleaned web.config');
+            return true;
+        }
+        
+        error_log('[VAPT Secure] Failed to write cleaned web.config');
+        return false;
+    }
+
+    /**
+     * Clean Caddyfile of VAPT rules
+     * 
+     * @return bool True if successful (or file doesn't exist)
+     */
+    public static function clean_caddy()
+    {
         $caddyfile = ABSPATH . 'Caddyfile';
-        if (file_exists($caddyfile) && is_writable($caddyfile)) {
-            $content = file_get_contents($caddyfile);
-            $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            file_put_contents($caddyfile, $content);
+        
+        if (!file_exists($caddyfile)) {
+            return true;
         }
+
+        if (!is_writable($caddyfile)) {
+            error_log('[VAPT Secure] Cannot clean Caddyfile: file not writable');
+            return false;
+        }
+
+        $content = file_get_contents($caddyfile);
+        if ($content === false) {
+            error_log('[VAPT Secure] Cannot clean Caddyfile: failed to read file');
+            return false;
+        }
+
+        $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        $result = file_put_contents($caddyfile, $content);
+        
+        if ($result !== false) {
+            error_log('[VAPT Secure] Cleaned Caddyfile');
+            return true;
+        }
+        
+        error_log('[VAPT Secure] Failed to write cleaned Caddyfile');
+        return false;
     }
 }

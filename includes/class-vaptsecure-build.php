@@ -53,8 +53,9 @@ class VAPTSECURE_Build
 
         $license_scope = isset($data['license_scope']) ? $data['license_scope'] : 'single';
         $domain_limit = isset($data['installation_limit']) ? intval($data['installation_limit']) : 1;
+        $restrict_features = isset($data['restrict_features']) ? filter_var($data['restrict_features'], FILTER_VALIDATE_BOOLEAN) : false;
 
-        $config_content = self::generate_config_content($domain, $version, $features, $active_data_file_name, $license_scope, $domain_limit);
+        $config_content = self::generate_config_content($domain, $version, $features, $active_data_file_name, $license_scope, $domain_limit, $restrict_features);
 
         // If Config Only -> Save and ZIP just that
         if ($generate_type === 'config_only') {
@@ -96,7 +97,7 @@ class VAPTSECURE_Build
         return $base_storage_url . '/' . $domain . '/' . $version . '/' . $zip_filename;
     }
 
-    public static function generate_config_content($domain, $version, $features, $active_data_file = null, $license_scope = 'single', $domain_limit = 1)
+    public static function generate_config_content($domain, $version, $features, $active_data_file = null, $license_scope = 'single', $domain_limit = 1, $restrict_features = false)
     {
         $config = "<?php\n";
         $config .= "/**\n * VAPT Secure Configuration for $domain\n * Build Version: $version\n */\n\n";
@@ -116,9 +117,15 @@ class VAPTSECURE_Build
             $config .= "define( 'VAPTSECURE_ACTIVE_DATA_FILE', '" . esc_sql($active_data_file) . "' );\n";
         }
 
-        $config .= "\n// Active Features\n";
-        foreach ($features as $key) {
-            $config .= "define( 'VAPTSECURE_FEATURE_" . strtoupper(str_replace('-', '_', $key)) . "', true );\n";
+        // Active Features (only include if restrict_features is true)
+        if ($restrict_features) {
+            $config .= "define( 'VAPTSECURE_RESTRICT_FEATURES', true );\n";
+            $config .= "\n// Active Features (Restricted Mode)\n";
+            foreach ($features as $key) {
+                $config .= "define( 'VAPTSECURE_FEATURE_" . strtoupper(str_replace('-', '_', $key)) . "', true );\n";
+            }
+        } else {
+            $config .= "\n// Active Features: All features allowed (Open Mode)\n";
         }
 
         return $config;

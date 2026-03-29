@@ -1,3 +1,26 @@
+## [2.8.0] - 2026-03-29
+
+### REST API & Architecture Enhancements
+- **REST API Expansion**: Added new endpoints for license management, settings restoration, and global enforcement.
+- **Global Enforcement Logic**: Improved global enforcement with immediate configuration rebuild trigger.
+- **License Management**: Enhanced license info retrieval and manual cache restoration capabilities.
+- **Build Generator**: Refined file exclusion patterns and directory handling for more robust builds.
+- **Database Schema**: Optimized schema update logic and normalization of feature relationships.
+- **Modularization**: Continued effort in modularizing REST controllers and shared utilities.
+
+## [2.7.0] - 2026-03-28
+
+### Feature Toggle for Configuration File
+
+- **Build Generator Enhancement**: Added toggle to conditionally include/exclude Active Features list from generated config
+- **Restrictive Mode (Toggle ON)**: Config includes feature definitions, plugin ONLY allows listed features
+- **Open Mode (Toggle OFF)**: Config excludes feature definitions, plugin allows ANY feature
+- **UI Changes**: Added "Restrict to Selected Features" toggle in Build Generator tab
+- **API Changes**: Added `restrict_features` parameter to `/build/generate` and `/build/save-config` endpoints
+- **Config Generation**: Updated `generate_config_content()` to conditionally include feature definitions
+- **Feature Validation**: Added `vaptsecure_is_feature_allowed()` function to check if features are permitted
+- **Backward Compatibility**: Default is OFF (Open Mode) for flexible environments
+
 ## [2.6.4] - 2026-03-28
 
 ### Architecture Improvements: REST API Modularization

@@ -51,6 +51,9 @@ wp-config.php
 /test-*.php
 /test-*.txt
 /debug-*
+
+# KiloCode AI worktrees (keep root level files)
+.kilo/worktrees/
 .git_vapt-secure/COMMIT_EDITMSG
 .git_vapt-secure/config
 .git_vapt-secure/description
