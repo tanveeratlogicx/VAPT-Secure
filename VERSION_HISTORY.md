@@ -1,3 +1,9 @@
+## [2.10.2] - 2026-03-29
+
+### Bug Fixes
+- **500 Error Fix**: Resolved site-wide 500 Internal Server Error caused by `VAPTSECURE_Hook_Driver` not implementing all abstract methods from `VAPTSECURE_Driver_Interface`.
+- **Driver Methods**: Implemented `generate_rules()`, `write_batch()`, and added missing private `is_global_enabled()` to `VAPTSECURE_Hook_Driver`.
+
 ## [2.10.1] - 2026-03-29
 
 ### Documentation & Developer Experience (P5)
