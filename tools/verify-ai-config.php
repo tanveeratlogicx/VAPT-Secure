@@ -195,6 +195,96 @@ function validateSecurityContent(string $file): array {
 }
 
 // ---------------------------------------------------------------------------
+// EDITOR OPTIMIZATION FUNCTIONS
+// ---------------------------------------------------------------------------
+
+/**
+ * Display editor optimization hints
+ */
+function displayEditorOptimizationHints(): void {
+    global $EDITOR_HINTS;
+    
+    header("💡 Editor Optimization Hints");
+    
+    foreach ($EDITOR_HINTS as $editor => $hints) {
+        echo "\n" . color("🔧 $editor:", 'cyan') . "\n";
+        echo "   Optimal Model: {$hints['optimal_model']}\n";
+        echo "   Context Window: {$hints['context_window']}\n";
+        echo "   Special Features: " . implode(', ', $hints['special_features']) . "\n";
+        echo "   Performance Tip: {$hints['performance_tip']}\n";
+        
+        // Verify editor-specific files exist
+        $files_exist = true;
+        foreach ($hints['config_files'] as $file) {
+            if (!file_exists($file)) {
+                $files_exist = false;
+                echo "   " . color("⚠ Missing: $file", 'yellow') . "\n";
+            }
+        }
+        
+        if ($files_exist) {
+            echo "   " . color("✅ Configuration files present", 'green') . "\n";
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// EDITOR OPTIMIZATION HINTS
+// ---------------------------------------------------------------------------
+
+$EDITOR_HINTS = [
+    'cursor' => [
+        'optimal_model' => 'claude-sonnet-4-6',
+        'context_window' => '200k',
+        'special_features' => ['@vapt-expert skill invocation', 'real-time validation'],
+        'performance_tip' => 'Use cursor.rules for fastest startup',
+        'config_files' => ['.cursor/cursor.rules'],
+    ],
+    'windsurf' => [
+        'optimal_model' => 'claude-sonnet-4-6',
+        'context_window' => '200k',
+        'special_features' => ['cascade preview integration', 'auto-format on save'],
+        'performance_tip' => 'Keep .windsurfrules in root for instant loading',
+        'config_files' => ['.windsurfrules'],
+    ],
+    'claude' => [
+        'optimal_model' => 'claude-3-5-sonnet-20241022',
+        'context_window' => '200k',
+        'special_features' => ['CLI integration', 'batch processing'],
+        'performance_tip' => 'Use settings.json for persistent configuration',
+        'config_files' => ['.claude/settings.json'],
+    ],
+    'roo-code' => [
+        'optimal_model' => 'gpt-4-turbo',
+        'context_window' => '128k',
+        'special_features' => ['mode-specific rules', 'fallback .roorules'],
+        'performance_tip' => 'Use .clinerules for modern Roo Code versions',
+        'config_files' => ['.clinerules', '.roorules'],
+    ],
+    'github-copilot' => [
+        'optimal_model' => 'gpt-4-turbo',
+        'context_window' => '128k',
+        'special_features' => ['IDE integration', 'context-aware suggestions'],
+        'performance_tip' => 'Place in .github/ for automatic detection',
+        'config_files' => ['.github/copilot-instructions.md'],
+    ],
+    'jetbrains-junie' => [
+        'optimal_model' => 'claude-sonnet-4-6',
+        'context_window' => '200k',
+        'special_features' => ['multi-IDE support', 'project guidelines'],
+        'performance_tip' => 'Use .junie/guidelines.md for persistent loading',
+        'config_files' => ['.junie/guidelines.md'],
+    ],
+    'zed' => [
+        'optimal_model' => 'claude-sonnet-4-6',
+        'context_window' => '200k',
+        'special_features' => ['priority-based loading', 'rules library'],
+        'performance_tip' => '.rules loads first - keep it lean',
+        'config_files' => ['.rules'],
+    ],
+];
+
+// ---------------------------------------------------------------------------
 // MAIN VERIFICATION
 // ---------------------------------------------------------------------------
 
@@ -392,6 +482,11 @@ function main(): int {
             info("Skill link missing (optional): $link");
         }
     }
+    
+    // -----------------------------------------------------------------------
+    // Display Editor Optimization Hints
+    // -----------------------------------------------------------------------
+    displayEditorOptimizationHints();
     
     // -----------------------------------------------------------------------
     // Summary

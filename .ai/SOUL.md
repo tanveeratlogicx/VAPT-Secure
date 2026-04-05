@@ -1951,12 +1951,13 @@ The following workflow must be followed for every code generation task:
 ## 📋 Feature Lifecycle Rules
 
 ### Draft → Develop
-1. Verify plugin dependencies exist
-2. Apply `.htaccess` rules via `vapt_htaccess_write()`
-3. Set up feature-specific database tables
-4. Enable debug logging
-5. Test: `https://{domain}/wp-json/wp/v2/`
-6. **Trigger**: `VAPT_Self_Check::run('feature_enable', ['feature_id' => $id])`
+1. **Automated Initiation Check**: The system automatically validates and repairs all AI configuration symlinks via `VAPTSECURE_AI_Config::verify_and_repair()`.
+2. Verify plugin dependencies exist
+3. Apply `.htaccess` rules via `vapt_htaccess_write()`
+4. Set up feature-specific database tables
+5. Enable debug logging
+6. Test: `https://{domain}/wp-json/wp/v2/`
+7. **Trigger**: `VAPT_Self_Check::run('feature_enable', ['feature_id' => $id])`
 
 ### Develop → Deploy
 1. Run all validation workflows

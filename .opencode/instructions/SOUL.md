@@ -7,11 +7,11 @@
 >
 > | # | Editor / Extension | Platform | Symlink / Config Path | Type |
 > |---|-------------------|----------|-----------------------|------|
-> | 1 | **Cursor** | VS Code fork | `.cursor/cursor.rules → .ai/rules/cursor.rules → SOUL.md` | Rules file |
-> | 2 | **Gemini / Antigravity** | VS Code | `.gemini/gemini.md → .ai/rules/gemini.md → SOUL.md` | Rules file |
+> | 1 | **Cursor** | VS Code fork | `.cursor/cursor.rules → .ai/SOUL.md` | Rules file |
+> | 2 | **Gemini / Antigravity** | VS Code | `.gemini/gemini.md → .ai/SOUL.md` | Rules file |
 > | 3 | **Claude Code** | CLI / VS Code | `.claude/settings.json → .ai/rules/claude-settings.json` | Settings |
 > | 4 | **Qoder** | VS Code | `.qoder/qoder.rules → .ai/SOUL.md` | Rules file |
-> | 5 | **Trae** | VS Code | `.trae/trae.rules → .ai/SOUL.md` | Rules file |
+> | 5 | **Trae** | VS Code fork | `.trae/trae.rules → .ai/SOUL.md` | Rules file |
 > | 6 | **Windsurf** | VS Code fork | `.windsurfrules → .ai/SOUL.md` | Rules file |
 > | 7 | **Kilo Code** | VS Code | `.kilocode/rules/soul.md → .ai/SOUL.md` | Rules dir |
 > | 8 | **Continue** | VS Code / JetBrains | `.continue/rules/soul.md → .ai/SOUL.md` | Rules dir |
@@ -20,7 +20,7 @@
 > | 11 | **JetBrains Junie** | IntelliJ / PyCharm / WebStorm / GoLand / PhpStorm | `.junie/guidelines.md → .ai/SOUL.md` | Guidelines file |
 > | 12 | **Zed** | Zed Editor | `.rules → .ai/SOUL.md` | Rules file |
 > | 13 | **OpenCode / ECC** | CLI / Agent | `.opencode/instructions/SOUL.md → .ai/SOUL.md` | Instructions file |
-> | 14 | **VS Code** | VS Code | `.vscode/settings.json` | Editor settings only |
+> | 14 | **VS Code** | VS Code | `.vscode/SOUL.md → .ai/SOUL.md` | Rules file |
 >
 > **Edit this file once — changes propagate to ALL editors and extensions automatically.**
 
@@ -1951,12 +1951,13 @@ The following workflow must be followed for every code generation task:
 ## 📋 Feature Lifecycle Rules
 
 ### Draft → Develop
-1. Verify plugin dependencies exist
-2. Apply `.htaccess` rules via `vapt_htaccess_write()`
-3. Set up feature-specific database tables
-4. Enable debug logging
-5. Test: `https://{domain}/wp-json/wp/v2/`
-6. **Trigger**: `VAPT_Self_Check::run('feature_enable', ['feature_id' => $id])`
+1. **Automated Initiation Check**: The system automatically validates and repairs all AI configuration symlinks via `VAPTSECURE_AI_Config::verify_and_repair()`.
+2. Verify plugin dependencies exist
+3. Apply `.htaccess` rules via `vapt_htaccess_write()`
+4. Set up feature-specific database tables
+5. Enable debug logging
+6. Test: `https://{domain}/wp-json/wp/v2/`
+7. **Trigger**: `VAPT_Self_Check::run('feature_enable', ['feature_id' => $id])`
 
 ### Develop → Deploy
 1. Run all validation workflows
@@ -2002,6 +2003,584 @@ actions:
 
 ---
 
+## 🚦 Rate Limiting Standards
+
+**Purpose:** Protect WordPress native forms and endpoints from abuse through configurable rate limiting.
+
+**Protected Forms:**
+- WordPress Native Login Form (`/wp-login.php`)
+- WordPress Registration Form (`/wp-login.php?action=register`)
+- Lost Password Form (`/wp-login.php?action=lostpassword`)
+- Comment Submission Form
+- XML-RPC endpoint (`/xmlrpc.php`)
+
+**Configuration Options:**
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| **Time Window** | Per Minute / Per Hour / Per Day | Per Minute |
+| **Allowed Limit** | 1-1000 requests | 5 (per minute) |
+| **Test Limit** | 1.0x - 2.0x of Allowed Limit | 1.25x |
+
+**Rate Limit Tiers:**
+- `strict` - Low limits, immediate blocking (admin/login areas)
+- `moderate` - Balanced limits with warning threshold
+- `lenient` - Higher limits for public content
+
+**Technical Requirements:**
+- Store counters in transients (not database for performance)
+- Whitelist logged-in administrators (via `wordpress_logged_in_` cookie)
+- Return HTTP 429 on limit exceeded with `Retry-After` header
+- Auto-purge expired counters via WP-Cron
+
+**Test & Verify Functionality:**
+
+| Component | Description |
+|-----------|-------------|
+| **Test Limit Button** | Simulates requests up to test limit (1.25x allowed) without actual blocking |
+| **Realtime Statistics** | Live counter showing: Attempts, Allowed, Blocked |
+| **Visual Indicators** | Progress bar showing usage vs limit |
+| **Reset Counters** | Manual reset for testing purposes |
+
+**Realtime Statistics Display:**
+```
+┌─────────────────────────────────────────┐
+│  Realtime Test Statistics               │
+├───────────┬───────────┬─────────────────┤
+│ Attempts  │ Allowed   │ Blocked         │
+│    12     │     5     │       7         │
+└───────────┴───────────┴─────────────────┘
+[████████░░░░░░░░░░] 58% of limit used
+```
+
+**Example .htaccess Pattern:**
+```apache
+# BEGIN VAPT-RATE-LIMIT-LOGIN
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Exempt logged-in users (via cookie check)
+    RewriteCond %{HTTP_COOKIE} !wordpress_logged_in_
+    # Rate limiting via environment variables
+    RewriteRule .* - [E=VAPT_LOGIN_LIMIT:1]
+</IfModule>
+# END VAPT-RATE-LIMIT-LOGIN
+```
+
+---
+
+## 🔒 Progressive IP Lockout & Blacklisting
+
+**Purpose:** Escalating lockout penalties for repeated failed login attempts with permanent blacklist for persistent attackers.
+
+**Lockout Escalation Matrix:**
+
+| Failed Attempts | Lockout Duration | Status |
+|-----------------|------------------|--------|
+| 3 | 3 minutes | Temporary |
+| 5 | 5 minutes | Temporary |
+| 10 | 30 minutes | Temporary |
+| >10 | Permanent | Blacklisted (Admin release required) |
+
+**Algorithm Flow:**
+```
+User Attempts Login
+        ↓
+Check IP Blacklist → If BLACKLISTED → Block + Show admin contact message
+        ↓ (not blacklisted)
+Check Active Lockout → If LOCKED → Show remaining time
+        ↓ (not locked)
+Validate Credentials
+        ↓
+   Failure? → Increment Fail Count → Check Escalation Threshold → Apply Lockout
+        ↓ (success)
+   Clear Fail Count + Log Success
+```
+
+**Data Storage Structure:**
+```php
+// IP tracking entry (wp_vapt_ip_lockouts)
+{
+    "ip_address": "192.168.1.100",
+    "fail_count": 4,
+    "first_attempt": "2026-04-05 10:00:00",
+    "last_attempt": "2026-04-05 10:15:00",
+    "lockout_until": "2026-04-05 10:18:00",  // 3 min lockout
+    "status": "locked"  // active | locked | blacklisted
+}
+
+// Permanent blacklist entry (wp_vapt_ip_blacklist)
+{
+    "ip_address": "192.168.1.100",
+    "blacklisted_at": "2026-04-05 10:45:00",
+    "reason": "Exceeded 10 failed attempts",
+    "release_requires": "admin_action",
+    "released_by": null,
+    "released_at": null
+}
+```
+
+**PHP Implementation:**
+```php
+class VAPT_IP_Lockout {
+    
+    private const LOCKOUT_RULES = [
+        3  => 180,   // 3 minutes in seconds
+        5  => 300,   // 5 minutes
+        10 => 1800,  // 30 minutes
+    ];
+    
+    private const BLACKLIST_THRESHOLD = 10;
+    
+    /**
+     * Check if IP is blocked (locked or blacklisted)
+     */
+    public function is_blocked( string $ip ): array {
+        // Check blacklist first
+        if ( $this->is_blacklisted( $ip ) ) {
+            return [
+                'blocked'  => true,
+                'reason'   => 'blacklisted',
+                'message'  => 'Access permanently blocked. Contact site administrator.',
+                'until'    => null
+            ];
+        }
+        
+        // Check active lockout
+        $lockout = $this->get_lockout( $ip );
+        if ( $lockout && strtotime( $lockout['lockout_until'] ) > time() ) {
+            $remaining = strtotime( $lockout['lockout_until'] ) - time();
+            return [
+                'blocked'   => true,
+                'reason'    => 'locked',
+                'message'   => 'Too many failed attempts.',
+                'until'     => $lockout['lockout_until'],
+                'remaining' => $remaining
+            ];
+        }
+        
+        return ['blocked' => false];
+    }
+    
+    /**
+     * Record failed attempt and apply lockout if threshold reached
+     */
+    public function record_failure( string $ip ): array {
+        global $wpdb;
+        
+        $table = $wpdb->prefix . 'vapt_ip_lockouts';
+        $data  = $this->get_or_create_entry( $ip );
+        
+        $data['fail_count']++;
+        $data['last_attempt'] = current_time( 'mysql' );
+        
+        // Check for permanent blacklist
+        if ( $data['fail_count'] > self::BLACKLIST_THRESHOLD ) {
+            $this->blacklist_ip( $ip, $data['fail_count'] );
+            return [
+                'action'  => 'blacklisted',
+                'message' => 'IP permanently blocked due to excessive failures.'
+            ];
+        }
+        
+        // Check for temporary lockout
+        foreach ( self::LOCKOUT_RULES as $threshold => $duration ) {
+            if ( $data['fail_count'] === $threshold ) {
+                $lockout_until = time() + $duration;
+                $data['status'] = 'locked';
+                $data['lockout_until'] = date( 'Y-m-d H:i:s', $lockout_until );
+                
+                $this->update_entry( $ip, $data );
+                
+                return [
+                    'action'    => 'locked',
+                    'duration'  => $duration,
+                    'until'     => $data['lockout_until'],
+                    'message'   => "IP locked for {$duration} seconds after {$threshold} failed attempts."
+                ];
+            }
+        }
+        
+        $this->update_entry( $ip, $data );
+        return ['action' => 'counted', 'fails' => $data['fail_count']];
+    }
+    
+    /**
+     * Clear fail count on successful login
+     */
+    public function clear_failures( string $ip ): void {
+        global $wpdb;
+        $wpdb->delete(
+            $wpdb->prefix . 'vapt_ip_lockouts',
+            ['ip_address' => $ip],
+            ['%s']
+        );
+    }
+}
+```
+
+**Admin IP Release Interface:**
+
+Admin page: VAPT Security → IP Blacklist
+
+```php
+class VAPT_IP_Blacklist_Admin {
+    
+    public function render_page() {
+        // Two tables:
+        // 1. Currently Locked IPs with "Release Now" buttons
+        // 2. Permanently Blacklisted IPs with "Remove from Blacklist" buttons
+        // AJAX handlers for release actions with nonce validation
+    }
+}
+```
+
+**Release Action Handler:**
+```php
+add_action( 'wp_ajax_vapt_release_blacklist', function() {
+    check_ajax_referer( 'vapt_blacklist_release', '_ajax_nonce' );
+    
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+    
+    $ip = sanitize_text_field( $_POST['ip'] ?? '' );
+    if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+        wp_send_json_error( 'Invalid IP address' );
+    }
+    
+    global $wpdb;
+    $result = $wpdb->update(
+        $wpdb->prefix . 'vapt_ip_blacklist',
+        [
+            'released_by' => get_current_user_id(),
+            'released_at' => current_time( 'mysql' )
+        ],
+        ['ip_address' => $ip, 'released_at' => null]
+    );
+    
+    // Also clear from lockouts table
+    $wpdb->delete( $wpdb->prefix . 'vapt_ip_lockouts', ['ip_address' => $ip] );
+    
+    // Log admin action
+    vapt_log_admin_action( 'ip_release', $ip, get_current_user_id() );
+    
+    wp_send_json_success( ['released' => $ip] );
+} );
+```
+
+---
+
+## 🌐 FQDN Path Standards
+
+**CRITICAL:** All paths in security rules MUST be converted to Fully Qualified Domain Name (FQDN) format with `https://` scheme.
+
+**MANDATORY Path Conversions:**
+
+| Relative Path | FQDN Format |
+|---------------|-------------|
+| `/xmlrpc.php` | `https://{domain}/xmlrpc.php` |
+| `/wp/v2/users` | `https://{domain}/wp-json/wp/v2/users` |
+| `/wp-login.php` | `https://{domain}/wp-login.php` |
+| `/wp-admin/` | `https://{domain}/wp-admin/` |
+| `/wp-cron.php` | `https://{domain}/wp-cron.php` |
+| `/wp-json/wp/v2/` | `https://{domain}/wp-json/wp/v2/` |
+| `/wp-admin/admin-ajax.php` | `https://{domain}/wp-admin/admin-ajax.php` |
+
+**PHP FQDN Conversion Helper:**
+```php
+/**
+ * Convert relative path to FQDN format
+ * 
+ * @param string $path Relative path (e.g., '/xmlrpc.php')
+ * @return string FQDN URL (e.g., 'https://example.com/xmlrpc.php')
+ */
+function vapt_get_fqdn( string $path ): string {
+    $domain = get_site_url();  // https://example.com
+    $path   = ltrim( $path, '/' );
+    return trailingslashit( $domain ) . $path;
+}
+
+// Usage examples
+$xmlrpc_url = vapt_get_fqdn( 'xmlrpc.php' );  // https://{domain}/xmlrpc.php
+$rest_users = vapt_get_fqdn( 'wp-json/wp/v2/users' );  // https://{domain}/wp-json/wp/v2/users
+```
+
+**Documentation URL Standard:**
+- ✅ `https://{domain}/wp-admin/`
+- ✅ `https://{domain}/wp-json/wp/v2/`
+- ❌ `yoursite.com/wp-admin/` (no scheme)
+- ❌ `/wp-admin/` (relative path)
+- ❌ `example.com/xmlrpc.php` (no placeholder)
+
+---
+
+## 🔐 Native Endpoints Security
+
+**Purpose:** Protect WordPress REST API and critical endpoints from enumeration attacks and unauthorized access.
+
+**Critical Endpoints Registry:**
+
+| Endpoint | Protection Type | Risk Level |
+|----------|----------------|------------|
+| `/wp-json/wp/v2/users` | Enumeration prevention | High |
+| `/wp-json/wp/v2/posts` | Data exposure limit | Medium |
+| `/wp-json/wp/v2/media` | Unauthorized access | High |
+| `/wp-json/wp/v2/comments` | Spam prevention | Medium |
+| `/xmlrpc.php` | Disable/Restrict | Critical |
+| `/wp-trackback.php` | Disable | Low |
+| `/wp-json/wp/v2/users/me` | Allow own data | Low |
+
+**Implementation Rules:**
+- Always use FQDN format in documentation
+- Use `RewriteCond %{REQUEST_URI}` patterns for blocking
+- Preserve admin access via capability checks
+- Log blocked attempts to audit trail
+- Never block `/wp-json/vaptsecure/v1/` (plugin API)
+
+**Example .htaccess Rules:**
+```apache
+# BEGIN VAPT-RISK-ENDPOINT-PROTECTION
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Block user enumeration via REST API
+    RewriteCond %{REQUEST_URI} ^/wp-json/wp/v2/users [NC]
+    RewriteCond %{QUERY_STRING} !^.*context=edit.*$
+    RewriteCond %{HTTP_COOKIE} !wordpress_logged_in_
+    RewriteRule .* - [F,L]
+    
+    # Disable XML-RPC
+    RewriteCond %{REQUEST_URI} ^/xmlrpc\.php [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+# END VAPT-RISK-ENDPOINT-PROTECTION
+```
+
+---
+
+## 📝 Contact Form Security Standards
+
+**Purpose:** Provide security guidelines for sanitization and validation across popular WordPress contact form plugins.
+
+**Supported Plugins (10 Total):**
+
+**Tier 1 - Most Popular:**
+1. **Contact Form 7** - Free, 5M+ installs
+2. **WPForms** - Freemium, 6M+ installs
+3. **Elementor Forms** - Bundled with Elementor Pro
+4. **Gravity Forms** - Premium, industry standard
+
+**Tier 2 - Widely Used:**
+5. **Ninja Forms** - Freemium, 900K+ installs
+6. **Formidable Forms** - Freemium, 300K+ installs
+7. **Fluent Forms** - Freemium, 400K+ installs
+
+**Tier 3 - Custom/Bespoke:**
+8. **Custom HTML Forms** - Hand-coded forms
+9. **Custom JavaScript Forms** - AJAX-based forms
+10. **Theme-Integrated Forms** - Forms from themes (Divi, Avada, etc.)
+
+**Universal Sanitation Requirements:**
+- **Input Validation:** Whitelist allowed characters per field type
+- **SQL Injection Prevention:** Use `$wpdb->prepare()` for any DB operations
+- **XSS Prevention:** Escaping with `wp_kses_post()`, `esc_html()`, `esc_attr()`
+- **CSRF Protection:** Nonce validation with `wp_nonce_field()` and `wp_verify_nonce()`
+- **Honeypot Fields:** Hidden field spam detection
+- **Rate Limiting:** Per-IP submission limits
+
+**Plugin-Specific Implementation:**
+```php
+// Contact Form 7
+add_filter( 'wpcf7_validate_text', 'vapt_sanitize_cf7_field', 10, 2 );
+add_filter( 'wpcf7_validate_email', 'vapt_validate_cf7_email', 10, 2 );
+
+// WPForms
+add_action( 'wpforms_process_validate_text', 'vapt_sanitize_wpforms_field', 10, 3 );
+
+// Elementor Forms
+add_action( 'elementor_pro/forms/validation', 'vapt_validate_elementor_form', 10, 2 );
+
+// Custom HTML/JS Forms
+function vapt_sanitize_custom_form() {
+    check_ajax_referer( 'vapt_custom_form_nonce', 'nonce' );
+    $name  = sanitize_text_field( $_POST['name'] ?? '' );
+    $email = sanitize_email( $_POST['email'] ?? '' );
+    $message = sanitize_textarea_field( $_POST['message'] ?? '' );
+    // ... validation logic
+}
+```
+
+---
+
+## 🛡️ OWASP Top 10 (2025) Compliance
+
+**Purpose:** Map VAPTSecure features to OWASP Top 10 2025 security categories.
+
+| OWASP 2025 | VAPTSecure Implementation | Priority |
+|------------|---------------------------|----------|
+| **A01 - Broken Access Control** | Endpoint whitelisting, capability checks | Critical |
+| **A02 - Cryptographic Failures** | HTTPS enforcement, secure cookies | High |
+| **A03 - Injection** | Input validation, `$wpdb->prepare()` | Critical |
+| **A04 - Insecure Design** | Rate limiting, security by default | High |
+| **A05 - Security Misconfiguration** | Self-check automation, secure defaults | High |
+| **A06 - Vulnerable Components** | Dependency scanning, auto-updates | Medium |
+| **A07 - Auth Failures** | 2FA support, brute force protection | High |
+| **A08 - Data Integrity Failures** | File integrity monitoring | Medium |
+| **A09 - Logging Failures** | Comprehensive audit logging | High |
+| **A10 - SSRF** | URL validation, request filtering | Medium |
+
+**Implementation Guidelines:**
+- Tag features with `owasp_a01` through `owasp_a10` metadata
+- Generate compliance reports per OWASP category
+- Map every security rule to corresponding OWASP category
+
+---
+
+## ⚡ Severity Response Matrix
+
+**Purpose:** Calibrate security responses based on threat severity.
+
+| Severity | Response | Example |
+|----------|----------|---------|
+| **Critical** | Block + Alert + Log | SQL injection attempt |
+| **High** | Block + Log | Failed admin login (5x) |
+| **Medium** | Rate Limit + Log | Excessive API requests |
+| **Low** | Log Only | Suspicious user agent |
+
+**PHP Implementation:**
+```php
+function vapt_get_response_action( string $severity ): array {
+    $actions = [
+        'critical' => [
+            'block' => true, 
+            'alert' => true, 
+            'log' => true, 
+            'notify_admin' => true
+        ],
+        'high' => [
+            'block' => true, 
+            'alert' => false, 
+            'log' => true, 
+            'notify_admin' => false
+        ],
+        'medium' => [
+            'block' => false, 
+            'rate_limit' => true, 
+            'log' => true, 
+            'notify_admin' => false
+        ],
+        'low' => [
+            'block' => false, 
+            'log' => true, 
+            'notify_admin' => false
+        ],
+    ];
+    return $actions[$severity] ?? $actions['low'];
+}
+```
+
+---
+
+## 📋 WordPress Coding Standards
+
+**Purpose:** Enforce WordPress security coding standards for all generated code.
+
+**Database Queries:**
+```php
+// ALWAYS use prepare()
+$results = $wpdb->get_results(
+    $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}vapt_logs WHERE user_id = %d AND created_at > %s",
+        $user_id,
+        $date_from
+    )
+);
+```
+
+**Nonce Validation:**
+```php
+// ALWAYS verify for state-changing actions
+if ( ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'vapt_action_' . $feature_id ) ) {
+    wp_send_json_error( ['message' => 'Invalid security token'] );
+    wp_die();
+}
+```
+
+**Capability Checks:**
+```php
+// ALWAYS check permissions
+current_user_can( 'manage_options' );           // Admin only
+current_user_can( 'activate_plugins' );       // Plugin management
+current_user_can( 'vapt_manage_security' );   // Custom capability
+```
+
+**Output Escaping:**
+```php
+echo esc_html( $title );           // Plain text
+echo esc_attr( $class_name );      // HTML attributes
+echo wp_kses_post( $content );     // Limited HTML allowed
+echo esc_url( $url );              // URLs
+echo esc_js( $javascript_var );    // JavaScript
+```
+
+---
+
+## 🔗 IDE Loader Verification
+
+**Purpose:** Verify all IDE loader files correctly point to the canonical `.ai/SOUL.md`.
+
+**Symlink Verification Script:**
+
+```bash
+#!/bin/bash
+# verify-symlinks.sh - Run to verify all IDE loaders point to canonical SOUL.md
+
+CANONICAL="$(pwd)/.ai/SOUL.md"
+LOADERS=(
+  ".cursor/cursor.rules"
+  ".trae/trae.rules"
+  ".gemini/gemini.md"
+  ".vscode/SOUL.md"
+  ".windsurfrules"
+  ".roo/rules/soul.md"
+  ".clinerules"
+  ".roorules"
+)
+
+for loader in "${LOADERS[@]}"; do
+  if [ -L "$loader" ]; then
+    target=$(readlink "$loader")
+    if [ "$target" = "$CANONICAL" ]; then
+      echo "✅ $loader -> $target"
+    else
+      echo "⚠️  $loader -> $target (expected: $CANONICAL)"
+    fi
+  elif [ -f "$loader" ]; then
+    echo "❌ $loader (file, not symlink)"
+  else
+    echo "❌ $loader (missing)"
+  fi
+done
+```
+
+**Loader File Status:**
+
+| IDE | Loader File | Status | Target |
+|-----|-------------|--------|--------|
+| Cursor | `.cursor/cursor.rules` | ✅ Symlink | `.ai/SOUL.md` |
+| Trae | `.trae/trae.rules` | ✅ Symlink | `.ai/SOUL.md` |
+| Gemini | `.gemini/gemini.md` | ✅ Symlink | `.ai/SOUL.md` |
+| VS Code | `.vscode/SOUL.md` | ✅ Symlink | `.ai/SOUL.md` |
+| Windsurf | `.windsurfrules` | ✅ Symlink | `.ai/SOUL.md` |
+| Roo Code | `.clinerules` | ✅ Symlink | `.ai/SOUL.md` |
+| Kilo Code | `.kilocode/rules/soul.md` | ✅ Symlink | `.ai/SOUL.md` |
+| Continue | `.continue/rules/soul.md` | ✅ Symlink | `.ai/SOUL.md` |
+| OpenCode | `.opencode/instructions/SOUL.md` | ✅ Symlink | `.ai/SOUL.md` |
+| Junie | `.junie/guidelines.md` | ✅ Symlink | `.ai/SOUL.md` |
+| Zed | `.rules` | ✅ Symlink | `.ai/SOUL.md` |
+
+---
+
 ## 🎓 Domain Expertise Areas
 
 1. **Apache `.htaccess`** — [mod_rewrite](https://httpd.apache.org/docs/current/mod/mod_rewrite.html), [mod_headers](https://httpd.apache.org/docs/current/mod/mod_headers.html)
@@ -2012,6 +2591,8 @@ actions:
 6. **Vulnerability Catalogs** — [OWASP Top 10](https://owasp.org/Top10/), [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 7. **JSON Schema Validation** — VAPT schemas in `/data/VAPTSchema-Builder/`
 8. **Self-Check Automation** — event-driven validation and auto-correction
+9. **Rate Limiting & IP Blocking** — progressive lockout algorithms
+10. **Contact Form Security** — plugin-specific sanitization patterns
 
 ---
 
@@ -2088,5 +2669,5 @@ if ( $result->has_failures() ) {
 ---
 
 *This `SOUL.md` defines universal AI behavior for the VAPTSecure plugin project.*
-*Edit this file once — changes propagate to **all 13 editors and extensions** via their respective symlinks.*
-*Version: 2.5.9 | Last Updated: March 2026*
+*Edit this file once — changes propagate to **all 14 editors and extensions** via their respective symlinks.*
+*Version: 2.6.0 | Last Updated: April 2026*
