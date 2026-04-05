@@ -64,6 +64,13 @@ class VAPTSECURE_Workflow
             $update_data['implemented_at'] = null;
         }
 
+        // 🛡️ Automated Initiation Check (Draft -> Develop)
+        if (strtolower($old_status) === 'draft' && strtolower($new_status) === 'develop') {
+            if (class_exists('VAPTSECURE_AI_Config')) {
+                VAPTSECURE_AI_Config::verify_and_repair();
+            }
+        }
+
         if ($current) {
             $wpdb->update($table_status, $update_data, array('feature_key' => $feature_key));
         } else {

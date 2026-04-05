@@ -904,7 +904,33 @@ When modifying this configuration:
 
 ---
 
-## 📚 References
+## �️ Maintenance Tools
+
+### **Automated Verification**
+```bash
+# Verify all AI configurations
+php tools/verify-ai-config.php
+
+# Includes editor optimization hints and performance tips
+```
+
+### **Automated Setup**
+```bash
+# Linux/Mac - automatically creates all symlinks
+./tools/setup-ai-config.sh
+
+# Windows PowerShell - automatically creates all symlinks
+.\tools\setup-ai-config.ps1
+```
+
+### **Performance Optimization**
+- 📖 **Editor Optimization Guide**: `.ai/EDITOR_OPTIMIZATION_GUIDE.md`
+- 🎯 **Performance Tips**: Model recommendations, context windows, loading optimization
+- 📊 **Configuration Scoring**: Automated 100-point scoring system
+
+---
+
+## 📚 Resources
 
 | Reference | Link |
 |-----------|------|

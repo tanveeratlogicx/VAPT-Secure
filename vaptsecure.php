@@ -183,6 +183,7 @@ require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-schema-validator.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-rest.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-db.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-workflow.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-ai-config.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-config-cleaner.php';  // Shared utility for config cleaning
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
