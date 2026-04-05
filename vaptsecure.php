@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
- * Version: 2.10.2
+ * Version: 2.10.3
  * Author: Tanveer H. Malik
  * Author URI: https://vapt.copilot.com
  * License: GPL-2.0+
@@ -52,7 +52,11 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-define('VAPTSECURE_VERSION', '2.10.2');
+if (defined('VAPTSECURE_BUILD_VERSION')) {
+    define('VAPTSECURE_VERSION', VAPTSECURE_BUILD_VERSION);
+} else {
+    define('VAPTSECURE_VERSION', '2.10.3');
+}
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
@@ -853,16 +857,21 @@ function vaptsecure_enqueue_admin_assets($hook)
 
 
     // Common Settings Localization
+    $localized_settings = array(
+            'root'          => esc_url_raw(rest_url()),
+            'nonce'         => wp_create_nonce('wp_rest'),
+            'domainLocked'  => defined('VAPTSECURE_DOMAIN_LOCKED') ? VAPTSECURE_DOMAIN_LOCKED : false,
+            'buildVersion'  => VAPTSECURE_VERSION,
+            'activeData'    => VAPTSECURE_ACTIVE_DATA_FILE
+        );
     $vapt_settings = array(
-    'root' => esc_url_raw(rest_url()),
-    'homeUrl' => esc_url_raw(home_url()),
-    'nonce' => wp_create_nonce('wp_rest'),
-    'isSuper' => $is_superadmin,
-    'pluginVersion' => VAPTSECURE_VERSION,
-    'pluginName' => 'VAPT Secure',
-    'currentDomain' => parse_url(home_url(), PHP_URL_HOST),
-    'abspath' => ABSPATH,
-    'pluginPath' => VAPTSECURE_PATH,
+        'isSuper' => $is_superadmin,
+        'pluginVersion' => VAPTSECURE_VERSION,
+        'pluginName' => 'VAPT Secure',
+        'currentDomain' => parse_url(home_url(), PHP_URL_HOST),
+        'abspath' => ABSPATH,
+        'pluginPath' => VAPTSECURE_PATH,
+        'uploadPath' => wp_upload_dir()['basedir'],
     'uploadPath' => wp_upload_dir()['basedir'],
     );
 

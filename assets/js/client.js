@@ -145,10 +145,13 @@ var vaptLog = window.vaptLog || {
     // Filtered Features
     const releasedFeatures = useMemo(() => {
       return features.filter(f => {
+        // In generated builds (Locked Mode), we trust the list returned by the scoped API
+        if (settings.domainLocked || !f.status) return true;
+
         const s = f.normalized_status || (f.status ? f.status.toLowerCase() : '');
         return ['release', 'implemented'].includes(s);
       });
-    }, [features]);
+    }, [features, settings.domainLocked]);
 
     const filteredFeatures = useMemo(() => {
       if (activeTab === 'all' || activeTab === 'stats') return releasedFeatures;

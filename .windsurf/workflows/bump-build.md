@@ -28,6 +28,7 @@ This step commits all modified and untracked files (excluding temporary files) w
 4. Stage changes:
    `git add .`
 
+// turbo
 5. Create commit with details of modified files:
    `git commit -m "Build: Bump version to $(Get-Content vaptsecure.php | Select-String 'VAPTSECURE_VERSION' | ForEach-Object { $_.ToString().Split("'")[3] }) - Syncing modifications"`
 

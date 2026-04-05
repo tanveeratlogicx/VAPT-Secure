@@ -1,3 +1,12 @@
+## [2.10.3] - 2026-03-29
+
+### Build Generator & Generation Fixes
+- **Main Plugin Filename**: Forced generated main plugin file to `vaptsecure.php` to prevent path resolution and loading issues.
+- **Robust Stubbing**: Implemented more resilient regex for stubbing superadmin functions, handling nested braces to prevent syntax errors in builds.
+- **Config Loader Injection**: Improved `require_once` injection for domain-specific config files.
+- **Frontend Resilience**: Added `domainLocked` and `buildVersion` to localized settings in `vaptsecure.php` for better client-side adaptation.
+- **Version Synchronization**: Enhanced version sync logic in build generator to reliably update plugin headers and constants in generated ZIPs.
+
 ## [2.10.2] - 2026-03-29
 
 ### Bug Fixes

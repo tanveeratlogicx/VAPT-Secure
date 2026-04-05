@@ -472,6 +472,22 @@ class VAPTSECURE_REST
                 if (! is_array($raw_data)) { continue;
                 }
 
+                // [v2.4.11] Restricted Mode Filtering for Generated Builds
+                // If a build is locked to a domain, we only show features that are allowed
+                if (defined('VAPTSECURE_DOMAIN_LOCKED')) {
+                    if (isset($raw_data['wordpress_vapt']) && is_array($raw_data['wordpress_vapt'])) {
+                        $raw_data['wordpress_vapt'] = array_filter($raw_data['wordpress_vapt'], function($f) {
+                            return vaptsecure_is_feature_allowed($f['key'] ?? '');
+                        });
+                    }
+                    if (isset($raw_data['risk_interfaces']) && is_array($raw_data['risk_interfaces'])) {
+                        $raw_data['risk_interfaces'] = array_filter($raw_data['risk_interfaces'], function($f, $k) {
+                            $key = $f['risk_id'] ?? $k;
+                            return vaptsecure_is_feature_allowed($key);
+                        }, ARRAY_FILTER_USE_BOTH);
+                    }
+                }
+
                 if (!$design_prompt && isset($raw_data['design_prompt'])) { $design_prompt = $raw_data['design_prompt'];
                 }
                 if (!$ai_agent_instructions && isset($raw_data['ai_agent_instructions'])) { $ai_agent_instructions = $raw_data['ai_agent_instructions'];

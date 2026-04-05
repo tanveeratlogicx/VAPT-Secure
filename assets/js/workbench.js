@@ -120,29 +120,27 @@ var vaptLog = window.vaptLog || {
     const availableStatuses = useMemo(() => isSuper ? ['All', 'Develop', 'Release'] : ['All', 'Develop', 'Release'], [isSuper]);
 
     const statusFeatures = useMemo(() => {
-      return features.filter(f => {
-        // Enforce visibility rule: Features must have a valid generated_schema (published from Design modal)
-        if (!f.generated_schema) return false;
-        try {
-          const parsed = typeof f.generated_schema === 'string' ? JSON.parse(f.generated_schema) : f.generated_schema;
-          if (!parsed || (Array.isArray(parsed) && parsed.length === 0) || (typeof parsed === 'object' && Object.keys(parsed).length === 0)) {
-            return false;
-          }
-        } catch (e) {
-          return false;
-        }
+        return features.filter(f => {
+            // In generated builds (Locked Mode), we trust the list returned by the scoped API
+            // which already filters by vaptsecure_is_feature_allowed().
+            // We still check for generated_schema to ensure the UI can render.
+            if (!f.generated_schema) return false;
 
-        const s = f.normalized_status || (f.status ? f.status.toLowerCase() : '');
-        const active = activeStatus.toLowerCase();
+            const s = f.normalized_status || (f.status ? f.status.toLowerCase() : '');
+            
+            // For Locked Builds (Client Side), we typically want to see "Release" features.
+            // However, the user might want to see what's implemented regardless of status 
+            // if it's explicitly included in the build.
+            const active = activeStatus.toLowerCase();
 
-        if (active === 'all') {
-          return ['develop', 'release', 'in_progress', 'implemented'].includes(s);
-        }
+            if (active === 'all') {
+                return true; // Trust the API's scoping
+            }
 
-        if (active === 'develop') return ['develop', 'in_progress'].includes(s);
-        if (active === 'release') return ['release', 'implemented'].includes(s);
-        return s === active;
-      });
+            if (active === 'develop') return ['develop', 'in_progress'].includes(s);
+            if (active === 'release') return ['release', 'implemented'].includes(s);
+            return s === active;
+        });
     }, [features, activeStatus]);
 
     const categories = useMemo(() => {

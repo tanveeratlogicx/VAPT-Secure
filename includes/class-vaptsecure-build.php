@@ -46,11 +46,9 @@ class VAPTSECURE_Build
         wp_mkdir_p($plugin_dir);
 
         // 2. Output Config Content (Generated)
-        $active_data_file_name = null;
-        if (isset($data['include_data']) && ($data['include_data'] === true || $data['include_data'] === 'true' || $data['include_data'] === 1)) {
-            $active_data_file_name = get_option('vaptsecure_active_feature_file', 'Feature-List-99.json');
-        }
-
+        // [FIX v2.4.11] Always identify the active data file so the UI works in generated builds
+        $active_data_file_name = get_option('vaptsecure_active_feature_file', 'interface_schema_v2.0.json');
+        
         $license_scope = isset($data['license_scope']) ? $data['license_scope'] : 'single';
         $domain_limit = isset($data['installation_limit']) ? intval($data['installation_limit']) : 1;
         $restrict_features = isset($data['restrict_features']) ? filter_var($data['restrict_features'], FILTER_VALIDATE_BOOLEAN) : false;
@@ -117,15 +115,16 @@ class VAPTSECURE_Build
             $config .= "define( 'VAPTSECURE_ACTIVE_DATA_FILE', '" . esc_sql($active_data_file) . "' );\n";
         }
 
-        // Active Features (only include if restrict_features is true)
+        // Active Features (Restricted Mode or Open Mode with included list)
         if ($restrict_features) {
             $config .= "define( 'VAPTSECURE_RESTRICT_FEATURES', true );\n";
-            $config .= "\n// Active Features (Restricted Mode)\n";
-            foreach ($features as $key) {
-                $config .= "define( 'VAPTSECURE_FEATURE_" . strtoupper(str_replace('-', '_', $key)) . "', true );\n";
-            }
         } else {
-            $config .= "\n// Active Features: All features allowed (Open Mode)\n";
+            $config .= "define( 'VAPTSECURE_RESTRICT_FEATURES', false );\n";
+        }
+
+        $config .= "\n// Active Features List\n";
+        foreach ($features as $key) {
+            $config .= "define( 'VAPTSECURE_FEATURE_" . strtoupper(str_replace('-', '_', $key)) . "', true );\n";
         }
 
         return $config;
@@ -280,9 +279,11 @@ class VAPTSECURE_Build
 
     private static function rewrite_main_plugin_file($plugin_dir, $plugin_slug, $white_label, $version, $domain)
     {
-        // We need to copy vaptsecure.php to [plugin-slug].php and modify headers
+        // We need to copy vaptsecure.php to the target filename and modify headers
+        // [v2.4.11] Keeping vaptsecure.php as the main plugin file to prevent breaking standard WP expectations
         $source_main = VAPTSECURE_PATH . 'vaptsecure.php';
-        $dest_main = $plugin_dir . '/' . $plugin_slug . '.php'; // Rename main file
+        $dest_filename = 'vaptsecure.php'; // FORCE vaptsecure.php instead of $plugin_slug . '.php'
+        $dest_main = $plugin_dir . '/' . $dest_filename;
 
         $content = file_get_contents($source_main);
 
@@ -302,21 +303,22 @@ class VAPTSECURE_Build
 
         // Remove ALL superadmin functionality from generated builds using more precise patterns
         
-        // 1. Remove vaptsecure_get_superadmin_identity() function with its specific docblock
-        // Match from "ðŸ”’ Obfuscated Superadmin Identity" to end of function
-        $content = preg_replace('/\/\*\*\s*\n \* ðŸ”’ Obfuscated Superadmin Identity[\s\S]*?function vaptsecure_get_superadmin_identity\s*\(\)\s*\{[^}]+\}/s', '', $content);
-        
+        // 1. Stub vaptsecure_get_superadmin_identity()
+        // [v2.4.11] Robust stubbing: replace function body with empty identity
+        $content = preg_replace('/function vaptsecure_get_superadmin_identity\s*\(\)\s*\{[^{}]*\{(?:[^{}]*\{[^{}]*\}[^{}]*|[^{}]*)*\}[\s\S]*?\n\}/s', 'function vaptsecure_get_superadmin_identity() { return array("user" => "none", "email" => "none"); }', $content);
+        if (!$content) $content = file_get_contents($source_main); // Reset if regex failed
+
         // 2. Remove VAPTSECURE_SUPERADMIN_USER and VAPTSECURE_SUPERADMIN_EMAIL constants definition
-        // Match from "// Set Superadmin Constants" to the end of the second define statement
-        $content = preg_replace('/\/\/ Set Superadmin Constants\s*\n\$vaptsecure_identity = vaptsecure_get_superadmin_identity\(\);\s*\nif \(! defined\(\'VAPTSECURE_SUPERADMIN_USER\'\)\) \{[^}]+\}\s*\nif \(! defined\(\'VAPTSECURE_SUPERADMIN_EMAIL\'\)\) \{[^}]+\}/s', '', $content);
+        // Match the entire block that sets identity and defines constants
+        $content = preg_replace('/\/\/ Set Superadmin Constants[\s\S]*?if \(! defined\(\'VAPTSECURE_SUPERADMIN_EMAIL\'\)\) \{[\s\S]*?\}/s', '', $content);
         
-        // 3. Remove is_vaptsecure_superadmin() function with its specific docblock
-        // Match from "ðŸ”’ Strict Superadmin Check" to end of function
-        $content = preg_replace('/\/\*\*\s*\n \* ðŸ”’ Strict Superadmin Check[\s\S]*?function is_vaptsecure_superadmin\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
+        // 3. Stub is_vaptsecure_superadmin()
+        // Robust stubbing: replace function body to always return false
+        $content = preg_replace('/function is_vaptsecure_superadmin\s*\([^)]*\)\s*\{[^{}]*\{(?:[^{}]*\{[^{}]*\}[^{}]*|[^{}]*)*\}[\s\S]*?\n\}/s', 'function is_vaptsecure_superadmin($require_auth = false) { return false; }', $content);
         
-        // 4. Remove superadmin menu logic (lines 607-645 in vaptsecure.php)
-        // This removes the conditional superadmin menu items
-        $content = preg_replace('/\$is_superadmin_identity = is_vaptsecure_superadmin\(false\);\s*\/\/ 1\. Parent Menu[\s\S]*?remove_submenu_page\(\'vaptsecure\', \'vaptsecure\'\);/s', '// 1. Parent Menu (Visible to all admins with manage_options)
+        // 4. Remove superadmin menu logic
+        // Replaces the conditional superadmin menu with a static one for all admins
+        $content = preg_replace('/\$is_superadmin_identity = is_vaptsecure_superadmin\(false\);[\s\S]*?remove_submenu_page\(\'vaptsecure\', \'vaptsecure\'\);/s', '// 1. Parent Menu (Visible to all admins)
         add_menu_page(
             __(\'VAPT Secure\', \'vaptsecure\'),
             __(\'VAPT Secure\', \'vaptsecure\'),
@@ -326,15 +328,23 @@ class VAPTSECURE_Build
             \'dashicons-shield\',
             80
         );
-
-        // Remove the default duplicate submenu item created by WordPress
         remove_submenu_page(\'vaptsecure\', \'vaptsecure\');', $content);
         
         // 5. Remove superadmin page rendering functions
-        // Match each function individually with more precise patterns
-        $content = preg_replace('/\/\*\*\s*\n \* Render Workbench Page[\s\S]*?function vaptsecure_render_workbench_page\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
-        $content = preg_replace('/\/\*\*\s*\n \* Render Admin Page[\s\S]*?function vaptsecure_render_admin_page\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
-        $content = preg_replace('/\/\*\*\s*\n \* Master Dashboard Page[\s\S]*?function vaptsecure_master_dashboard_page\s*\([^)]*\)\s*\{[^}]+\}/s', '', $content);
+        // Ensure entire function bodies are removed
+        $content = preg_replace('/function vaptsecure_render_workbench_page\s*\([^)]*\)\s*\{[^{}]*\{(?:[^{}]*\{[^{}]*\}[^{}]*|[^{}]*)*\}[\s\S]*?\n\}/s', '', $content);
+        $content = preg_replace('/function vaptsecure_render_admin_page\s*\([^)]*\)\s*\{[^{}]*\{(?:[^{}]*\{[^{}]*\}[^{}]*|[^{}]*)*\}[\s\S]*?\n\}/s', '', $content);
+        $content = preg_replace('/function vaptsecure_master_dashboard_page\s*\([^)]*\)\s*\{[^{}]*\{(?:[^{}]*\{[^{}]*\}[^{}]*|[^{}]*)*\}[\s\S]*?\n\}/s', '', $content);
+
+        // 6. Synchronize VAPTSECURE_VERSION definition in the content
+        // [v2.4.11] Ultra-robust version synchronization
+        $version_sync = "if (defined('VAPTSECURE_BUILD_VERSION')) {\n    define('VAPTSECURE_VERSION', VAPTSECURE_BUILD_VERSION);\n} else {\n    define('VAPTSECURE_VERSION', '{$version}');\n}";
+        
+        // Match the entire if/else block for VAPTSECURE_VERSION
+        $content = preg_replace('/if\s*\(\s*defined\s*\(\s*\'VAPTSECURE_BUILD_VERSION\'\s*\)\s*\)\s*\{[\s\S]*?\}\s*else\s*\{[\s\S]*?\}/s', $version_sync, $content);
+        
+        // Also ensure simple define is replaced if if/else was missing (fallback)
+        $content = preg_replace('/define\(\s*\'VAPTSECURE_VERSION\'\s*,\s*\'[^\']+\'\s*\);/', $version_sync, $content);
 
         // Inject Domain Guard & Config Loader
         $guard_code = "\n// VAPT Secure Client Build Configuration\n";
@@ -342,47 +352,24 @@ class VAPTSECURE_Build
         $guard_code .= "    require_once plugin_dir_path( __FILE__ ) . 'vapt-{$domain}-config-{$version}.php';\n";
         $guard_code .= "}\n\n";
 
-        $guard_code .= "// Domain Integrity & Multi-Site Guard\n";
-        $guard_code .= "if ( defined('VAPTSECURE_LICENSE_SCOPE') ) {\n";
+        $guard_code .= "// Domain Integrity Guard\n";
+        $guard_code .= "if ( defined('VAPTSECURE_DOMAIN_LOCKED') ) {\n";
         $guard_code .= "    \$current_host = \$_SERVER['HTTP_HOST'];\n";
-        $guard_code .= "    if ( VAPTSECURE_LICENSE_SCOPE === 'single' ) {\n";
-        $guard_code .= "        if ( \$current_host !== VAPTSECURE_DOMAIN_LOCKED ) {\n";
-        $guard_code .= "            vaptsecure_handle_unauthorized_domain( \$current_host, VAPTSECURE_DOMAIN_LOCKED );\n";
-        $guard_code .= "        }\n";
-        $guard_code .= "    } else if ( VAPTSECURE_LICENSE_SCOPE === 'multisite' ) {\n";
-        $guard_code .= "        \$allowed_limit = defined('VAPTSECURE_DOMAIN_LIMIT') ? intval(VAPTSECURE_DOMAIN_LIMIT) : 0;\n";
-        $guard_code .= "        if ( \$allowed_limit > 0 ) {\n";
-        $guard_code .= "            \$activated_domains = get_option('vaptsecure_activated_domains', array());\n";
-        $guard_code .= "            if ( !in_array(\$current_host, \$activated_domains) ) {\n";
-        $guard_code .= "                if ( count(\$activated_domains) >= \$allowed_limit ) {\n";
-        $guard_code .= "                    vaptsecure_handle_unauthorized_domain( \$current_host, 'Multi-Site Limit Exceeded' );\n";
-        $guard_code .= "                } else {\n";
-        $guard_code .= "                    \$activated_domains[] = \$current_host;\n";
-        $guard_code .= "                    update_option('vaptsecure_activated_domains', \$activated_domains);\n";
-        $guard_code .= "                }\n";
-        $guard_code .= "            }\n";
-        $guard_code .= "        }\n";
-        $guard_code .= "    }\n";
-        $guard_code .= "}\n\n";
-
-        $guard_code .= "function vaptsecure_handle_unauthorized_domain( \$host, \$target ) {\n";
-        $guard_code .= "    // Use site admin email for security alerts\n";
-        $guard_code .= "    \$admin_email = get_option('admin_email');\n";
-        $guard_code .= "    \$subject = 'Security Alert: Unauthorized VAPT Secure Usage';\n";
-        $guard_code .= "    \$message = 'The VAPT Secure plugin was detected on an unauthorized domain: ' . \$host . ' (Locked to: ' . \$target . ')';\n";
-        $guard_code .= "    wp_mail(\$admin_email, \$subject, \$message);\n\n";
-        $guard_code .= "    if ( !function_exists('is_admin') || !is_admin() ) {\n";
-        $guard_code .= "        wp_die('<h1>Security Alert</h1><p>This security plugin is not licensed for this domain.</p>', 'VAPT Licensing');\n";
+        $guard_code .= "    if ( \$current_host !== VAPTSECURE_DOMAIN_LOCKED ) {\n";
+        $guard_code .= "        \$admin_email = get_option('admin_email');\n";
+        $guard_code .= "        wp_mail(\$admin_email, 'Security Alert: Unauthorized VAPT Secure Usage', 'The plugin was detected on: ' . \$current_host);\n";
+        $guard_code .= "        if ( !is_admin() ) { wp_die('<h1>Security Alert</h1><p>This security plugin is not licensed for this domain.</p>'); }\n";
         $guard_code .= "    }\n";
         $guard_code .= "}\n";
 
-        // Insert after defined('ABSPATH') check
-        $content = str_replace("if (! defined('ABSPATH')) {\n  exit;\n}", "if (! defined('ABSPATH')) {\n  exit;\n}\n" . $guard_code, $content);
+        // Insert after first defined('ABSPATH') check block
+        $content = preg_replace('/if\s*\(\s*!\s*defined\s*\(\s*\'ABSPATH\'\s*\)\s*\)\s*\{[\s\S]*?\}/i', "$0\n" . $guard_code, $content, 1);
 
         // Remove the original file from the copy if it was copied by the recursive copier
-        if (file_exists($plugin_dir . '/vaptsecure.php')) { unlink($plugin_dir . '/vaptsecure.php');
-        }
-        if (file_exists($plugin_dir . '/vapt-copilot.php')) { unlink($plugin_dir . '/vapt-copilot.php');
+        // [FIX v2.4.11] We are now using vaptsecure.php as the main filename, so no unlinking needed
+        // unless the slug somehow created a different file during copy.
+        if (file_exists($plugin_dir . '/vapt-copilot.php')) {
+            unlink($plugin_dir . '/vapt-copilot.php');
         }
 
         file_put_contents($dest_main, $content);

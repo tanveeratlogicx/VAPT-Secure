@@ -1,6 +1,6 @@
 {
   "name": "vapt-secure",
-  "version": "1.0.0",
+  "version": "2.10.3",
   "description": "VAPT Secure - WordPress Security Plugin",
   "scripts": {
     "test": "jest",
