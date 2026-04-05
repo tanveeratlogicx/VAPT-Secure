@@ -9,7 +9,7 @@ if (!defined("ABSPATH")) {
     exit();
 }
 
-class VAPTSECURE_Hook_Driver
+class VAPTSECURE_Hook_Driver implements VAPTSECURE_Driver_Interface
 {
     private static $feature_configs = [];
     private static $enforced_keys = [];
@@ -1164,5 +1164,56 @@ class VAPTSECURE_Hook_Driver
         // We don't block at the authentication level to avoid breaking core functionality
         // Each endpoint should use 'permission_callback' => [$this, 'check_permission']
         // to properly verify capabilities (e.g., manage_options for admin endpoints)
+    }
+
+    /**
+     * Check if global protection is enabled
+     */
+    private static function is_global_enabled()
+    {
+        return VAPTSECURE_DB::get_global_enforcement();
+    }
+
+    /**
+     * Generates a list of rules based on the provided implementation data and schema.
+     *
+     * @param array $impl_data Implementation data (user inputs)
+     * @param array $schema    Feature schema containing enforcement mappings
+     * @return array List of rules/directives for the target platform
+     */
+    public static function generate_rules($impl_data, $schema)
+    {
+        // Hook driver operates at runtime; rules are not statically generated for files.
+        return [];
+    }
+
+    /**
+     * Writes a complete batch of rules to the target location.
+     *
+     * @param array  $rules  Flat array of all rules to write
+     * @param string $target Target location identifier (e.g., 'root', 'uploads')
+     * @return bool Success status
+     */
+    public static function write_batch($rules, $target = 'root')
+    {
+        // Hook-based enforcement is runtime-only; no static writing required.
+        return true;
+    }
+
+    /**
+     * Cleans/disables all hook-based enforcements.
+     *
+     * Note: Hook driver operates at runtime via PHP hooks.
+     * Cleaning is achieved by removing the vapt-functions.php file
+     * and clearing internal enforcement state.
+     *
+     * @param string $target Target location (unused for hook driver, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        // Hook-based enforcement is runtime-only
+        // We clean by clearing the PHP functions file
+        return VAPTSECURE_PHP_Driver::clean($target);
     }
 }

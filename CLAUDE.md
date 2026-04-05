@@ -4,29 +4,83 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Commands
 
-1. **Install Dependency**:
+### Dependencies
+
+1. **Install PHP Dependencies**:
 
    ```bash
    composer install --optimize-autoload
    ```
 
-2. **Run Security Check**:
+2. **Install JavaScript Dependencies**:
+
+   ```bash
+   npm install
+   ```
+
+### PHP Quality Tools
+
+3. **Lint PHP Code** (check coding standards):
+
+   ```bash
+   composer run lint
+   # Or fix automatically:
+   composer run lint:fix
+   ```
+
+4. **Static Analysis** (PHPStan):
+
+   ```bash
+   composer run analyze
+   ```
+
+5. **Run PHP Unit Tests**:
+
+   ```bash
+   composer run test
+   # With coverage report:
+   composer run test:coverage
+   ```
+
+### JavaScript Quality Tools
+
+6. **Run JavaScript Tests**:
+
+   ```bash
+   npm test
+   # Watch mode:
+   npm run test:watch
+   # With coverage:
+   npm run test:coverage
+   ```
+
+7. **Lint JavaScript**:
+
+   ```bash
+   npm run lint:js
+   # Fix automatically:
+   npm run lint:js:fix
+   ```
+
+### Legacy Commands
+
+8. **Run Security Check**:
 
    ```bash
    php tools/check_balance.php
    ```
 
-3. **Lint PHP Code**:
+9. **Quick PHP Syntax Check**:
 
    ```bash
    php -l includes/*.php
    ```
 
-4. **Test Enforcer Rules**:
+10. **Test Enforcer Rules**:
 
-   ```bash
-   php wp-cli balance check --config data/Enforcers/rewrite-rules.json
-   ```
+    ```bash
+    php wp-cli balance check --config data/Enforcers/rewrite-rules.json
+    ```
 
 ## Code Structure
 

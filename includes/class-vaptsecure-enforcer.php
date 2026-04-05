@@ -63,6 +63,14 @@ class VAPTSECURE_Enforcer
         self::load_php_functions_file();
 
         foreach ($enforced as $meta) {
+            $feature_key = $meta['feature_key'];
+
+            // [v2.7.0] Restricted Mode Validation
+            if (!vaptsecure_is_feature_allowed($feature_key)) {
+                vapt_debug("Feature $feature_key skipped: Not allowed in Restricted Mode");
+                continue;
+            }
+
             $status = isset($meta['status']) ? strtolower($meta['status']) : 'draft';
 
             // Override Logic
@@ -526,44 +534,64 @@ class VAPTSECURE_Enforcer
     /**
      * Clean all configuration files of VAPT rules
      * Used when license expires or when removing protections
+     * 
+     * Delegates to the shared Config Cleaner utility to avoid code duplication
+     * with the License Manager.
+     * 
+     * @return array Results of cleaning operations
      */
     public static function clean_all_config_files()
     {
+        // Use shared Config Cleaner if available
+        if (class_exists('VAPTSECURE_Config_Cleaner')) {
+            return VAPTSECURE_Config_Cleaner::clean_all();
+        }
+        
+        // Fallback: perform basic cleaning inline
+        return self::legacy_clean_all_config_files();
+    }
+    
+    /**
+     * Legacy config cleaning implementation (fallback)
+     * Kept for backward compatibility if Config Cleaner is not loaded
+     * 
+     * @return array Results of cleaning operations
+     */
+    private static function legacy_clean_all_config_files()
+    {
+        $results = array();
+        
         // Clean .htaccess
         $htaccess = ABSPATH . '.htaccess';
         if (file_exists($htaccess) && is_writable($htaccess)) {
             $content = file_get_contents($htaccess);
-            
-            // Remove VAPT blocks (both single and multi-line)
             $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
             $content = preg_replace('/# BEGIN VAPT-RISK[^\n]*\n.*?# END VAPT-RISK[^\n]*/s', '', $content);
-            
-            // Clean up extra newlines
             $content = preg_replace('/\n{3,}/', "\n\n", $content);
-            
-            file_put_contents($htaccess, $content);
+            $results['htaccess'] = (bool) file_put_contents($htaccess, $content);
+        } else {
+            $results['htaccess'] = !file_exists($htaccess);
         }
     
         // Clean wp-config.php
         $wp_config = ABSPATH . 'wp-config.php';
         if (file_exists($wp_config) && is_writable($wp_config)) {
             $content = file_get_contents($wp_config);
-            
-            // Remove VAPT blocks (both PHP comments and line comments)
             $content = preg_replace('/\/\/ BEGIN VAPT[^\n]*\n.*?\/\/ END VAPT[^\n]*/s', '', $content);
             $content = preg_replace('/\/\* BEGIN VAPT[^\n]*\*\/.*?\/\* END VAPT[^\n]*\*\//s', '', $content);
-            
-            // Clean up extra newlines
             $content = preg_replace('/\n{3,}/', "\n\n", $content);
-            
-            file_put_contents($wp_config, $content);
+            $results['wp_config'] = (bool) file_put_contents($wp_config, $content);
+        } else {
+            $results['wp_config'] = !file_exists($wp_config);
         }
     
         // Clean vapt-functions.php
         $vapt_func = VAPTSECURE_PATH . 'vapt-functions.php';
         if (file_exists($vapt_func) && is_writable($vapt_func)) {
             $content = "<?php\n\n/**\n * VAPT Secure Functions\n * License Expired - Functions Disabled\n */\n\nif (!defined('ABSPATH')) { exit; }\n\n";
-            file_put_contents($vapt_func, $content);
+            $results['php_functions'] = (bool) file_put_contents($vapt_func, $content);
+        } else {
+            $results['php_functions'] = !file_exists($vapt_func);
         }
     
         // Clean nginx.conf if exists
@@ -571,7 +599,9 @@ class VAPTSECURE_Enforcer
         if (file_exists($nginx_conf) && is_writable($nginx_conf)) {
             $content = file_get_contents($nginx_conf);
             $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            file_put_contents($nginx_conf, $content);
+            $results['nginx'] = (bool) file_put_contents($nginx_conf, $content);
+        } else {
+            $results['nginx'] = true;
         }
     
         // Clean web.config if exists (IIS)
@@ -579,7 +609,9 @@ class VAPTSECURE_Enforcer
         if (file_exists($web_config) && is_writable($web_config)) {
             $content = file_get_contents($web_config);
             $content = preg_replace('/<!-- BEGIN VAPT[^\n]*-->.*?<!-- END VAPT[^\n]*-->/s', '', $content);
-            file_put_contents($web_config, $content);
+            $results['iis'] = (bool) file_put_contents($web_config, $content);
+        } else {
+            $results['iis'] = true;
         }
     
         // Clean Caddyfile if exists
@@ -587,8 +619,12 @@ class VAPTSECURE_Enforcer
         if (file_exists($caddyfile) && is_writable($caddyfile)) {
             $content = file_get_contents($caddyfile);
             $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            file_put_contents($caddyfile, $content);
+            $results['caddy'] = (bool) file_put_contents($caddyfile, $content);
+        } else {
+            $results['caddy'] = true;
         }
+        
+        return $results;
     }
 
     /**

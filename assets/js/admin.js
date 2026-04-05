@@ -2998,17 +2998,17 @@ var vaptLog = window.vaptLog || {
     const [includeConfig, setIncludeConfig] = useState(true);
     const [includeData, setIncludeData] = useState(false);
     const [whiteLabel, setWhiteLabel] = useState({
-      name: 'VAPT Security',
+      name: 'VAPT Secure',
       description: '',
       author: 'Tanveer Malik',
       plugin_uri: 'https://vaptsecure.net',
       author_uri: '#',
-      text_domain: 'vapt-security'
+      text_domain: 'vapt-secure'
     });
     // Local draft state: captures typed values without triggering effects on every keystroke.
     // Fields bind to draftLabel for display/onChange, and commit to whiteLabel on onBlur.
     const [draftLabel, setDraftLabel] = useState({
-      name: 'VAPT Security',
+      name: 'VAPT Secure',
       author: 'Tanveer Malik',
       plugin_uri: 'https://vaptsecure.net',
       author_uri: '#'
@@ -3037,6 +3037,7 @@ var vaptLog = window.vaptLog || {
     const [importedAt, setImportedAt] = useState(null);
     const [licenseScope, setLicenseScope] = useState('single');
     const [installationLimit, setInstallationLimit] = useState(1);
+    const [restrictFeatures, setRestrictFeatures] = useState(false); // Default: Open Mode
 
     // Auto-Generation Effect — only fires when committed whiteLabel fields or domain/features change
     useEffect(() => {
@@ -3098,6 +3099,7 @@ var vaptLog = window.vaptLog || {
           include_data: includeData,
           license_scope: licenseScope,
           installation_limit: installationLimit,
+          restrict_features: restrictFeatures,
           white_label: {
             name: whiteLabel.name.trim(),
             description: whiteLabel.description.trim(),
@@ -3138,7 +3140,8 @@ var vaptLog = window.vaptLog || {
           version: buildVersion.trim(),
           features: buildFeatures,
           license_scope: licenseScope,
-          installation_limit: installationLimit
+          installation_limit: installationLimit,
+          restrict_features: restrictFeatures
         }
       }).then(res => {
         if (res.success) {
@@ -3267,6 +3270,22 @@ var vaptLog = window.vaptLog || {
                     })
                   ),
                   el(Tooltip, { text: sprintf(__('Include Risk Catalog and definitions from active file: %s.', 'vaptsecure'), activeFile || 'Default') },
+                    el('span', { className: 'dashicons dashicons-editor-help', style: { fontSize: '14px', color: '#94a3b8', cursor: 'help' } })
+                  )
+                ]),
+                // Restrict Features Toggle
+                el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
+                  el('div', { style: { marginBottom: 0, lineHeight: 1 } },
+                    el(ToggleControl, {
+                      label: __('Restrict Features', 'vaptsecure'),
+                      checked: restrictFeatures,
+                      onChange: (val) => setRestrictFeatures(val),
+                      help: null,
+                      __nextHasNoMarginBottom: true,
+                      style: { marginBottom: 0 }
+                    })
+                  ),
+                  el(Tooltip, { text: __('Restrict plugin to only selected features. When OFF, custom-developed features will also work.', 'vaptsecure') },
                     el('span', { className: 'dashicons dashicons-editor-help', style: { fontSize: '14px', color: '#94a3b8', cursor: 'help' } })
                   )
                 ])

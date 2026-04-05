@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_IIS_Driver
+class VAPTSECURE_IIS_Driver implements VAPTSECURE_Driver_Interface
 {
     /**
      * Generates a list of valid IIS XML nodes based on the provided data and schema.
@@ -118,6 +118,19 @@ class VAPTSECURE_IIS_Driver
 
         // TODO: Full XML injection logic.
         // For now, we return true to simulate success for the structure.
+        return true;
+    }
+
+    /**
+     * Cleans/removes all VAPT rules from web.config.
+     *
+     * @param string $target Target location (unused for IIS driver, kept for interface compatibility)
+     * @return bool Success status
+     */
+    public static function clean($target = 'root')
+    {
+        // TODO: Implement full web.config cleaning logic
+        // For now, return true to satisfy interface contract
         return true;
     }
 }

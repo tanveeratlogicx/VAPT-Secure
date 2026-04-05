@@ -1,0 +1,63 @@
+parameters:
+    # Analysis level (0-9, 5 is reasonable for existing codebase)
+    level: 5
+    
+    # Paths to scan
+    paths:
+        - includes
+        - vaptsecure.php
+        - vapt-functions.php
+    
+    # Exclude patterns
+    excludePaths:
+        - vendor
+        - node_modules
+        - tests
+        - assets
+        - archive
+        - data
+        - Debug
+        - backup_debug_cleanup
+        - deployment
+        - tools
+        - plans
+    
+    # WordPress stubs for static analysis
+    scanFiles:
+        - vaptsecure.php
+    
+    # Treat these as optional (WordPress functions that may not be loaded in tests)
+    treatPhpDocTypesAsCertain: false
+    
+    # Ignore errors that are common in WordPress plugins
+    ignoreErrors:
+        # WordPress global variables
+        - '#Variable \$wpdb might not be defined#'
+        - '#Variable \$_GET might not be defined#'
+        - '#Variable \$_POST might not be defined#'
+        - '#Variable \$_SERVER might not be defined#'
+        - '#Variable \$wp_filesystem might not be defined#'
+        
+        # WordPress constants that may not be defined in analysis
+        - '#Constant ABSPATH not found#'
+        - '#Constant VAPTSECURE_PATH not found#'
+        - '#Constant VAPTSECURE_URL not found#'
+        - '#Constant VAPTSECURE_VERSION not found#'
+        - '#Constant WP_DEBUG not found#'
+        
+        # Dynamic method calls common in WordPress
+        - '#Call to an undefined method WP_Error::#'
+        
+        # WordPress hook system
+        - '#Function add_action not found#'
+        - '#Function add_filter not found#'
+        - '#Function do_action not found#'
+        - '#Function apply_filters not found#'
+        - '#Function remove_action not found#'
+        - '#Function remove_filter not found#'
+        - '#Function register_activation_hook not found#'
+        - '#Function register_deactivation_hook not found#'
+    
+    # Bootstrap file for WordPress function stubs
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php

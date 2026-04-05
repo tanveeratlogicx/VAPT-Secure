@@ -1,0 +1,27 @@
+{
+    "name": "vaptsecure/vapt-secure",
+    "description": "VAPT Secure - WordPress Security Plugin",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.7",
+        "wp-coding-standards/wpcs": "^3.0",
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^9.6"
+    },
+    "scripts": {
+        "lint": "phpcs --standard=phpcs.xml",
+        "lint:fix": "phpcbf --standard=phpcs.xml",
+        "analyze": "phpstan analyse --configuration=phpstan.neon",
+        "test": "phpunit --configuration=tests/phpunit.xml",
+        "test:coverage": "phpunit --configuration=tests/phpunit.xml --coverage-html=tests/coverage"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

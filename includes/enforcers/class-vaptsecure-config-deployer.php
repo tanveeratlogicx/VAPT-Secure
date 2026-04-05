@@ -7,8 +7,33 @@
 if (!defined('ABSPATH')) { exit;
 }
 
-class VAPTSECURE_Config_Deployer
+class VAPTSECURE_Config_Deployer implements VAPTSECURE_Driver_Interface
 {
+    /**
+     * Static wrapper for generate_rules - delegates to config driver
+     */
+    public static function generate_rules($impl_data, $schema)
+    {
+        return VAPTSECURE_Config_Driver::generate_rules($impl_data, $schema);
+    }
+
+    /**
+     * Static wrapper for write_batch - delegates to config driver
+     */
+    public static function write_batch($rules, $target = 'root')
+    {
+        return VAPTSECURE_Config_Driver::write_batch($rules);
+    }
+
+    /**
+     * Static wrapper for clean - delegates to config driver
+     */
+    public static function clean($target = 'root')
+    {
+        return VAPTSECURE_Config_Driver::clean();
+    }
+
+    // Instance methods below...
     public function can_deploy()
     {
         $paths = [];

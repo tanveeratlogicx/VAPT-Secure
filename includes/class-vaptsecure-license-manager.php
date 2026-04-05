@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) { exit; }
 class VAPTSECURE_License_Manager
 {
     const CACHE_PREFIX = 'vaptsecure_license_cache_';
-    const GRACE_PERIOD = 86400; // 24 hours in seconds
+    const GRACE_PERIOD = 1296000; // 15 days in seconds (15 * 24 * 60 * 60)
     const CACHE_DURATION = 30 * DAY_IN_SECONDS; // 30 days
 
     /**
@@ -240,7 +240,7 @@ class VAPTSECURE_License_Manager
         ), ARRAY_A);
 
         // Get current enforcement state
-        $enforcement_state = get_option('vaptsecure_global_enforcement', 1);
+        $enforcement_state = get_option('vaptsecure_global_protection', 1);
 
         // Get all feature meta for restoration
         $feature_meta = $wpdb->get_results(
@@ -281,103 +281,31 @@ class VAPTSECURE_License_Manager
      */
     private static function remove_all_protections($domain)
     {
-        global $wpdb;
-
         // 1. Disable global enforcement
-        update_option('vaptsecure_global_enforcement', 0);
+        update_option('vaptsecure_global_protection', 0);
 
-        // 2. Clear active enforcements cache
+        // 2. Clear enforcement cache
         delete_transient('vaptsecure_active_enforcements');
 
-        // 3. Remove all VAPT blocks from configuration files
-        self::clean_all_config_files();
+        // 3. Clean all configuration files using shared utility
+        if (class_exists('VAPTSECURE_Config_Cleaner')) {
+            VAPTSECURE_Config_Cleaner::clean_all();
+        } else {
+            // Fallback: Use enforcer's clean method if available
+            if (class_exists('VAPTSECURE_Enforcer')) {
+                VAPTSECURE_Enforcer::clean_all_config_files();
+            }
+        }
 
-        // 4. Disable all domain features
-        $domain_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}vaptsecure_domains WHERE domain = %s",
+        // 4. Log the removal
+        error_log(sprintf(
+            '[VAPT Secure] All protections removed for domain %s',
             $domain
         ));
-
-        if ($domain_id) {
-            $wpdb->update(
-                $wpdb->prefix . 'vaptsecure_domain_features',
-                array('enabled' => 0),
-                array('domain_id' => $domain_id),
-                array('%d'),
-                array('%d')
-            );
-        }
-
-        // 5. Disable all feature meta
-        $wpdb->query("UPDATE {$wpdb->prefix}vaptsecure_feature_meta SET is_enabled = 0");
-
-        // 6. Rebuild to ensure clean state
-        if (class_exists('VAPTSECURE_Enforcer')) {
-            VAPTSECURE_Enforcer::rebuild_all(true); // true = remove mode
-        }
     }
 
     /**
-     * Clean all configuration files of VAPT rules
-     */
-    private static function clean_all_config_files()
-    {
-        // Clean .htaccess
-        $htaccess = ABSPATH . '.htaccess';
-        if (file_exists($htaccess) && is_writable($htaccess)) {
-            $content = file_get_contents($htaccess);
-            
-            // Remove VAPT blocks
-            $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            $content = preg_replace('/# BEGIN VAPT-RISK[^\n]*\n.*?# END VAPT-RISK[^\n]*/s', '', $content);
-            
-            // Clean up extra newlines
-            $content = preg_replace('/\n{3,}/', "\n\n", $content);
-            
-            file_put_contents($htaccess, $content);
-        }
-
-        // Clean wp-config.php
-        $wp_config = ABSPATH . 'wp-config.php';
-        if (file_exists($wp_config) && is_writable($wp_config)) {
-            $content = file_get_contents($wp_config);
-            
-            // Remove VAPT blocks
-            $content = preg_replace('/\/\/ BEGIN VAPT[^\n]*\n.*?\/\/ END VAPT[^\n]*/s', '', $content);
-            $content = preg_replace('/\/\* BEGIN VAPT[^\n]*\*\/.*?\/\* END VAPT[^\n]*\*\//s', '', $content);
-            
-            // Clean up extra newlines
-            $content = preg_replace('/\n{3,}/', "\n\n", $content);
-            
-            file_put_contents($wp_config, $content);
-        }
-
-        // Clean vapt-functions.php
-        $vapt_func = VAPTSECURE_PATH . 'vapt-functions.php';
-        if (file_exists($vapt_func) && is_writable($vapt_func)) {
-            $content = "<?php\n\n/**\n * VAPT Secure Functions\n * License Expired - Functions Disabled\n */\n\nif (!defined('ABSPATH')) { exit; }\n\n";
-            file_put_contents($vapt_func, $content);
-        }
-
-        // Clean nginx config if exists
-        $nginx_conf = ABSPATH . 'nginx.conf';
-        if (file_exists($nginx_conf) && is_writable($nginx_conf)) {
-            $content = file_get_contents($nginx_conf);
-            $content = preg_replace('/# BEGIN VAPT[^\n]*\n.*?# END VAPT[^\n]*/s', '', $content);
-            file_put_contents($nginx_conf, $content);
-        }
-
-        // Clean web.config if exists (IIS)
-        $web_config = ABSPATH . 'web.config';
-        if (file_exists($web_config) && is_writable($web_config)) {
-            $content = file_get_contents($web_config);
-            $content = preg_replace('/<!-- BEGIN VAPT[^\n]*-->.*?<!-- END VAPT[^\n]*-->/s', '', $content);
-            file_put_contents($web_config, $content);
-        }
-    }
-
-    /**
-     * Restore settings from transient cache
+     * Restore settings from cache when license is renewed
      * 
      * @param string $domain Domain name
      * @return bool True if restoration was successful
@@ -452,7 +380,7 @@ class VAPTSECURE_License_Manager
 
             // 4. Restore enforcement state
             if (isset($cached['enforcement_state'])) {
-                update_option('vaptsecure_global_enforcement', $cached['enforcement_state']);
+                update_option('vaptsecure_global_protection', $cached['enforcement_state']);
             }
 
             // 5. Rebuild protections

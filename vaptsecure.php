@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VAPT Secure
  * Description: Ultimate VAPT and OWASP Security Plugin Builder.
-  * Version: 2.5.26
+ * Version: 2.10.3
  * Author: Tanveer H. Malik
  * Author URI: https://vapt.copilot.com
  * License: GPL-2.0+
@@ -22,7 +22,7 @@ if (file_exists(dirname(__FILE__) . '/vendor/autoload.php')) {
 }
 
 /**
- * ðŸ› ï¸ Linter Stubs (Satisfies IDEs without WP symbols)
+ * ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Linter Stubs (Satisfies IDEs without WP symbols)
  */
 if (false) {
     function home_url($path = '', $scheme = null)
@@ -52,7 +52,11 @@ if (false) {
 /**
  * Define Paths & Constants
  */
-define('VAPTSECURE_VERSION', '2.5.26');
+if (defined('VAPTSECURE_BUILD_VERSION')) {
+    define('VAPTSECURE_VERSION', VAPTSECURE_BUILD_VERSION);
+} else {
+    define('VAPTSECURE_VERSION', '2.10.3');
+}
 if (! defined('VAPTSECURE_DATA_VERSION')) {
     define('VAPTSECURE_DATA_VERSION', '2.5.0');
 }
@@ -87,7 +91,7 @@ if (! defined('VAPTC_URL')) {
 }
 
 /**
- * ðŸ”’ Obfuscated Superadmin Identity
+ * ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ Obfuscated Superadmin Identity
  * Returns decoded credentials for strict access control.
  *
  * User: tanmalik786 (Base64: dGFubWFsaWs3ODY=)
@@ -113,7 +117,7 @@ if (! defined('VAPTSECURE_SUPERADMIN_EMAIL')) {
 }
 
 /**
- * ðŸ”’ Strict Superadmin Check
+ * ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ Strict Superadmin Check
  * Verifies if current user matches the hidden identity.
  *
  * @return bool True if the current user is a superadmin.
@@ -128,7 +132,7 @@ function is_vaptsecure_superadmin($require_auth = false)
     $login = strtolower($current_user->user_login);
     $email = strtolower($current_user->user_email);
 
-    // 1. ðŸ›¡ï¸ Identity Check (Primary Firewall)
+    // 1. ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Identity Check (Primary Firewall)
     // MUST match the hardcoded superadmin identity login or email.
     $is_super_identity = ($login === strtolower($identity['user']) || $email === strtolower($identity['email']));
 
@@ -136,7 +140,7 @@ function is_vaptsecure_superadmin($require_auth = false)
         return false;
     }
 
-    // 2. ðŸ›¡ï¸ Authentication Check (Secondary Layer)
+    // 2. ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Authentication Check (Secondary Layer)
     // If require_auth is true, also check if the user has a valid OTP session.
     if ($require_auth && class_exists('VAPTSECURE_Auth')) {
         if (!VAPTSECURE_Auth::is_authenticated()) {
@@ -147,13 +151,40 @@ function is_vaptsecure_superadmin($require_auth = false)
     return true;
 }
 
+/**
+ * Check if a feature is allowed to be used/enforced.
+ * Supports Restricted Mode (defined via VAPTSECURE_RESTRICT_FEATURES).
+ *
+ * @param string $feature_key The feature ID/key to check.
+ * @return bool True if allowed, false otherwise.
+ */
+function vaptsecure_is_feature_allowed($feature_key)
+{
+    // If not in restricted mode, all features are allowed
+    if (!defined('VAPTSECURE_RESTRICT_FEATURES') || !VAPTSECURE_RESTRICT_FEATURES) {
+        return true;
+    }
+
+    // Check if the specific feature constant is defined (set in generated config)
+    $const_name = 'VAPTSECURE_FEATURE_' . strtoupper(str_replace('-', '_', $feature_key));
+    return defined($const_name) && constant($const_name) === true;
+}
+
 // Include core classes (new Builder includes)
 require_once VAPTSECURE_PATH . 'includes/debug-utils.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-auth.php';
+
+// P4.1: Driver Interface Contract - Load interface before drivers
+require_once VAPTSECURE_PATH . 'includes/interfaces/interface-vaptsecure-driver.php';
+
+// P4.2: Schema Validation Pipeline - Load validator before REST
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-schema-validator.php';
+
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-rest.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-db.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-workflow.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-build.php';
+require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-config-cleaner.php';  // Shared utility for config cleaning
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-enforcer.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-admin.php';
 require_once VAPTSECURE_PATH . 'includes/class-vaptsecure-license-manager.php';
@@ -302,7 +333,7 @@ function vaptsecure_activate_plugin()
         wp_mkdir_p(VAPTSECURE_PATH . 'data');
     }
 
-    // ðŸ”” Send Activation Email to Superadmin (Only on fresh activation)
+    // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Send Activation Email to Superadmin (Only on fresh activation)
     $existing_version = get_option('vaptsecure_version');
     if (empty($existing_version)) {
         vaptsecure_send_activation_email();
@@ -617,7 +648,7 @@ if (! function_exists('vaptsecure_add_admin_menu')) {
             80
         );
 
-        // ðŸ›¡ï¸ Superadmin Only Sub-menus
+        // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Superadmin Only Sub-menus
         if ($is_superadmin_identity) {
             // Sub-menu 1: Workbench
             add_submenu_page(
@@ -826,20 +857,25 @@ function vaptsecure_enqueue_admin_assets($hook)
 
 
     // Common Settings Localization
+    $localized_settings = array(
+            'root'          => esc_url_raw(rest_url()),
+            'nonce'         => wp_create_nonce('wp_rest'),
+            'domainLocked'  => defined('VAPTSECURE_DOMAIN_LOCKED') ? VAPTSECURE_DOMAIN_LOCKED : false,
+            'buildVersion'  => VAPTSECURE_VERSION,
+            'activeData'    => VAPTSECURE_ACTIVE_DATA_FILE
+        );
     $vapt_settings = array(
-    'root' => esc_url_raw(rest_url()),
-    'homeUrl' => esc_url_raw(home_url()),
-    'nonce' => wp_create_nonce('wp_rest'),
-    'isSuper' => $is_superadmin,
-    'pluginVersion' => VAPTSECURE_VERSION,
-    'pluginName' => 'VAPT Secure',
-    'currentDomain' => parse_url(home_url(), PHP_URL_HOST),
-    'abspath' => ABSPATH,
-    'pluginPath' => VAPTSECURE_PATH,
+        'isSuper' => $is_superadmin,
+        'pluginVersion' => VAPTSECURE_VERSION,
+        'pluginName' => 'VAPT Secure',
+        'currentDomain' => parse_url(home_url(), PHP_URL_HOST),
+        'abspath' => ABSPATH,
+        'pluginPath' => VAPTSECURE_PATH,
+        'uploadPath' => wp_upload_dir()['basedir'],
     'uploadPath' => wp_upload_dir()['basedir'],
     );
 
-    // ðŸ›¡ï¸ GLOBAL REST HOTPATCH (v3.8.17) - Inline for maximum priority
+    // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â GLOBAL REST HOTPATCH (v3.8.17) - Inline for maximum priority
     $home_url = esc_url_raw(home_url());
     $inline_patch = "
     (function() {
@@ -847,7 +883,7 @@ function vaptsecure_enqueue_admin_assets($hook)
       if (wp.apiFetch.__vaptsecure_patched) return;
       
       try {
-        // ðŸ›¡ï¸ RECOVERY: If the browser was permanently stuck in silent mode, free it (v2.2.9 Fix)
+        // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â RECOVERY: If the browser was permanently stuck in silent mode, free it (v2.2.9 Fix)
         localStorage.removeItem('vaptsecure_rest_broken');
       } catch (e) { }
 
@@ -861,7 +897,7 @@ function vaptsecure_enqueue_admin_assets($hook)
         
         const home = '{$home_url}';
         
-        // ðŸ›¡ï¸ AUTH PERI-FIX: Ensure Nonce is present for non-GET requests
+        // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â AUTH PERI-FIX: Ensure Nonce is present for non-GET requests
         const method = (args.method || 'GET').toUpperCase();
         if (effectiveNonce && method !== 'GET') {
           if (!args.headers) args.headers = {};
@@ -885,7 +921,7 @@ function vaptsecure_enqueue_admin_assets($hook)
           return cleanHome + '/?rest_route=/' + cleanPath + queryParams + nonceParam;
         };
 
-        // ðŸ›¡ï¸ REMOVED THE INSTANT FALLBACK LOGIC to prevent permanently spamming 403s
+        // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â REMOVED THE INSTANT FALLBACK LOGIC to prevent permanently spamming 403s
         // on all endpoints when only one endpoint was broken.
         // Fallbacks will only occur per-request dynamically.
 
